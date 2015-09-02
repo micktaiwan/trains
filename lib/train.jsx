@@ -32,7 +32,6 @@ class Train {
     tmp.x += this.dir.x;
     tmp.y += this.dir.y;
     if(!caseEqual(this.from, tmp) && this.map.getCase(tmp)) {
-      console.log(this.from, tmp);
       caseCopy(this.from, this.pos);
       caseCopy(this.pos, tmp);
       return true;

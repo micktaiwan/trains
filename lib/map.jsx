@@ -23,17 +23,18 @@ class Map {
   resetMap() {
     this.tiles.length = 0;
     this.train = null;
+    Meteor.call('mapReset');
   }
 
-/*
   setCase(pos) {
-    this.tiles.push(new Tile(this, pos));
+    if(this.getCase(pos)) return false;
+    Meteor.call('mapSet', pos);
+    return true;
   }
-*/
 
-  getCase(coords) {
+  getCase(pos) {
     for(let i = 0; i < this.tiles.length; i++) {
-      if(this.tiles[i].pos.x === coords.x && this.tiles[i].pos.y === coords.y) return this.tiles[i];
+      if(this.tiles[i].pos.x === pos.x && this.tiles[i].pos.y === pos.y) return this.tiles[i];
     }
     return null;
   }

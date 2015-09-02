@@ -48,10 +48,13 @@ Meteor.startup(function() {
     putTrain() {
       if(!this.train)
         this.train = new TrainGui(this);
+      this.draw();
     }
 
-    setCase(pos) {
-      this.tiles.push(new TileGui(this, pos));
+    setCase(pos, skipDB) {
+      if(skipDB || super.setCase(pos))
+        this.tiles.push(new TileGui(this, pos));
+      this.draw();
     }
 
     resetMap() {

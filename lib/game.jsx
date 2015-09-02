@@ -4,5 +4,12 @@
 "use strict";
 
 class Game {
+  constructor() {
+    //this.map = new Map();
+  }
 
+}
+
+if(Meteor.isClient) {
+  window.Game = Game;
 }

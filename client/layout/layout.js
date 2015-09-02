@@ -1,9 +1,19 @@
-var mapObject;
+var game;
+var map;
 
 Template.map.onRendered(function() {
 
-  mapObject = new MapGui('canvas');
-  mapObject.draw();
+  game = new Game();
+  map = new MapGui('canvas');
+  map.draw();
+
+
+  Tiles.find().observeChanges({
+    added: function(id, doc) {
+      map.setCase(doc, true);
+    }
+
+  });
 
 });
 
@@ -12,11 +22,11 @@ Template.map.helpers({});
 Template.map.events({
 
   'click .reset': function() {
-    mapObject.resetMap();
+    map.resetMap();
   },
 
   'click .start': function() {
-    mapObject.putTrain();
+    map.putTrain();
   }
 
 });
