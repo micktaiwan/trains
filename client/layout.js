@@ -2,7 +2,7 @@ var mapObject;
 
 Template.map.onRendered(function() {
 
-  mapObject = new Map('canvas');
+  mapObject = new MapGui('canvas');
   mapObject.draw();
 
 });

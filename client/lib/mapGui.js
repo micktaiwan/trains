@@ -3,14 +3,11 @@
  */
 "use strict";
 
-class Tile {
+class TileGui extends Tile {
 
   constructor(map, pos) {
-    this.map = map;
+    super(map, pos);
     this.ctx = map.ctx;
-    this.pos = pos;
-    //this.img = new Image();
-    //this.img.src = "http://static.dotjobs.io.s3.amazonaws.com/www/img/perks/cross.svg";
   }
 
   draw() {
@@ -25,30 +22,35 @@ class Tile {
 
 }
 
-class Map {
+class MapGui extends Map {
   constructor(canvas_id, displayOptions) {
+    super();
     displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
     this.displayOptions = {
       caseWidth: displayOptions.caseWidth || 50
     };
     this.canvas = $(canvas_id).get(0);
     this.ctx = this.canvas.getContext("2d");
-    this.tiles = [];
-    //this.tiles.push(new Tile(this.ctx));
+
     this.mouseIsDown = false;
+
     // listen to mouse
     this.canvas.addEventListener("mousedown", $.proxy(this.onMouseDown, this), false);
-    //this.canvas.addEventListener("dblclick", $.proxy(this.onMouseDblClick, this), false);
     this.canvas.addEventListener("mouseup", $.proxy(this.onMouseUp, this), false);
     this.canvas.addEventListener("mousemove", $.proxy(this.onMouseMove, this), false);
-    //this.canvas.addEventListener("mouseout", $.proxy(this.onMouseOut, this), false);
     this.canvas.addEventListener("mousewheel", $.proxy(this.onMouseWheel, this), false);
+    //this.canvas.addEventListener("dblclick", $.proxy(this.onMouseDblClick, this), false);
+    //this.canvas.addEventListener("mouseout", $.proxy(this.onMouseOut, this), false);
+  }
+
+  putTrain() {
+    if(!this.train)
+      this.train = new TrainGui(this);
   }
 
   resetMap() {
-    this.tiles.length = 0;
+    super.resetMap();
     this.displayOptions.caseWidth = 50;
-    this.train = null;
     this.draw();
   }
 
@@ -91,14 +93,7 @@ class Map {
   }
 
   setCase(event) {
-    this.tiles.push(new Tile(this, this.getMouseCaseCoords(this.relMouseCoords(event))));
-  }
-
-  getCase(coords) {
-    for(let i = 0; i < this.tiles.length; i++) {
-      if(this.tiles[i].pos.x === coords.x && this.tiles[i].pos.y === coords.y) return this.tiles[i];
-    }
-    return null;
+    super.setCase(this.getMouseCaseCoords(this.relMouseCoords(event)));
   }
 
   drawMouseCase(c) {
@@ -133,10 +128,9 @@ class Map {
   }
 
   putTrain() {
-    if(!this.train)
-      this.train = new Train(this);
+    super.putTrain();
     this.draw();
   }
 }
 
-window.Map = Map;
+window.MapGui = MapGui;
