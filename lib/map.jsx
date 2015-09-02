@@ -5,15 +5,16 @@
 
 class Tile {
 
-  constructor(map, pos) {
+  constructor(map, pos, id) {
     this.map = map;
     this.pos = pos;
+    this.id = id;
+    console.log('created Tile', id);
     //this.img = new Image();
     //this.img.src = "http://static.dotjobs.io.s3.amazonaws.com/www/img/perks/cross.svg";
   }
 
 }
-
 
 class Map {
   constructor() {
@@ -29,6 +30,12 @@ class Map {
   setCase(pos) {
     if(this.getCase(pos)) return false;
     Meteor.call('mapSet', pos);
+    return true;
+  }
+
+  removeCase(pos) {
+    if(!this.getCase(pos)) return false;
+    Meteor.call('mapRemove', pos);
     return true;
   }
 

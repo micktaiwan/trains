@@ -10,9 +10,14 @@ Template.map.onRendered(function() {
 
   Tiles.find().observeChanges({
     added: function(id, doc) {
-      map.setCase(doc, true);
+      console.log('change: added', id);
+      map.setCaseWithId(id, doc);
+    },
+    removed: function(id) {
+      var doc = Tiles.findOne(id);
+      console.log('change: removed', id);
+      map.removeCase(id, true);
     }
-
   });
 
 });
