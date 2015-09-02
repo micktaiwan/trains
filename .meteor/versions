@@ -21,6 +21,7 @@ ecmascript-collections@0.1.5-rc.0
 ejson@1.0.7-rc.0
 fastclick@1.0.7-rc.0
 geojson-utils@1.0.4-rc.0
+grigio:babel@0.1.7
 html-tools@1.0.5-rc.0
 htmljs@1.0.5-rc.1
 http@1.1.1-rc.0

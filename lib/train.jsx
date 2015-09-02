@@ -55,3 +55,6 @@ class Train {
   }
 
 }
+if(Meteor.isClient) {
+  window.Train = Train;
+}

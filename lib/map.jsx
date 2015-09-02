@@ -14,6 +14,7 @@ class Tile {
 
 }
 
+
 class Map {
   constructor() {
     this.tiles = [];
@@ -24,9 +25,11 @@ class Map {
     this.train = null;
   }
 
+/*
   setCase(pos) {
     this.tiles.push(new Tile(this, pos));
   }
+*/
 
   getCase(coords) {
     for(let i = 0; i < this.tiles.length; i++) {
@@ -35,4 +38,9 @@ class Map {
     return null;
   }
 
+}
+
+if(Meteor.isClient) {
+  window.Tile = Tile;
+  window.Map = Map;
 }
