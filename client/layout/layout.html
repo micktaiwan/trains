@@ -19,10 +19,8 @@
 </template>
 
 <template name="lobby">
-  <button class="newGame">New game</button>
-  <br/>
+  <button class="ui primary button newGame">New game</button><br/>
 
-  Games:<br/>
   <ul>
     {{#each games}}
       {{> gameItem}}
