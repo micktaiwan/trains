@@ -2,7 +2,7 @@
  * Created by mfaivremacon on 02/09/2015.
  */
 
-Meteor.publish('Titles', function(game_id) {
+Meteor.publish('tiles', function(game_id) {
   return Tiles.find({game_id: game_id});
 });
 

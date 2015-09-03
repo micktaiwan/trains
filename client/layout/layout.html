@@ -1,9 +1,26 @@
 <template name="layout">
+
+  <div class="ui primary pointing menu">
+    <a class="item" href="/">
+      Home
+    </a>
+
+    <div class="right menu">
+      <a class="ui item">
+        Logout
+      </a>
+    </div>
+  </div>
+
+
   {{>yield}}
+
+  <div class="footer">Un jeu qu'il est bien avec un nom qu'il est pas compliqu&eacute;</div>
 </template>
 
 <template name="lobby">
-  <button class="newGame">New game</button><br/>
+  <button class="newGame">New game</button>
+  <br/>
 
   Games:<br/>
   <ul>
@@ -14,5 +31,5 @@
 </template>
 
 <template name="gameItem">
-  <li>{{name}} {{_id}}</li>
+  <li><a href="{{pathFor "game" _id=_id}}">{{name}} {{_id}}</a></li>
 </template>

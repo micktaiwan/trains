@@ -9,7 +9,7 @@ Template.game.onRendered(function() {
 
   console.log('data', this.data);
 
-  Tiles.find().observeChanges({
+  Tiles.find({_id: this.data._id}).observeChanges({
     added: function(id, doc) {
       console.log('change: added', id);
       map.setCaseWithId(id, doc);
