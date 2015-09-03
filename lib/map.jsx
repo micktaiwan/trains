@@ -28,7 +28,7 @@ class Map {
   }
 
   setCase(pos) {
-    console.log('sessions', Session.get('game_id'));
+    console.log('setCase session', Session.get('game_id'));
     if(this.getCase(pos)) return false;
     Meteor.call('mapSet', pos, Session.get('game_id'));
     return true;

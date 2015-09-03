@@ -97,11 +97,10 @@ Meteor.startup(function() {
 
       // we have been notified that another client removed this tile
       removeCase(id) {
-        console.log('removeCase', id);
+        console.log('removing case', id, '...');
         for(let i = 0; i < this.tiles.length; i++) {
           if(this.tiles[i].id === id) {
             this.tiles.splice(i, 1);
-            console.log('ok', id);
             break;
           }
         }

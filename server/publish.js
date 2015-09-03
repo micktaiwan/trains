@@ -3,6 +3,7 @@
  */
 
 Meteor.publish('tiles', function(game_id) {
+  console.log('publishing tiles for', game_id);
   return Tiles.find({game_id: game_id});
 });
 

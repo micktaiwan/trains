@@ -1,5 +1,6 @@
 var game;
 var map;
+var handle;
 
 Template.game.onRendered(function() {
 
@@ -9,7 +10,8 @@ Template.game.onRendered(function() {
 
   console.log('data', this.data);
 
-  Tiles.find({_id: this.data._id}).observeChanges({
+  if(handle) handle.stop();
+  handle = Tiles.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
       console.log('change: added', id);
       map.setCaseWithId(id, doc);
@@ -21,6 +23,10 @@ Template.game.onRendered(function() {
     }
   });
 
+});
+
+Template.game.onDestroyed(function() {
+  if(handle) handle.stop();
 });
 
 Template.game.helpers({});
