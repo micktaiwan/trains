@@ -8,4 +8,6 @@ meteor-platform
 semantic:ui-css
 less
 grigio:babel # transcripting ES6 to ES5 for server scripts
+iron:router
+
 # dayd:stats

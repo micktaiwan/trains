@@ -75,12 +75,24 @@ Meteor.startup(function() {
       }
 
       draw() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillStyle = 'black';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         for(let i = 0; i < this.tiles.length; i++) {
           this.tiles[i].draw();
         }
         if(this.train) this.train.draw();
         this.drawMapBorder();
+      }
+
+      drawMouse(event) {
+        let coords = this.relMouseCoords(event);
+        let c = this.getMouseCaseCoords(coords);
+
+        this.ctx.fillStyle = 'white';
+        this.ctx.fillText(c.x + ' ' + c.y, 20, 20);
+
+        if(this.mouseIsDown) this.setCaseFromEvent(event);
+        this.drawMouseCase(c);
       }
 
       // we have been notified that another client removed this tile
@@ -100,18 +112,12 @@ Meteor.startup(function() {
         event.preventDefault();
         this.displayOptions.caseWidth = (event.wheelDelta / 30 + this.displayOptions.caseWidth);
         this.draw();
+        this.drawMouse(event);
       }
 
       onMouseMove(event) {
         this.draw();
-        let coords = this.relMouseCoords(event);
-        let c = this.getMouseCaseCoords(coords);
-
-        this.ctx.fillStyle = 'white';
-        this.ctx.fillText(c.x + ' ' + c.y, 20, 20);
-
-        if(this.mouseIsDown) this.setCaseFromEvent(event);
-        this.drawMouseCase(c);
+        this.drawMouse(event);
       }
 
       onMouseDown(event) {
@@ -132,17 +138,18 @@ Meteor.startup(function() {
 
       drawMapBorder() {
         this.ctx.lineWidth = 1;
-        this.ctx.strokeStyle = '#333';
+        this.ctx.strokeStyle = '#999';
         this.ctx.beginPath();
         this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.stroke();
       }
 
       drawMouseCase(c) {
+        let margin = 3;
         this.ctx.lineWidth = 3;
         this.ctx.strokeStyle = '#500';
         this.ctx.beginPath();
-        this.ctx.rect(c.x * this.displayOptions.caseWidth, c.y * this.displayOptions.caseWidth, this.displayOptions.caseWidth, this.displayOptions.caseWidth);
+        this.ctx.rect(c.x * this.displayOptions.caseWidth + margin, c.y * this.displayOptions.caseWidth + margin, this.displayOptions.caseWidth - margin * 2, this.displayOptions.caseWidth - margin * 2);
         this.ctx.stroke();
       }
 

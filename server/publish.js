@@ -2,7 +2,15 @@
  * Created by mfaivremacon on 02/09/2015.
  */
 
-// publish it to every client without needing a subscription
+Meteor.publish('Titles', function(game_id) {
+  return Tiles.find({game_id: game_id});
+});
+
+// publications to every client without needing a subscription
 Meteor.publish(null, function() {
-  return Tiles.find({});
+  return Trains.find({});
+});
+
+Meteor.publish(null, function() {
+  return Games.find({});
 });

@@ -1,37 +1,23 @@
-var game;
-var map;
+Template.lobby.onRendered(function() {
 
-Template.map.onRendered(function() {
-
-  game = new Game();
-  map = new MapGui('canvas');
-  map.draw();
-
-
-  Tiles.find().observeChanges({
-    added: function(id, doc) {
-      console.log('change: added', id);
-      map.setCaseWithId(id, doc);
-    },
-    removed: function(id) {
-      var doc = Tiles.findOne(id);
-      console.log('change: removed', id);
-      map.removeCase(id, true);
-    }
-  });
 
 });
 
-Template.map.helpers({});
+Template.lobby.helpers({
 
-Template.map.events({
+  games: function() {
+    return Games.find();
+  }
 
-  'click .reset': function() {
-    map.resetMap();
-  },
+});
 
-  'click .start': function() {
-    map.putTrain();
+Template.lobby.events({
+
+  'click .newGame': function() {
+    Meteor.call('gameCreate', function(err, rv) {
+      console.log(err, rv);
+      Router.go('/game/' + rv);
+    });
   }
 
 });

@@ -1,15 +1,18 @@
-<head>
-  <title>Trains</title>
-</head>
+<template name="layout">
+  {{>yield}}
+</template>
 
-<body>
-{{> map}}
-</body>
+<template name="lobby">
+  <button class="newGame">New game</button><br/>
 
-<template name="map">
-  <p>Click to put a case, Wheel to Zoom</p>
-  <button class="reset">Reset</button>
-  <button class="start">Start</button><br/>
-  <br/>
-  <canvas width="900" height="400"></canvas><br/>
+  Games:<br/>
+  <ul>
+    {{#each games}}
+      {{> gameItem}}
+    {{/each}}
+  </ul>
+</template>
+
+<template name="gameItem">
+  <li>{{name}} {{_id}}</li>
 </template>

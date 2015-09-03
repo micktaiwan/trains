@@ -24,18 +24,19 @@ class Map {
   resetMap() {
     this.tiles.length = 0;
     this.train = null;
-    Meteor.call('mapReset');
+    Meteor.call('mapReset', Session.get('game_id'));
   }
 
   setCase(pos) {
+    console.log('sessions', Session.get('game_id'));
     if(this.getCase(pos)) return false;
-    Meteor.call('mapSet', pos);
+    Meteor.call('mapSet', pos, Session.get('game_id'));
     return true;
   }
 
   removeCase(pos) {
     if(!this.getCase(pos)) return false;
-    Meteor.call('mapRemove', pos);
+    Meteor.call('mapRemove', pos, Session.get('game_id'));
     return true;
   }
 
