@@ -80,6 +80,7 @@ Meteor.startup(function() {
           this.tiles[i].draw();
         }
         if(this.train) this.train.draw();
+        this.drawMapBorder();
       }
 
       // we have been notified that another client removed this tile
@@ -129,6 +130,14 @@ Meteor.startup(function() {
         this.setCase(this.getMouseCaseCoords(this.relMouseCoords(event)));
       }
 
+      drawMapBorder() {
+        this.ctx.lineWidth = 1;
+        this.ctx.strokeStyle = '#333';
+        this.ctx.beginPath();
+        this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.stroke();
+      }
+
       drawMouseCase(c) {
         this.ctx.lineWidth = 3;
         this.ctx.strokeStyle = '#500';
@@ -162,9 +171,6 @@ Meteor.startup(function() {
 
     }
 
-    window
-      .
-      MapGui = MapGui;
+    window.MapGui = MapGui;
   }
-)
-;
+);

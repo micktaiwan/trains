@@ -1,0 +1,24 @@
+<?xml version="1.0"?><svg width="793.7007874015749" height="1122.5196850393702" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <title>green train</title>
+ <defs>
+  <linearGradient id="linearGradient567">
+   <stop stop-color="#000" offset="0" id="stop568"/>
+   <stop stop-color="#fff" offset="1" id="stop569"/>
+  </linearGradient>
+  <linearGradient xlink:href="#linearGradient567" id="linearGradient570"/>
+ </defs>
+ <g>
+  <title>Layer 1</title>
+  <rect fill="#ff0000" fill-rule="evenodd" stroke-width="3.125" stroke="#000000" y="324.700363" x="106.568329" width="79.926254" ry="20" rx="20" id="rect551" height="266.420776"/>
+  <rect fill="#ff0000" fill-rule="evenodd" stroke-width="3.75" stroke="#000000" y="379.649551" x="186.494583" width="256.430023" id="rect552" height="179.834061"/>
+  <rect fill="#ff0000" fill-rule="evenodd" stroke-width="1pt" stroke="#000000" y="319.704758" x="432.933792" width="236.448547" id="rect553" height="283.072205"/>
+  <rect fill="#ff0000" fill-rule="evenodd" stroke="#000000" stroke-width="1.39754" y="236.448314" x="213.136642" width="56.614441" id="rect554" height="183.164212"/>
+  <rect fill="#ff0000" fill-rule="evenodd" stroke="#000000" stroke-width="2.36902" y="156.522003" x="163.18277" width="146.531433" ry="20" rx="17.959183" id="rect557" height="83.256454"/>
+  <path fill-rule="evenodd" fill="#232a18" stroke-width="1pt" id="path558" d="m293.062866,604.4422a78.261108,71.600594 0 1 0 -156.522217,0a78.261101,71.600601 0 1 0 156.52182,0.000305l-78.260696,-0.000305l78.261093,0z"/>
+  <path fill-rule="evenodd" fill="#232a18" stroke-width="1pt" id="path563" d="m512.860107,604.4422a78.261108,71.600594 0 1 0 -156.522217,0a78.261101,71.600601 0 1 0 156.52179,0.000305l-78.260681,-0.000305l78.261108,0z"/>
+  <path fill-rule="evenodd" fill="#232a18" stroke-width="1pt" id="path564" d="m689.36377,604.4422a78.261108,71.600594 0 1 0 -156.522217,0a78.261101,71.600601 0 1 0 156.521851,0.000305l-78.260681,-0.000305l78.261047,0z"/>
+  <rect fill="#ff0000" fill-rule="evenodd" stroke-width="2.5" stroke="#000000" y="243.108917" x="396.30098" width="296.393127" ry="20" rx="20" id="rect565" height="83.256516"/>
+  <rect fill="#ffffff" fill-rule="evenodd" stroke-width="1pt" stroke="#000000" y="339.686462" x="492.878479" width="119.889404" id="rect566" height="139.870972"/>
+  <path fill-rule="evenodd" fill="#ff0000" stroke-width="1pt" id="path589" d="m269.751099,419.61264a28.307215,23.311831 0 1 0 -56.614441,0a28.307243,23.3118 0 1 0 56.614594,-0.000214l-28.307373,0.000214l28.30722,0z"/>
+ </g>
+</svg>
