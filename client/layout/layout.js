@@ -1,6 +1,12 @@
+Template.layout.helpers({
+
+  connected: function() {
+    return Meteor.status().connected;
+  }
+
+});
+
 Template.lobby.onRendered(function() {
-
-
 });
 
 Template.lobby.helpers({

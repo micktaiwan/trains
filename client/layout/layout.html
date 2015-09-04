@@ -1,9 +1,15 @@
 <template name="layout">
 
-  <div class="ui primary pointing menu">
+  <div class="ui pointing menu">
     <a class="item" href="/">
       Home
     </a>
+
+
+    {{#unless connected}}
+      <div class="ui active item" href="#">Connection issue...</div>
+    {{/unless}}
+
 
     <div class="right menu">
       <a class="ui item">
