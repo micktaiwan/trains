@@ -101,8 +101,8 @@ Meteor.startup(function() {
 
       drawMouse(event) {
         let c = this.getMouseCaseCoords(this.relMouseCoords(event), true);
-        this.ctx.fillStyle = 'white';
-        this.ctx.fillText(c.x + ' ' + c.y, 20, 20);
+        //this.ctx.fillStyle = 'white';
+        //this.ctx.fillText(c.x + ' ' + c.y, 20, 20);
         this.drawMouseCase(c);
       }
 
@@ -140,11 +140,14 @@ Meteor.startup(function() {
           if(e.ctrlKey) { // pan map
             this.pan.x += this.mouseMovement.x;
             this.pan.y += this.mouseMovement.y;
-            console.log(this.pan);
           }
           else { // edit map
             if(this.button === 1)
               this.setCaseFromEvent(e);
+            else if(this.button === 2) { // middle button = pan
+              this.pan.x += this.mouseMovement.x;
+              this.pan.y += this.mouseMovement.y;
+            }
             else if(this.button === 3)
               this.removeCaseFromEvent(e);
           }
@@ -193,7 +196,7 @@ Meteor.startup(function() {
       }
 
       drawMouseCase(c) {
-        let margin = 3;
+        let margin = 0;
         this.ctx.lineWidth = 3;
         this.ctx.strokeStyle = '#500';
         this.ctx.beginPath();

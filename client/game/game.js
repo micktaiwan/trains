@@ -38,7 +38,13 @@ Template.game.onDestroyed(function() {
   if(handle) handle.stop();
 });
 
-Template.game.helpers({});
+Template.game.helpers({
+
+  railsCount: function() {
+    return Tiles.find().count();
+  }
+
+});
 
 Template.game.events({
 
