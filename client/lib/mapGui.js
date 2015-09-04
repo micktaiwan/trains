@@ -35,6 +35,9 @@ Meteor.startup(function() {
         this.ctx = this.canvas.getContext("2d");
 
         this.mouseIsDown = false;
+        this.mouseOldPos = {x: -1, y: -1};
+        this.mousePos = {x: -1, y: -1};
+        this.pan = {x: 0, y: 0};
 
         // listen to mouse
         this.canvas.addEventListener("mousedown", $.proxy(this.onMouseDown, this), false);
@@ -73,23 +76,31 @@ Meteor.startup(function() {
 
       resetMap() {
         super.resetMap();
+        this.resetPosition();
+      }
+
+      resetPosition() {
         this.displayOptions.caseWidth = 50;
+        this.pan = {x: 0, y: 0};
         this.draw();
       }
 
       draw() {
         this.ctx.fillStyle = 'black';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.ctx.translate(this.pan.x, this.pan.y);
         for(let i = 0; i < this.tiles.length; i++) {
           this.tiles[i].draw();
         }
         if(this.train) this.train.draw();
+        this.ctx.translate(-this.pan.x, -this.pan.y);
+
         this.drawMapBorder();
       }
 
       drawMouse(event) {
-        let coords = this.relMouseCoords(event);
-        let c = this.getMouseCaseCoords(coords);
+        let c = this.getMouseCaseCoords(this.relMouseCoords(event), true);
         this.ctx.fillStyle = 'white';
         this.ctx.fillText(c.x + ' ' + c.y, 20, 20);
         this.drawMouseCase(c);
@@ -114,29 +125,41 @@ Meteor.startup(function() {
         this.drawMouse(event);
       }
 
-      onMouseMove(event) {
+      onMouseMove(e) {
+        this.mouseOldPos = this.mousePos;
+        this.mousePos = this.relMouseCoords(e);
+        this.mouseMovement = {x: this.mousePos.x - this.mouseOldPos.x, y: this.mousePos.y - this.mouseOldPos.y};
         this.draw();
-        this.drawMouse(event);
+        if(!e.ctrlKey) this.drawMouse(e);
         if(this.mouseIsDown) {
-          if(this.button === 1)
-            this.setCaseFromEvent(event);
-          else if(this.button === 3)
-            this.removeCaseFromEvent(event);
+          if(e.ctrlKey) {
+            //this.ctx.translate(this.mouseMovement.x, this.mouseMovement.y);
+            this.pan.x += this.mouseMovement.x;
+            this.pan.y += this.mouseMovement.y;
+            console.log(this.pan);
+          }
+          else {
+            if(this.button === 1)
+              this.setCaseFromEvent(e);
+            else if(this.button === 3)
+              this.removeCaseFromEvent(e);
+          }
         }
       }
 
-      onMouseDown(event) {
-        event.preventDefault();
-        console.log(event.which);
-        switch(event.which) {
-          case 1: // left button
-            this.setCaseFromEvent(event);
-            break;
-          case 3: // right button
-            this.removeCaseFromEvent(event);
-            break;
+      onMouseDown(e) {
+        e.preventDefault();
+        if(!e.ctrlKey) {
+          switch(e.which) {
+            case 1: // left button
+              this.setCaseFromEvent(e);
+              break;
+            case 3: // right button
+              this.removeCaseFromEvent(e);
+              break;
+          }
         }
-        this.button = event.which;
+        this.button = e.which;
         this.draw();
         this.mouseIsDown = true;
         document.body.style.cursor = 'none';
@@ -174,10 +197,17 @@ Meteor.startup(function() {
         this.ctx.stroke();
       }
 
-      getMouseCaseCoords(coords) {
+      getMouseCaseCoords(coords, ignorePan) {
+        if(ignorePan) {
+          return {
+            x: Math.floor((coords.x) / this.displayOptions.caseWidth),
+            y: Math.floor((coords.y) / this.displayOptions.caseWidth)
+          };
+
+        }
         return {
-          x: Math.floor(coords.x / this.displayOptions.caseWidth),
-          y: Math.floor(coords.y / this.displayOptions.caseWidth)
+          x: Math.floor((coords.x - this.pan.x) / this.displayOptions.caseWidth),
+          y: Math.floor((coords.y - this.pan.y) / this.displayOptions.caseWidth)
         };
       }
 

@@ -1,8 +1,14 @@
 <template name="game">
   <h1>{{name}}</h1>
-  <p>Left click to put a case, right click to remove, Wheel to Zoom</p>
-  <button class="ui primary button start">Start train</button><br/>
+  <button class="ui primary button start pup" data-content="It will start automatically in a later version :)">Start train</button>
+  <button class="ui button center pup" data-content="Reset zoom and pan">Center Map</button>
+  <div class="ui buttons">
+    <button class="ui positive button pup" data-content="Left click to put a rail, right click to remove">Edit</button>
+    <div class="or"></div>
+    <button class="ui button pup" data-content="Pan the map with the mouse">Pan</button>
+  </div>
+  <br/>
   <br/>
   <canvas width="900" height="400"></canvas><br/>
-  <button class="ui red button reset">Reset Map</button>
+  <button class="ui red button reset pup" data-content="Remove all rails">Reset Map</button>
 </template>

@@ -6,6 +6,13 @@ Template.game.onRendered(function() {
 
   //while(!this.data) {for(let i=0; i < 999999; i++){var a = 3*3;}}
 
+  $('.pup')
+    .popup({
+      inline: true,
+      hoverable: true,
+      position: 'bottom left',
+    });
+
   game = new Game();
   map = new MapGui('canvas');
   map.draw();
@@ -41,6 +48,10 @@ Template.game.events({
 
   'click .start': function() {
     map.putTrain();
+  },
+
+  'click .center': function() {
+    map.resetPosition();
   }
 
 });
