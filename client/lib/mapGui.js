@@ -120,12 +120,15 @@ Meteor.startup(function() {
 
       onMouseWheel(event) {
         event.preventDefault();
-        let factor = Math.round((this.displayOptions.caseWidth * 10 / event.wheelDelta));
+        let factor = Math.round((this.displayOptions.caseWidth * 2 / (event.wheelDelta / 30)));
         this.displayOptions.caseWidth += factor;
+        //this.pan.x += (this.pan.x - this.mousePos.x);
+        //this.pan.y += (this.pan.y - this.mousePos.y);
         if(this.displayOptions.caseWidth < 1)
           this.displayOptions.caseWidth = 1;
         if(this.displayOptions.caseWidth > 200)
           this.displayOptions.caseWidth = 200;
+        console.log(event.wheelDelta, factor, "=>", this.displayOptions.caseWidth);
         this.draw();
         this.drawMouse(event);
       }
