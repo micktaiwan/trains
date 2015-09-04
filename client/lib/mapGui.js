@@ -55,6 +55,7 @@ Meteor.startup(function() {
       putTrain() {
         if(!this.train)
           this.train = new TrainGui(this);
+        this.train.reset();
         this.draw();
       }
 

@@ -20,6 +20,10 @@ class Train {
     this.from = {x: -1, y: -1};
   }
 
+  reset() {
+    this.pos.x = this.y = 1;
+  }
+
   move() {
     for(let i = 1; i <= 4; i++) {
       if(this.dirMove()) return;

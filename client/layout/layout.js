@@ -14,7 +14,8 @@ Template.lobby.helpers({
 Template.lobby.events({
 
   'click .newGame': function() {
-    Meteor.call('gameCreate', function(err, rv) {
+    var name = $('#gameName').val();
+    Meteor.call('gameCreate', name, function(err, rv) {
       console.log(err, rv);
       Router.go('/game/' + rv);
     });

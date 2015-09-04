@@ -4,6 +4,8 @@ var handle;
 
 Template.game.onRendered(function() {
 
+  //while(!this.data) {for(let i=0; i < 999999; i++){var a = 3*3;}}
+
   game = new Game();
   map = new MapGui('canvas');
   map.draw();
