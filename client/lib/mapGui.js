@@ -120,7 +120,12 @@ Meteor.startup(function() {
 
       onMouseWheel(event) {
         event.preventDefault();
-        this.displayOptions.caseWidth = (event.wheelDelta / 30 + this.displayOptions.caseWidth);
+        let factor = Math.round((this.displayOptions.caseWidth * 10 / event.wheelDelta));
+        this.displayOptions.caseWidth += factor;
+        if(this.displayOptions.caseWidth < 1)
+          this.displayOptions.caseWidth = 1;
+        if(this.displayOptions.caseWidth > 200)
+          this.displayOptions.caseWidth = 200;
         this.draw();
         this.drawMouse(event);
       }
