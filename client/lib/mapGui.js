@@ -5,6 +5,8 @@
 
 Meteor.startup(function() {
 
+    var defaultTileSize = 50;
+
     class TileGui extends Tile {
 
       constructor(map, pos, id) {
@@ -14,7 +16,7 @@ Meteor.startup(function() {
 
       draw() {
         // background
-        let w = this.map.displayOptions.caseWidth;
+        let w = this.map.displayOptions.tileWidth;
         //this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w);
         this.ctx.fillStyle = "#333";
         this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
@@ -29,7 +31,7 @@ Meteor.startup(function() {
         super();
         displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
         this.displayOptions = {
-          caseWidth: displayOptions.caseWidth || 50
+          tileWidth: displayOptions.tileWidth || defaultTileSize
         };
         this.canvas = $(canvas_id).get(0);
         this.ctx = this.canvas.getContext("2d");
@@ -63,9 +65,9 @@ Meteor.startup(function() {
       }
 
       // coming from db
-      setCaseWithId(id, pos) {
-        let c = this.getCase(pos);
-        console.log('setCaseWithId', id, pos, 'found', c);
+      setTileWithId(id, pos) {
+        let c = this.getTile(pos);
+        console.log('setTileWithId', id, pos, 'found', c);
         if(c) // if the client already have it
           c.id = id; // make sure the object have a DB id so we can remove it later
         else {
@@ -80,7 +82,7 @@ Meteor.startup(function() {
       }
 
       resetPosition() {
-        this.displayOptions.caseWidth = 50;
+        this.displayOptions.tileWidth = 50;
         this.pan = {x: 0, y: 0};
         this.draw();
       }
@@ -100,15 +102,15 @@ Meteor.startup(function() {
       }
 
       drawMouse(event) {
-        let c = this.getMouseCaseCoords(this.relMouseCoords(event), true);
+        let c = this.getMouseTileCoords(this.mouseCoords(event), true);
         //this.ctx.fillStyle = 'white';
         //this.ctx.fillText(c.x + ' ' + c.y, 20, 20);
-        this.drawMouseCase(c);
+        this.drawMouseTile(c);
       }
 
       // we have been notified that another client removed this tile
-      removeCase(id) {
-        console.log('removing case', id, '...');
+      removeTile(id) {
+        console.log('removing tile', id, '...');
         for(let i = 0; i < this.tiles.length; i++) {
           if(this.tiles[i].id === id) {
             this.tiles.splice(i, 1);
@@ -118,26 +120,32 @@ Meteor.startup(function() {
         this.draw();
       }
 
-      onMouseWheel(event) {
-        event.preventDefault();
-        let factor = Math.round((this.displayOptions.caseWidth * 2 / (event.wheelDelta / 30)));
-        this.displayOptions.caseWidth += factor;
-        //this.pan.x += (this.pan.x - this.mousePos.x);
-        //this.pan.y += (this.pan.y - this.mousePos.y);
-        if(this.displayOptions.caseWidth < 1)
-          this.displayOptions.caseWidth = 1;
-        if(this.displayOptions.caseWidth > 200)
-          this.displayOptions.caseWidth = 200;
-        console.log(event.wheelDelta, factor, "=>", this.displayOptions.caseWidth);
+      onMouseWheel(e) {
+        e.preventDefault();
+        let oldPos = this.relMouseCoords(e);
+
+        let factor = Math.round((this.displayOptions.tileWidth / (e.wheelDelta / 60)));
+        this.displayOptions.tileWidth += factor;
+        if(this.displayOptions.tileWidth < 1)
+          this.displayOptions.tileWidth = 1;
+        if(this.displayOptions.tileWidth > 200)
+          this.displayOptions.tileWidth = 200;
+
+        // zoom depends on mouse position
+        let newPos = this.relMouseCoords(e);
+        this.pan.x += (newPos.x - oldPos.x) / (defaultTileSize / this.displayOptions.tileWidth);
+        this.pan.y += (newPos.y - oldPos.y) / (defaultTileSize / this.displayOptions.tileWidth);
+
         this.draw();
-        this.drawMouse(event);
+        this.drawMouse(e);
       }
 
       onMouseMove(e) {
         this.mouseOldPos = this.mousePos;
-        this.mousePos = this.relMouseCoords(e);
+        this.mousePos = this.mouseCoords(e);
         this.mouseMovement = {x: this.mousePos.x - this.mouseOldPos.x, y: this.mousePos.y - this.mouseOldPos.y};
         this.draw();
+
         if(!e.ctrlKey) this.drawMouse(e);
         if(this.mouseIsDown) {
           if(e.ctrlKey) { // pan map
@@ -146,13 +154,13 @@ Meteor.startup(function() {
           }
           else { // edit map
             if(this.button === 1)
-              this.setCaseFromEvent(e);
+              this.setTileFromEvent(e);
             else if(this.button === 2) { // middle button = pan
               this.pan.x += this.mouseMovement.x;
               this.pan.y += this.mouseMovement.y;
             }
             else if(this.button === 3)
-              this.removeCaseFromEvent(e);
+              this.removeTileFromEvent(e);
           }
         }
       }
@@ -162,10 +170,10 @@ Meteor.startup(function() {
         if(!e.ctrlKey) {
           switch(e.which) {
             case 1: // left button
-              this.setCaseFromEvent(e);
+              this.setTileFromEvent(e);
               break;
             case 3: // right button
-              this.removeCaseFromEvent(e);
+              this.removeTileFromEvent(e);
               break;
           }
         }
@@ -180,12 +188,12 @@ Meteor.startup(function() {
         document.body.style.cursor = 'default';
       }
 
-      setCaseFromEvent(event) {
-        this.saveTiteToDB(this.getMouseCaseCoords(this.relMouseCoords(event)));
+      setTileFromEvent(event) {
+        this.saveTileToDB(this.getMouseTileCoords(this.mouseCoords(event)));
       }
 
-      removeCaseFromEvent(event) {
-        let tile = this.getCase(this.getMouseCaseCoords(this.relMouseCoords(event)));
+      removeTileFromEvent(event) {
+        let tile = this.getTile(this.getMouseTileCoords(this.mouseCoords(event)));
         if(tile)
           this.removeTileFromDb(tile.id);
       }
@@ -198,30 +206,40 @@ Meteor.startup(function() {
         this.ctx.stroke();
       }
 
-      drawMouseCase(c) {
+      drawMouseTile(c) {
         let margin = 0;
         this.ctx.lineWidth = 3;
         this.ctx.strokeStyle = '#500';
         this.ctx.beginPath();
-        this.ctx.rect(c.x * this.displayOptions.caseWidth + margin + (this.pan.x % this.displayOptions.caseWidth), c.y * this.displayOptions.caseWidth + margin + (this.pan.y % this.displayOptions.caseWidth), this.displayOptions.caseWidth - margin * 2, this.displayOptions.caseWidth - margin * 2);
+        this.ctx.rect(c.x * this.displayOptions.tileWidth + margin + (this.pan.x % this.displayOptions.tileWidth), c.y * this.displayOptions.tileWidth + margin + (this.pan.y % this.displayOptions.tileWidth), this.displayOptions.tileWidth - margin * 2, this.displayOptions.tileWidth - margin * 2);
         this.ctx.stroke();
       }
 
-      getMouseCaseCoords(coords, ignorePan) {
+      getMouseTileCoords(coords, ignorePan) {
         if(ignorePan) {
           return {
-            x: Math.floor((coords.x - (this.pan.x % this.displayOptions.caseWidth)) / this.displayOptions.caseWidth),
-            y: Math.floor((coords.y - (this.pan.y % this.displayOptions.caseWidth)) / this.displayOptions.caseWidth)
+            x: Math.floor((coords.x - (this.pan.x % this.displayOptions.tileWidth)) / this.displayOptions.tileWidth),
+            y: Math.floor((coords.y - (this.pan.y % this.displayOptions.tileWidth)) / this.displayOptions.tileWidth)
           };
 
         }
         return {
-          x: Math.floor((coords.x - this.pan.x) / this.displayOptions.caseWidth),
-          y: Math.floor((coords.y - this.pan.y) / this.displayOptions.caseWidth)
+          x: Math.floor((coords.x - this.pan.x) / this.displayOptions.tileWidth),
+          y: Math.floor((coords.y - this.pan.y) / this.displayOptions.tileWidth)
         };
       }
 
+      // mouse coords relative to a tile size and panning
       relMouseCoords(e) {
+        let c = this.mouseCoords(e);
+        let factor = defaultTileSize / this.displayOptions.tileWidth;
+        c.x = (c.x * factor) - (this.pan.x * factor);
+        c.y = (c.y * factor) - (this.pan.y * factor);
+        return c;
+      }
+
+      // real mouse coords
+      mouseCoords(e) {
         let cx, cy;
         if(e.pageX || e.pageY) {
           cx = e.pageX;

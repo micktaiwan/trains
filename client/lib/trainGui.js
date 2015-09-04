@@ -19,7 +19,7 @@ Meteor.startup(function() {
 
     draw() {
       this.ctx.fillStyle = "#fff";
-      let w = this.map.displayOptions.caseWidth;
+      let w = this.map.displayOptions.tileWidth;
       this.ctx.fillRect(this.pos.x * w + this.displayOptions.margin, this.pos.y * w + this.displayOptions.margin, w - this.displayOptions.margin * 2, w - this.displayOptions.margin * 2);
       //this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w+10);
       this.move();

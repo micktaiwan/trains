@@ -27,9 +27,9 @@ class Map {
     Meteor.call('mapReset', Session.get('game_id'));
   }
 
-  saveTiteToDB(pos) {
-    console.log('saveTiteToDB session', Session.get('game_id'));
-    if(this.getCase(pos)) return false;
+  saveTileToDB(pos) {
+    console.log('saveTileToDB session', Session.get('game_id'));
+    if(this.getTile(pos)) return false;
     Meteor.call('mapSet', pos, Session.get('game_id'));
     return true;
   }
@@ -40,7 +40,7 @@ class Map {
     return true;
   }
 
-  getCase(pos) {
+  getTile(pos) {
     for(let i = 0; i < this.tiles.length; i++) {
       if(this.tiles[i].pos.x === pos.x && this.tiles[i].pos.y === pos.y) return this.tiles[i];
     }

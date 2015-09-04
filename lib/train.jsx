@@ -35,7 +35,7 @@ class Train {
     let tmp = {x: this.pos.x, y: this.pos.y};
     tmp.x += this.dir.x;
     tmp.y += this.dir.y;
-    if(!caseEqual(this.from, tmp) && this.map.getCase(tmp)) {
+    if(!caseEqual(this.from, tmp) && this.map.getTile(tmp)) {
       caseCopy(this.from, this.pos);
       caseCopy(this.pos, tmp);
       return true;

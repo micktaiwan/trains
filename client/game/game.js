@@ -23,12 +23,12 @@ Template.game.onRendered(function() {
   handle = Tiles.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
       console.log('change: added', id);
-      map.setCaseWithId(id, doc);
+      map.setTileWithId(id, doc);
     },
     removed: function(id) {
       var doc = Tiles.findOne(id);
       console.log('change: removed', id);
-      map.removeCase(id, true);
+      map.removeTile(id, true);
     }
   });
 
