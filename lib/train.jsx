@@ -21,7 +21,7 @@ class Train {
   }
 
   reset() {
-    this.pos.x = this.y = 1;
+    this.pos.x = this.pos.y = 1;
   }
 
   move() {
