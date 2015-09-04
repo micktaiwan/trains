@@ -27,16 +27,16 @@ class Map {
     Meteor.call('mapReset', Session.get('game_id'));
   }
 
-  setCase(pos) {
-    console.log('setCase session', Session.get('game_id'));
+  saveTiteToDB(pos) {
+    console.log('saveTiteToDB session', Session.get('game_id'));
     if(this.getCase(pos)) return false;
     Meteor.call('mapSet', pos, Session.get('game_id'));
     return true;
   }
 
-  removeCase(pos) {
-    if(!this.getCase(pos)) return false;
-    Meteor.call('mapRemove', pos, Session.get('game_id'));
+  removeTileFromDb(id) {
+    //if(!this.getCase(pos)) return false;
+    Meteor.call('mapRemove', id);
     return true;
   }
 

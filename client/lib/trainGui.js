@@ -13,15 +13,15 @@ Meteor.startup(function() {
       this.displayOptions = {
         margin: displayOptions.margin || 0
       };
-      this.img = new Image();
-      this.img.src = "/img/redTrain.svg";
+      //this.img = new Image();
+      //this.img.src = "/img/redTrain.svg";
     }
 
     draw() {
       this.ctx.fillStyle = "#fff";
       let w = this.map.displayOptions.caseWidth;
-      //this.ctx.fillRect(this.pos.x * w + this.displayOptions.margin, this.pos.y * w + this.displayOptions.margin, w - this.displayOptions.margin * 2, w - this.displayOptions.margin * 2);
-      this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w+10);
+      this.ctx.fillRect(this.pos.x * w + this.displayOptions.margin, this.pos.y * w + this.displayOptions.margin, w - this.displayOptions.margin * 2, w - this.displayOptions.margin * 2);
+      //this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w+10);
       this.move();
     }
 
