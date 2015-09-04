@@ -132,13 +132,12 @@ Meteor.startup(function() {
         this.draw();
         if(!e.ctrlKey) this.drawMouse(e);
         if(this.mouseIsDown) {
-          if(e.ctrlKey) {
-            //this.ctx.translate(this.mouseMovement.x, this.mouseMovement.y);
+          if(e.ctrlKey) { // pan map
             this.pan.x += this.mouseMovement.x;
             this.pan.y += this.mouseMovement.y;
             console.log(this.pan);
           }
-          else {
+          else { // edit map
             if(this.button === 1)
               this.setCaseFromEvent(e);
             else if(this.button === 3)
@@ -193,15 +192,15 @@ Meteor.startup(function() {
         this.ctx.lineWidth = 3;
         this.ctx.strokeStyle = '#500';
         this.ctx.beginPath();
-        this.ctx.rect(c.x * this.displayOptions.caseWidth + margin, c.y * this.displayOptions.caseWidth + margin, this.displayOptions.caseWidth - margin * 2, this.displayOptions.caseWidth - margin * 2);
+        this.ctx.rect(c.x * this.displayOptions.caseWidth + margin + (this.pan.x % this.displayOptions.caseWidth), c.y * this.displayOptions.caseWidth + margin + (this.pan.y % this.displayOptions.caseWidth), this.displayOptions.caseWidth - margin * 2, this.displayOptions.caseWidth - margin * 2);
         this.ctx.stroke();
       }
 
       getMouseCaseCoords(coords, ignorePan) {
         if(ignorePan) {
           return {
-            x: Math.floor((coords.x) / this.displayOptions.caseWidth),
-            y: Math.floor((coords.y) / this.displayOptions.caseWidth)
+            x: Math.floor((coords.x - (this.pan.x % this.displayOptions.caseWidth)) / this.displayOptions.caseWidth),
+            y: Math.floor((coords.y - (this.pan.y % this.displayOptions.caseWidth)) / this.displayOptions.caseWidth)
           };
 
         }
