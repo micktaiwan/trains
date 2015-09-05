@@ -7,10 +7,14 @@ Meteor.publish('tiles', function(game_id) {
   return Tiles.find({game_id: game_id});
 });
 
+Meteor.publish('trains', function(game_id) {
+  console.log('publishing trains for', game_id);
+  return Trains.find({game_id: game_id});
+});
+
 // publications to every client without needing a subscription
 Meteor.publish(null, function() {
   return [
-    Trains.find({}),
     Games.find({}),
     Meteor.users.find({})
   ]

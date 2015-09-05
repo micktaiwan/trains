@@ -27,8 +27,8 @@ Meteor.startup(function() {
     }
 
     class MapGui extends Map {
-      constructor(canvas_id, displayOptions) {
-        super();
+      constructor(canvas_id, id, displayOptions) {
+        super(id);
         displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
         this.displayOptions = {
           tileWidth: displayOptions.tileWidth || defaultTileSize
@@ -58,9 +58,11 @@ Meteor.startup(function() {
       }
 
       putTrain() {
-        if(!this.train)
-          this.train = new TrainGui(this);
-        this.train.reset();
+        if(this.trains.length == 0) {
+          let train = new TrainGui(this);
+          this.trains.push(train);
+          this.addTrainToDB(train);
+        }
         this.draw();
       }
 
@@ -72,6 +74,18 @@ Meteor.startup(function() {
           c.id = id; // make sure the object have a DB id so we can remove it later
         else {
           this.tiles.push(new TileGui(this, pos, id));
+          this.draw();
+        }
+      }
+
+      // coming from db
+      addTrain(id, pos) {
+        let c = this.getTrain(pos);
+        console.log('addTrain', id, pos, 'found', c);
+        if(c) // if the client already have it
+          c.id = id; // make sure the object have a DB id so we can remove it later
+        else {
+          this.trains.push(new TrainGui(this, pos, id));
           this.draw();
         }
       }
@@ -95,7 +109,9 @@ Meteor.startup(function() {
         for(let i = 0; i < this.tiles.length; i++) {
           this.tiles[i].draw();
         }
-        if(this.train) this.train.draw();
+        for(let i = 0; i < this.trains.length; i++) {
+          this.trains[i].draw();
+        }
         this.ctx.translate(-this.pan.x, -this.pan.y);
 
         this.drawMapBorder();

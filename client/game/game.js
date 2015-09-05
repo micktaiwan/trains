@@ -1,6 +1,8 @@
 var game;
 var map;
-var handle;
+var handleTiles;
+var handleTrains;
+
 
 Template.game.onRendered(function() {
 
@@ -14,13 +16,13 @@ Template.game.onRendered(function() {
     });
 
   game = new Game();
-  map = new MapGui('canvas');
+  map = new MapGui('canvas', this.data._id);
   map.draw();
 
   console.log('data', this.data);
 
-  if(handle) handle.stop();
-  handle = Tiles.find({game_id: this.data._id}).observeChanges({
+  if(handleTiles) handleTiles.stop();
+  handleTiles = Tiles.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
       console.log('change: added', id);
       map.setTileWithId(id, doc);
@@ -32,10 +34,29 @@ Template.game.onRendered(function() {
     }
   });
 
+  if(handleTrains) handleTrains.stop();
+  handleTrains = Trains.find({game_id: this.data._id}).observeChanges({
+    added: function(id, doc) {
+      console.log('change: added', id);
+      map.addTrain(id, doc);
+    },
+    changed: function(id, doc) {
+      console.log('change: changed', id);
+      map.updateTrain(id, doc);
+    },
+    removed: function(id) {
+      var doc = Tiles.findOne(id);
+      console.log('change: removed', id);
+      map.removeTrain(id, true);
+    }
+  });
+
+
+
 });
 
 Template.game.onDestroyed(function() {
-  if(handle) handle.stop();
+  if(handleTiles) handleTiles.stop();
 });
 
 Template.game.helpers({
