@@ -1,8 +1,10 @@
 <template name="game">
   <h1>{{name}}</h1>
-  <button class="ui primary button start pup" data-content="It will start automatically in a later version :)">Start
-    train
-  </button>
+  {{#if currentUser}}
+    <button class="ui primary button start pup" data-content="It will start automatically in a later version :)">Start
+      train
+    </button>
+  {{/if}}
   <button class="ui button center pup" data-content="Reset zoom and pan">Center Map</button>
   <br/>
   <br/>
@@ -13,12 +15,12 @@
   {{/if}}
   <div class="mini ui buttons floated right">
     <button class="ui positive button">Help</button>
-    <button class="ui button pup" data-content="Left click to put a rail, right click to remove">Edit</button>
+    <button class="ui button pup" data-content="While logged, left click to put a rail, right click to remove">Edit</button>
     <button class="ui button pup" data-content="Use the mouse wheel to zoom">Zoom</button>
     <div class="or"></div>
     <button class="ui button pup"
             data-content="Pan the map with the mouse while holding the Ctrl key, or the middle button">Pan
     </button>
   </div>
-  {{railsCount}}
+  Rails: {{railsCount}}
 </template>

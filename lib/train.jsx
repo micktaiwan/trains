@@ -14,10 +14,19 @@ let caseCopy = function(a, b) {
 
 class Train {
   constructor(map) {
+    console.log('new map', map);
     this.map = map;
     this.pos = {x: 1, y: 1};
     this.dir = {x: 1, y: 0};
     this.from = {x: -1, y: -1};
+  }
+
+  getDBObj() {
+    return {
+      game_id: this.game_id,
+      pos: this.pos,
+      dir: this.dir
+    }
   }
 
   reset() {
@@ -31,15 +40,17 @@ class Train {
     }
   }
 
+  // move in the current direction
   dirMove() {
     let tmp = {x: this.pos.x, y: this.pos.y};
     tmp.x += this.dir.x;
     tmp.y += this.dir.y;
-    if(!caseEqual(this.from, tmp) && this.map.getTile(tmp)) {
+    //if(!caseEqual(this.from, tmp) && this.map.getTile(tmp)) {
       caseCopy(this.from, this.pos);
       caseCopy(this.pos, tmp);
+      console.log('after move', this.pos);
       return true;
-    }
+    //}
     return false;
   }
 
@@ -61,3 +72,4 @@ class Train {
 if(Meteor.isClient) {
   window.Train = Train;
 }
+TrainsApp.Train = Train;

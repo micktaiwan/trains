@@ -42,7 +42,7 @@ Template.game.onRendered(function() {
     },
     changed: function(id, doc) {
       console.log('change: changed', id);
-      map.updateTrain(id, doc);
+      map.updateTrain(doc);
     },
     removed: function(id) {
       var doc = Tiles.findOne(id);
@@ -50,8 +50,6 @@ Template.game.onRendered(function() {
       map.removeTrain(id, true);
     }
   });
-
-
 
 });
 

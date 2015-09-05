@@ -9,7 +9,7 @@ class Tile {
     this.map = map;
     this.pos = pos;
     this.id = id;
-    console.log('created Tile', id);
+    //console.log('created Tile', id);
     //this.img = new Image();
     //this.img.src = "http://static.dotjobs.io.s3.amazonaws.com/www/img/perks/cross.svg";
   }
@@ -27,6 +27,20 @@ class Map {
     this.tiles.length = 0;
     this.trains.length = 0;
     Meteor.call('mapReset', this._id);
+  }
+
+  updateTrain(doc) {
+    let train = this.getTrainById(doc._id);
+    train.pos = doc.pos;
+    this.draw();
+  }
+
+  draw() {
+    console.error('method should be overridded');
+  }
+
+  tileCount() {
+    return this.tiles.length;
   }
 
   saveTileToDB(pos) {
@@ -62,6 +76,12 @@ class Map {
     }
     return null;
   }
+  getTrainById(id) {
+    for(let i = 0; i < this.trains.length; i++) {
+      if(this.trains[i]._id === id) return this.trains[i];
+    }
+    return null;
+  }
 
 }
 
@@ -69,3 +89,5 @@ if(Meteor.isClient) {
   window.Tile = Tile;
   window.Map = Map;
 }
+TrainsApp.Tile = Tile;
+TrainsApp.Map = Map;
