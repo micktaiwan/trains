@@ -42,7 +42,16 @@ Template.game.helpers({
 
   railsCount: function() {
     return Tiles.find().count();
+  },
+
+  screenWidth: function() {
+    return window.innerWidth - 20;
+  },
+
+  screenHeigth: function() {
+    return window.innerHeight - 300;
   }
+
 
 });
 
