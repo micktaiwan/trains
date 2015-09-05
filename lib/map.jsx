@@ -9,7 +9,7 @@ class Tile {
     this.map = map;
     this.pos = pos;
     this.id = id;
-    //console.log('created Tile', id);
+    //console.log('created Tile', this);
     //this.img = new Image();
     //this.img.src = "http://static.dotjobs.io.s3.amazonaws.com/www/img/perks/cross.svg";
   }
@@ -43,6 +43,16 @@ class Map {
     return this.tiles.length;
   }
 
+  removeTile(id) {
+    for(let i = 0; i < this.tiles.length; i++) {
+      if(this.tiles[i].id === id) {
+        this.tiles.splice(i, 1);
+        break;
+      }
+
+    }
+  }
+
   saveTileToDB(pos) {
     console.log('saveTileToDB session', this._id);
     if(this.getTile(pos)) return false;
@@ -65,6 +75,7 @@ class Map {
 
   getTile(pos) {
     for(let i = 0; i < this.tiles.length; i++) {
+      //console.log(this.tiles[i].pos);
       if(this.tiles[i].pos.x === pos.x && this.tiles[i].pos.y === pos.y) return this.tiles[i];
     }
     return null;
@@ -76,6 +87,7 @@ class Map {
     }
     return null;
   }
+
   getTrainById(id) {
     for(let i = 0; i < this.trains.length; i++) {
       if(this.trains[i]._id === id) return this.trains[i];
@@ -85,9 +97,17 @@ class Map {
 
 }
 
-if(Meteor.isClient) {
-  window.Tile = Tile;
-  window.Map = Map;
+if(Meteor
+
+    .
+    isClient
+) {
+  window
+    .
+    Tile = Tile;
+  window
+    .
+    Map = Map;
 }
 TrainsApp.Tile = Tile;
 TrainsApp.Map = Map;

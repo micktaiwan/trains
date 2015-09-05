@@ -58,10 +58,8 @@ Meteor.startup(function() {
       }
 
       putTrain() {
-        if(this.trains.length == 0) {
-          let train = new TrainGui(this);
-          this.trains.push(train);
-          this.addTrainToDB(train);
+        if(this.trains.length == 0) { // for now only one train
+          this.addTrainToDB({pos: {x:1, y: 1}, dir: {x:1, y: 0}});
         }
         this.draw();
       }
@@ -127,12 +125,7 @@ Meteor.startup(function() {
       // we have been notified that another client removed this tile
       removeTile(id) {
         console.log('removing tile', id, '...');
-        for(let i = 0; i < this.tiles.length; i++) {
-          if(this.tiles[i].id === id) {
-            this.tiles.splice(i, 1);
-            break;
-          }
-        }
+        super.removeTile(id);
         this.draw();
       }
 

@@ -8,16 +8,17 @@
 Meteor.startup(function() {
 
   class ServerTrain extends TrainsApp.Train {
-    constructor(map, train_id, trainObj) {
-      super(map);
+    constructor(train_id, trainObj) {
       console.log(trainObj);
+      super(new TrainsApp.Map(trainObj.game_id));
       this._id = train_id;
       this.game_id = trainObj.game_id;
-      this.pos = trainObj.pos;
+      this.pos = {x: 1, y: 1}; //trainObj.pos;
       this.dir = trainObj.dir;
       this.interval = 2000;
-      //this.onTime();
       let that = this;
+      this.observeChanges(that);
+
       Meteor.setInterval(function() {
         that.onTime(that);
       }, this.interval);
@@ -29,43 +30,43 @@ Meteor.startup(function() {
       Trains.update({_id: that._id}, {$set: {pos: that.pos}});
     }
 
-  }
+    observeChanges(that) {
+      Tiles.find({game_id: that.game_id}).observeChanges({
+        added: function(id, doc) {
+          console.log('change: added', id, doc);
+          that.map.tiles.push(new TrainsApp.Tile(that.map, {x: doc.x, y: doc.y}, id));
+        },
+        removed: function(id) {
+          let doc = Tiles.findOne(id);
+          console.log('change: removed', id);
+          that.map.removeTile(id);
+        }
 
+      });
+    }
+  } // class
 
-  var server = null;
-  var maps = [];
+  var trains = [];
+/*
 
   var getMap = function(game_id) {
     for(var i = 0; i < maps.length; i++) if(maps[i].id === game_id) return maps[i];
     // not found
-    let map = new TrainsApp.Map(game_id);
+    let map = {map: new TrainsApp.Map(game_id)};
     maps.push(map);
     return map;
   };
+*/
 
   Trains.find().observeChanges({
     added: function(train_id, doc) {
       console.log('server: added', train_id);
-      let map = getMap(doc.game_id);
-      if(!server) server = new ServerTrain(map, train_id, doc);
+      trains.push(new ServerTrain(train_id, doc));
     },
     removed: function(id) {
       let doc = Tiles.findOne(id);
       console.log('server: removed', id);
-      Meteor.throw('not implemented');
-    }
-  });
-
-  Tiles.find().observeChanges({
-    added: function(id, doc) {
-      console.log('change: added', id, doc);
-      let map = getMap(doc.game_id);
-      map.tiles.push(new TrainsApp.Tile(map, doc.pos, id));
-    },
-    removed: function(id) {
-      let doc = Tiles.findOne(id);
-      //console.log('change: removed', id);
-      getMap(doc.game_id).removeTile(id, true);
+      throw new Meteor.Error( 500, 'not implemented' );
     }
   });
 

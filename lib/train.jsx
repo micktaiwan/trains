@@ -45,12 +45,13 @@ class Train {
     let tmp = {x: this.pos.x, y: this.pos.y};
     tmp.x += this.dir.x;
     tmp.y += this.dir.y;
-    //if(!caseEqual(this.from, tmp) && this.map.getTile(tmp)) {
+    //console.log('tmp', tmp);
+    if(!caseEqual(this.from, tmp) && this.map.getTile(tmp)) {
       caseCopy(this.from, this.pos);
       caseCopy(this.pos, tmp);
-      console.log('after move', this.pos);
+      //console.log('after move', this.pos);
       return true;
-    //}
+    }
     return false;
   }
 
@@ -66,6 +67,7 @@ class Train {
       this.dir.x = rand;
       this.dir.y = 0;
     }
+    //console.log('after dir', this.dir);
   }
 
 }
