@@ -52,6 +52,14 @@
             {{> onlineUser}}
           {{/each}}
         </div>
+
+        <a class="ui teal right ribbon label">Offline users</a><br/>
+
+        <div class="online-users">
+          {{#each usersOffline}}
+            {{> onlineUser}}
+          {{/each}}
+        </div>
       </div>
     </div>
 

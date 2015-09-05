@@ -22,8 +22,16 @@ Template.lobby.helpers({
         "status.lastLogin.date": -1
       }
     });
-  }
+  },
 
+  usersOffline: function() {
+    return Meteor.users.find({"status.online": false}, {
+      sort: {
+        "status.online": -1,
+        "status.lastLogin.date": -1
+      }
+    });
+  }
 });
 
 Template.onlineUser.helpers({
@@ -36,6 +44,20 @@ Template.onlineUser.helpers({
   }
 
 });
+
+Template.gameItem.helpers({
+
+  // TODO: if we use these helpers we must publish all tiles and train... find another way
+  railsCount: function() {
+    return Tiles.find({game_id: this._id}).count();
+  },
+
+  trainPos: function() {
+    return Trains.findOne({game_id: this._id}).pos;
+  }
+
+});
+
 
 Template.lobby.events({
 
