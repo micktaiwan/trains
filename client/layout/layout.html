@@ -1,21 +1,11 @@
 <template name="layout">
 
   <div class="ui pointing menu">
-    <a class="item" href="/">
-      Home
-    </a>
-
-
+    <a class="item" href="/">Home</a>
     {{#unless connected}}
       <div class="ui active item" href="#">Connection issue...</div>
     {{/unless}}
-
-
-    <div class="right menu">
-      <a class="ui item">
-        Logout
-      </a>
-    </div>
+    <div class="right menu"><a class="ui item">{{> loginButtons}}</a></div>
   </div>
 
 
@@ -25,16 +15,30 @@
 </template>
 
 <template name="lobby">
-  <input class="ui button" id="gameName">
-  <button class="ui primary button newGame">New game</button><br/>
-
+  <h2>Games</h2>
   <ul>
     {{#each games}}
       {{> gameItem}}
     {{/each}}
   </ul>
+  <input class="mini ui button" id="gameName">
+  <button class="mini ui primary button newGame">New game</button>
+
+  <h2>Online users</h2>
+  <div class="online-users">
+    {{#each usersOnline}}
+      {{> onlineUser}}
+    {{/each}}
+  </div>
+
 </template>
 
 <template name="gameItem">
   <li><a href="{{pathFor "game" _id=_id}}">{{name}}</a></li>
+</template>
+
+<template name="onlineUser">
+  <div class="ui label">
+    <i class="user icon"></i> {{username}}
+  </div>
 </template>

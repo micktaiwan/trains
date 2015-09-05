@@ -9,9 +9,9 @@ Meteor.publish('tiles', function(game_id) {
 
 // publications to every client without needing a subscription
 Meteor.publish(null, function() {
-  return Trains.find({});
-});
-
-Meteor.publish(null, function() {
-  return Games.find({});
+  return [
+    Trains.find({}),
+    Games.find({}),
+    Meteor.users.find({})
+  ]
 });

@@ -13,6 +13,15 @@ Template.lobby.helpers({
 
   games: function() {
     return Games.find();
+  },
+
+  usersOnline: function() {
+    return Meteor.users.find({"status.online": true}, {
+      sort: {
+        "status.online": -1,
+        "status.lastLogin.date": -1
+      }
+    });
   }
 
 });
