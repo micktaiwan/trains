@@ -26,9 +26,22 @@ Template.lobby.helpers({
 
 });
 
+Template.onlineUser.helpers({
+
+  onlineClass: function() {
+    if(!this.status) return "offline";
+    if(this.status.idle) return "";
+    if(this.status.online) return "blue";
+    return "offline";
+  }
+
+});
+
 Template.lobby.events({
 
-  'click .newGame': function() {
+  'submit': function(e) {
+    console.log(e);
+    e.preventDefault();
     var name = $('#gameName').val();
     Meteor.call('gameCreate', name, function(err, rv) {
       console.log(err, rv);

@@ -15,20 +15,39 @@
 </template>
 
 <template name="lobby">
-  <h2>Games</h2>
-  <ul>
-    {{#each games}}
-      {{> gameItem}}
-    {{/each}}
-  </ul>
-  <input class="mini ui button" id="gameName">
-  <button class="mini ui primary button newGame">New game</button>
 
-  <h2>Online users</h2>
-  <div class="online-users">
-    {{#each usersOnline}}
-      {{> onlineUser}}
-    {{/each}}
+  <div class="ui two column grid">
+    <div class="column">
+      <div class="ui raised segment">
+        <a class="ui red ribbon label">Games</a>
+        <ul>
+          {{#each games}}
+            {{> gameItem}}
+          {{/each}}
+        </ul>
+
+        <a class="ui blue ribbon label">New game</a><br/>
+        <br/>
+
+        <form class="ui form">
+          <div class="inline fields">
+            <label class="ui label">Game name</label>
+            <input class="ui field" id="gameName">
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="column">
+      <div class="ui segment">
+        <a class="ui orange right ribbon label">Online users</a><br/>
+
+        <div class="online-users">
+          {{#each usersOnline}}
+            {{> onlineUser}}
+          {{/each}}
+        </div>
+      </div>
+    </div>
   </div>
 
 </template>
@@ -38,7 +57,7 @@
 </template>
 
 <template name="onlineUser">
-  <div class="ui label">
+  <div class="ui {{onlineClass}} label">
     <i class="user icon"></i> {{username}}
   </div>
 </template>
