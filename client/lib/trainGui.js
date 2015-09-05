@@ -5,8 +5,8 @@
 Meteor.startup(function() {
 
   class TrainGui extends Train {
-    constructor(map, displayOptions) {
-      super(map);
+    constructor(map, pos, id, displayOptions) {
+      super(map, pos, id);
       this.ctx = map.ctx;
       displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
       this.displayOptions = {
@@ -23,7 +23,6 @@ Meteor.startup(function() {
       //this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w+10);
       //this.move();
     }
-
 
   }
 

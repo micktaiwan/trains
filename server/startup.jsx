@@ -19,17 +19,20 @@ Meteor.startup(function() {
       let that = this;
       this.observeChanges(that);
 
-      Meteor.setInterval(function() {
+      this.timerHandle = Meteor.setInterval(function() {
         that.onTime(that);
       }, this.interval);
     }
 
     onTime(that) {
-      console.log('onTime', that.map._id, that.pos, that.dir, that.map.tileCount());
+      //console.log('onTime', that.map._id, that.pos, that.dir, that.map.tileCount());
       that.move();
       Trains.update({_id: that._id}, {$set: {pos: that.pos}});
     }
 
+    stop() {
+      Meteor.clearInterval(this.timerHandle);
+    }
     observeChanges(that) {
       Tiles.find({game_id: that.game_id}).observeChanges({
         added: function(id, doc) {
@@ -47,26 +50,44 @@ Meteor.startup(function() {
   } // class
 
   var trains = [];
-/*
 
-  var getMap = function(game_id) {
-    for(var i = 0; i < maps.length; i++) if(maps[i].id === game_id) return maps[i];
-    // not found
-    let map = {map: new TrainsApp.Map(game_id)};
-    maps.push(map);
-    return map;
+
+  var getTrain = function(train_id) {
+    for(var i = 0; i < trains.length; i++) if(trains[i]._id === train_id) return trains[i];
+    return null;
   };
-*/
+
+
+  var createTrain = function(train_id, doc) {
+    let train = getTrain(train_id);
+    if(train) return train;
+    // not found
+    train = new ServerTrain(train_id, doc);
+    trains.push(train);
+    return train;
+  };
+
+  var removeTrain = function(train_id, doc) {
+    let train = getTrain(train_id);
+    if(!train) return train;
+    // found
+    for(var i = 0; i < trains.length; i++) if(trains[i]._id === train_id) {
+      trains[i].stop();
+      trains.splice(i, 1);
+      break;
+    }
+  };
+
 
   Trains.find().observeChanges({
     added: function(train_id, doc) {
       console.log('server: added', train_id);
-      trains.push(new ServerTrain(train_id, doc));
+      createTrain(train_id, doc);
     },
     removed: function(id) {
       let doc = Tiles.findOne(id);
       console.log('server: removed', id);
-      throw new Meteor.Error( 500, 'not implemented' );
+      removeTrain(id);
     }
   });
 

@@ -59,7 +59,7 @@ Meteor.startup(function() {
 
       putTrain() {
         if(this.trains.length == 0) { // for now only one train
-          this.addTrainToDB({pos: {x:1, y: 1}, dir: {x:1, y: 0}});
+          this.addTrainToDB({pos: {x:1, y: 1}, dir: {x:1, y: 0}}); // TODO: let the server set the position
         }
         this.draw();
       }
@@ -266,6 +266,6 @@ Meteor.startup(function() {
 
     }
 
-    window.MapGui = MapGui;
+    window.MapGui = MapGui; // TODO: put it in TrainsApp
   }
 );

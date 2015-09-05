@@ -47,7 +47,7 @@ Template.game.onRendered(function() {
     removed: function(id) {
       var doc = Tiles.findOne(id);
       console.log('change: removed', id);
-      map.removeTrain(id, true);
+      map.removeTrain(id);
     }
   });
 

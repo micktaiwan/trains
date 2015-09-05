@@ -31,7 +31,8 @@ class Map {
 
   updateTrain(doc) {
     let train = this.getTrainById(doc._id);
-    train.pos = doc.pos;
+    if(!train) this.trains.push(new TrainGui(this, doc.pos, doc._id));
+    else train.pos = doc.pos;
     this.draw();
   }
 
@@ -49,7 +50,15 @@ class Map {
         this.tiles.splice(i, 1);
         break;
       }
+    }
+  }
 
+  removeTrain(id) {
+    for(let i = 0; i < this.trains.length; i++) {
+      if(this.trains[i].id === id) {
+        this.trains.splice(i, 1);
+        break;
+      }
     }
   }
 
