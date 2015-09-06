@@ -9,8 +9,8 @@ Meteor.startup(function() {
 
     class TileGui extends Tile {
 
-      constructor(map, pos, id) {
-        super(map, pos, id);
+      constructor(map, doc, id) {
+        super(map, doc, id);
         this.ctx = map.ctx;
       }
 
@@ -60,19 +60,19 @@ Meteor.startup(function() {
       // create a new train
       createTrain() {
         if(this.trains.length == 0) { // for now only one train
-          this.addTrainToDB({pos: {x:1, y: 1}, dir: {x:1, y: 0}}); // TODO: let the server set the position
+          this.addTrainToDB({pos: {x: 1, y: 1}, dir: {x: 1, y: 0}}); // TODO: let the server set the position
         }
         this.draw();
       }
 
       // coming from db
-      setTileWithId(id, pos) {
-        let c = this.getTile(pos);
-        console.log('setTileWithId', id, pos, 'found', c);
+      setTileWithId(id, doc) {
+        let c = this.getTile({x: doc.x, y: doc.y});
+        console.log('setTileWithId', id, doc, 'found', c);
         if(c) // if the client already have it
           c.id = id; // make sure the object have a DB id so we can remove it later
         else {
-          this.tiles.push(new TileGui(this, pos, id));
+          this.tiles.push(new TileGui(this, doc, id));
           this.draw();
         }
       }
@@ -81,11 +81,11 @@ Meteor.startup(function() {
       addTrain(id, doc) {
         let pos = doc.pos;
         let c = this.getTrain(pos);
-        console.log('addTrain', id, pos, 'found', c);
+        console.log('addTrain', id, doc, 'found', c);
         if(c) // if the client already have it
           c.id = id; // make sure the object have a DB id so we can remove it later
         else {
-          this.trains.push(new TrainGui(this, pos, id));
+          this.trains.push(new TrainGui(this, doc, id));
           this.draw();
         }
       }

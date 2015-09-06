@@ -6,6 +6,37 @@
     </button>
   {{/if}}
   <button class="ui button center pup" data-content="Reset zoom and pan">Center Map</button>
+
+  <div class="ui icon top left pointing dropdown button">
+    <i class="wrench icon"></i>
+    <div class="menu">
+      <div class="header">Display Density</div>
+      <div class="item">Comfortable</div>
+      <div class="item">Cozy</div>
+      <div class="item">Compact</div>
+      <div class="ui divider"></div>
+      <div class="item">Settings</div>
+      <div class="item">
+        <i class="dropdown icon"></i>
+        <span class="text">Upload Settings</span>
+        <div class="menu">
+          <div class="item">
+            <i class="check icon"></i>
+            Convert Uploaded Files to PDF
+          </div>
+          <div class="item">
+            <i class="check icon"></i>
+            Digitize Text from Uploaded Files
+          </div>
+        </div>
+      </div>
+      <div class="item">Manage Apps</div>
+      <div class="item">Keyboard Shortcuts</div>
+      <div class="item">Help</div>
+    </div>
+  </div>
+
+  Current speed: 45 km/h. 1 locomotive, 0 freight cars, 0 passenger cars
   <br/>
   <br/>
   <canvas width="{{screenWidth}}" height="{{screenHeigth}}"></canvas>

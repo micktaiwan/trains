@@ -5,8 +5,8 @@
 Meteor.startup(function() {
 
   class TrainGui extends Train {
-    constructor(map, pos, id, displayOptions) {
-      super(map, pos, id);
+    constructor(map, doc, id, displayOptions) {
+      super(map, doc, id);
       this.ctx = map.ctx;
       displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
       this.displayOptions = {

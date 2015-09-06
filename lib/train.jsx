@@ -13,12 +13,13 @@ let caseCopy = function(a, b) {
 };
 
 class Train {
-  constructor(map, pos, id) {
-    console.log('new train', id, pos, map);
+  constructor(map, doc, id) {
+    //console.log('new train', id, doc, map);
+    this.game_id = doc.game_id;
     this.map = map;
     this._id = id;
-    this.pos = pos || {x: 1, y: 1};
-    this.dir = {x: 1, y: 0};
+    this.pos = doc.pos || {x: 1, y: 1};
+    this.dir = doc.dir || {x: 1, y: 0};
     this.from = {x: -1, y: -1};
   }
 

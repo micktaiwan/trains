@@ -9,13 +9,9 @@ Meteor.startup(function() {
 
   class ServerTrain extends TrainsApp.Train {
     constructor(train_id, trainObj) {
-      console.log(trainObj);
-      super(new TrainsApp.Map(trainObj.game_id));
-      this._id = train_id;
-      this.game_id = trainObj.game_id;
-      this.pos = {x: 1, y: 1}; //trainObj.pos;
-      this.dir = trainObj.dir;
-      this.interval = 2000;
+      //console.log('ServerTrain constructor', trainObj);
+      super(new TrainsApp.Map(trainObj.game_id), trainObj, train_id);
+      this.interval = 400;
       let that = this;
       this.observeChanges(that);
 
@@ -37,12 +33,12 @@ Meteor.startup(function() {
     observeChanges(that) {
       Tiles.find({game_id: that.game_id}).observeChanges({
         added: function(id, doc) {
-          console.log('change: added', id, doc);
-          that.map.tiles.push(new TrainsApp.Tile(that.map, {x: doc.x, y: doc.y}, id));
+          //console.log('change: added', id, doc);
+          that.map.tiles.push(new TrainsApp.Tile(that.map, doc, id));
         },
         removed: function(id) {
           let doc = Tiles.findOne(id);
-          console.log('change: removed', id);
+          //console.log('change: removed', id);
           that.map.removeTile(id);
         }
 
@@ -60,6 +56,7 @@ Meteor.startup(function() {
 
 
   var createTrain = function(train_id, doc) {
+    // console.log('create train', train_id, doc);
     let train = getTrain(train_id);
     if(train) return train;
     // not found
@@ -82,12 +79,12 @@ Meteor.startup(function() {
 
   Trains.find().observeChanges({
     added: function(train_id, doc) {
-      console.log('server: added', train_id);
+      //console.log('server: added', train_id, doc);
       createTrain(train_id, doc);
     },
     removed: function(id) {
       let doc = Tiles.findOne(id);
-      console.log('server: removed', id);
+      //console.log('server: removed', id);
       removeTrain(id);
     }
   });

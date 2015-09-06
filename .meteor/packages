@@ -12,5 +12,5 @@ mizzao:user-status
 iron:router
 less
 dayd:stats
+semantic:ui
 semantic:ui-css
-semantic:ui-popup

@@ -24,12 +24,12 @@ Template.game.onRendered(function() {
   if(handleTiles) handleTiles.stop();
   handleTiles = Tiles.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
-      console.log('change: added', id);
+      //console.log('change: added', id);
       map.setTileWithId(id, doc);
     },
     removed: function(id) {
       var doc = Tiles.findOne(id);
-      console.log('change: removed', id);
+      //console.log('change: removed', id);
       map.removeTile(id, true);
     }
   });
@@ -37,16 +37,16 @@ Template.game.onRendered(function() {
   if(handleTrains) handleTrains.stop();
   handleTrains = Trains.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
-      console.log('change: added', id);
+      //console.log('change: added', id);
       map.addTrain(id, doc);
     },
     changed: function(id, doc) {
-      console.log('change: changed', id, doc);
+      //console.log('change: changed', id, doc);
       map.updateTrain(id, doc);
     },
     removed: function(id) {
       var doc = Tiles.findOne(id);
-      console.log('change: removed', id);
+      //console.log('change: removed', id);
       map.removeTrain(id);
     }
   });

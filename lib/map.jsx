@@ -3,15 +3,17 @@
  */
 "use strict";
 
+let W = 1, S = 2, E = 4, N = 8; // any rail directions is the sum of simple directions, SWE = 2 + 1 + 4 = 7
+
+
 class Tile {
 
-  constructor(map, pos, id) {
+  constructor(map, doc, id) {
     this.map = map;
-    this.pos = pos;
+    this.pos = {x: doc.x, y: doc.y};
     this.id = id;
+    this.type = {rails: W+E};
     //console.log('created Tile', this);
-    //this.img = new Image();
-    //this.img.src = "http://static.dotjobs.io.s3.amazonaws.com/www/img/perks/cross.svg";
   }
 
 }
@@ -30,7 +32,7 @@ class Map {
   }
 
   updateTrain(id, doc) {
-    console.log('updateTrain', doc);
+    //console.log('updateTrain', doc);
     let train = this.getTrainById(id);
     if(train) {
       if(doc.pos) train.pos = doc.pos;
@@ -88,7 +90,7 @@ class Map {
 
   getTile(pos) {
     for(let i = 0; i < this.tiles.length; i++) {
-      //console.log(this.tiles[i].pos);
+      //console.log('loop', this.tiles[i]);
       if(this.tiles[i].pos.x === pos.x && this.tiles[i].pos.y === pos.y) return this.tiles[i];
     }
     return null;
