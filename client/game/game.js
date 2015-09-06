@@ -41,8 +41,8 @@ Template.game.onRendered(function() {
       map.addTrain(id, doc);
     },
     changed: function(id, doc) {
-      console.log('change: changed', id);
-      map.updateTrain(doc);
+      console.log('change: changed', id, doc);
+      map.updateTrain(id, doc);
     },
     removed: function(id) {
       var doc = Tiles.findOne(id);
@@ -81,7 +81,7 @@ Template.game.events({
   },
 
   'click .start': function() {
-    map.putTrain();
+    map.createTrain();
   },
 
   'click .center': function() {

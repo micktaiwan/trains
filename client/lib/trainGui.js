@@ -20,6 +20,36 @@ Meteor.startup(function() {
       this.ctx.fillStyle = "#fff";
       let w = this.map.displayOptions.tileWidth;
       this.ctx.fillRect(this.pos.x * w + this.displayOptions.margin, this.pos.y * w + this.displayOptions.margin, w - this.displayOptions.margin * 2, w - this.displayOptions.margin * 2);
+
+
+      let half = 0.5;
+      let center = {x: this.pos.x + half, y: this.pos.y + half};
+      let tip = {x: (center.x + this.dir.x * 0.7) * w, y: (center.y + this.dir.y * 0.7 ) * w};
+
+      let p1, p2;
+      if(this.dir.x == 1) {
+        p1 = {x: (this.pos.x + 1) * w, y: this.pos.y * w};
+        p2 = {x: (this.pos.x + 1) * w, y: (this.pos.y + 1) * w}
+      }
+      else if(this.dir.x == -1) {
+        p1 = {x: (this.pos.x) * w, y: this.pos.y * w};
+        p2 = {x: (this.pos.x) * w, y: (this.pos.y + 1) * w}
+      }
+      else if(this.dir.y == 1) {
+        p1 = {x: (this.pos.x) * w, y: (this.pos.y + 1) * w};
+        p2 = {x: (this.pos.x + 1) * w, y: (this.pos.y + 1) * w}
+      }
+      else if(this.dir.y == -1) {
+        p1 = {x: (this.pos.x) * w, y: this.pos.y * w};
+        p2 = {x: (this.pos.x + 1) * w, y: (this.pos.y) * w}
+      }
+
+      var path = new Path2D();
+      /*this.ctx.beginPath();*/
+      path.moveTo(p1.x, p1.y);
+      path.lineTo(tip.x, tip.y);
+      path.lineTo(p2.x, p2.y);
+      this.ctx.fill(path);
       //this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w+10);
       //this.move();
     }
@@ -27,5 +57,5 @@ Meteor.startup(function() {
   }
 
   window.TrainGui = TrainGui;
-});
-
+})
+;

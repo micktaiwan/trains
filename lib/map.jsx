@@ -29,10 +29,14 @@ class Map {
     Meteor.call('mapReset', this._id);
   }
 
-  updateTrain(doc) {
-    let train = this.getTrainById(doc._id);
-    if(!train) this.trains.push(new TrainGui(this, doc.pos, doc._id));
-    else train.pos = doc.pos;
+  updateTrain(id, doc) {
+    console.log('updateTrain', doc);
+    let train = this.getTrainById(id);
+    if(train) {
+      if(doc.pos) train.pos = doc.pos;
+      if(doc.dir) train.dir = doc.dir;
+    }
+    else console.error('no train?');
     this.draw();
   }
 

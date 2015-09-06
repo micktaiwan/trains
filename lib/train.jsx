@@ -14,7 +14,7 @@ let caseCopy = function(a, b) {
 
 class Train {
   constructor(map, pos, id) {
-    console.log('new map', map);
+    console.log('new train', id, pos, map);
     this.map = map;
     this._id = id;
     this.pos = pos || {x: 1, y: 1};

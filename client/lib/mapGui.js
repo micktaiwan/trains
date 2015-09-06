@@ -57,7 +57,8 @@ Meteor.startup(function() {
         return false;
       }
 
-      putTrain() {
+      // create a new train
+      createTrain() {
         if(this.trains.length == 0) { // for now only one train
           this.addTrainToDB({pos: {x:1, y: 1}, dir: {x:1, y: 0}}); // TODO: let the server set the position
         }
@@ -77,7 +78,8 @@ Meteor.startup(function() {
       }
 
       // coming from db
-      addTrain(id, pos) {
+      addTrain(id, doc) {
+        let pos = doc.pos;
         let c = this.getTrain(pos);
         console.log('addTrain', id, pos, 'found', c);
         if(c) // if the client already have it

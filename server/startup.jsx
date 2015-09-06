@@ -27,12 +27,13 @@ Meteor.startup(function() {
     onTime(that) {
       //console.log('onTime', that.map._id, that.pos, that.dir, that.map.tileCount());
       that.move();
-      Trains.update({_id: that._id}, {$set: {pos: that.pos}});
+      Trains.update({_id: that._id}, {$set: {pos: that.pos, dir: that.dir}});
     }
 
     stop() {
       Meteor.clearInterval(this.timerHandle);
     }
+
     observeChanges(that) {
       Tiles.find({game_id: that.game_id}).observeChanges({
         added: function(id, doc) {
