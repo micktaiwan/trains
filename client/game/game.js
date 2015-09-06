@@ -12,8 +12,10 @@ Template.game.onRendered(function() {
     .popup({
       inline: true,
       hoverable: true,
-      position: 'bottom left',
+      position: 'bottom left'
     });
+
+  $('.dropdown').dropdown('restore default text');
 
   game = new Game();
   map = new MapGui('canvas', this.data._id);
