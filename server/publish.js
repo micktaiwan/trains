@@ -17,6 +17,7 @@ Meteor.publish(null, function() {
   return [
     Games.find({}),
     Meteor.users.find({}),
-    TileTypes.find({})
+    TileTypes.find({}),
+    Chats.find({type: 'lobby'},{limit:10, sort: {time: -1}})
   ]
 });

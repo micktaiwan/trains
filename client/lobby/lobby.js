@@ -27,14 +27,19 @@ Template.lobby.helpers({
         "status.lastLogin.date": -1
       }
     });
+  },
+
+  chats: function() {
+    return Chats.find({}, {sort: {time: 1}});
   }
+
 });
 
 Template.onlineUser.helpers({
 
   onlineClass: function() {
     if(!this.status) return "offline";
-    if(this.status.idle) return "";
+    if(this.status.idle) return "grey";
     if(this.status.online) return "blue";
     return "offline";
   }
@@ -57,13 +62,19 @@ Template.gameItem.helpers({
 
 Template.lobby.events({
 
-  'submit': function(e) {
-    console.log(e);
+  'submit .newgame': function(e) {
     e.preventDefault();
     var name = $('#gameName').val();
     Meteor.call('gameCreate', name, function(err, rv) {
-      console.log(err, rv);
       Router.go('/game/' + rv);
+    });
+  },
+
+  'submit .chatmsg': function(e) {
+    e.preventDefault();
+    var msg = $('#chatMsg').val();
+    Meteor.call('chatPost', msg, 'lobby', function(err, rv) {
+      $('#chatMsg').val('');
     });
   }
 

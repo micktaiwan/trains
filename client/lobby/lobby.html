@@ -1,30 +1,31 @@
-
 <template name="lobby">
 
   <div class="ui two column grid">
     <div class="column">
       <div class="ui raised segment">
-        <a class="ui red ribbon label">Games</a>
+
+        <div class="ui red ribbon label">Games</div>
+
         <ul>
           {{#each games}}
             {{> gameItem}}
           {{/each}}
         </ul>
 
-        <a class="ui blue ribbon label">New game</a><br/>
-        <br/>
+        <div class="ui blue ribbon label">New game</div>
 
-        <form class="ui form">
+        <form class="ui form newgame">
           <div class="inline fields">
             <label class="ui label">Game name</label>
-            <input class="ui field" id="gameName">
+            <input type="text" id="gameName">
           </div>
         </form>
       </div>
     </div>
     <div class="column">
       <div class="ui segment">
-        <a class="ui orange right ribbon label">Online users</a><br/>
+
+        <div class="ui orange right ribbon label">Online users</div>
 
         <div class="online-users">
           {{#each usersOnline}}
@@ -32,15 +33,37 @@
           {{/each}}
         </div>
 
-        <a class="ui teal right ribbon label">Offline users</a><br/>
+        <div class="ui teal right ribbon label">Offline users</div>
 
         <div class="online-users">
           {{#each usersOffline}}
             {{> onlineUser}}
           {{/each}}
         </div>
+
+
       </div>
     </div>
+
+  </div>
+
+
+  <div class="ui raised segment">
+    <div class="ui olive ribbon label"><i class="ui icon comment"></i> Chat</div>
+
+    <div class="ui comments">
+      {{#each chats}}
+        {{> chatMsg}}
+      {{/each}}
+    </div>
+    <form class="ui form chatmsg">
+      <div class="inline fields">
+
+        <label>Message</label>
+        <input type="text" id="chatMsg">
+
+      </div>
+    </form>
 
   </div>
 
@@ -53,5 +76,15 @@
 <template name="onlineUser">
   <div class="ui {{onlineClass}} label">
     <i class="user icon"></i> {{username}}
+  </div>
+</template>
+
+<template name="chatMsg">
+  <div class="comment">
+    <div class="content">
+      <div class="metadata"><span class="date">{{formatTime time}}</span></div>
+      <span class="author">{{user.name}}</span>
+      <span class="text"> {{msg}} </span>
+    </div>
   </div>
 </template>
