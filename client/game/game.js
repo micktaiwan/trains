@@ -71,6 +71,10 @@ Template.game.helpers({
 
   screenHeigth: function() {
     return window.innerHeight - 300;
+  },
+
+  tileTypes: function() {
+    return TileTypes.find();
   }
 
 });
@@ -87,6 +91,11 @@ Template.game.events({
 
   'click .center': function() {
     map.resetPosition();
+  },
+
+  'click .selectTile': function() {
+    console.log(this);
   }
+
 
 });

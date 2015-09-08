@@ -68,7 +68,7 @@ Meteor.startup(function() {
       // coming from db
       setTileWithId(id, doc) {
         let c = this.getTile({x: doc.x, y: doc.y});
-        console.log('setTileWithId', id, doc, 'found', c);
+        //console.log('setTileWithId', id, doc, 'found', c);
         if(c) // if the client already have it
           c.id = id; // make sure the object have a DB id so we can remove it later
         else {
@@ -81,7 +81,7 @@ Meteor.startup(function() {
       addTrain(id, doc) {
         let pos = doc.pos;
         let c = this.getTrain(pos);
-        console.log('addTrain', id, doc, 'found', c);
+        //console.log('addTrain', id, doc, 'found', c);
         if(c) // if the client already have it
           c.id = id; // make sure the object have a DB id so we can remove it later
         else {

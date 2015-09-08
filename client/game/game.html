@@ -11,8 +11,9 @@
     <i class="road icon"></i>
     <div class="menu">
       <div class="header">Tile</div>
-      <div class="item"><i class="road icon"></i><span class="description">1$</span> Rails</div>
-      <div class="item"><i class="university icon"></i><span class="description">150$</span>Station</div>
+      {{#each tileTypes }}
+        {{> tileType}}
+        {{/each }}
     </div>
   </div>
 
@@ -34,4 +35,8 @@
     </button>
   </div>
   Rails: {{railsCount}}
+</template>
+
+<template name="tileType">
+  <div class="item selectTile"><i class="{{icon}} icon"></i><span class="description">{{price}}$</span> {{name}}</div>
 </template>

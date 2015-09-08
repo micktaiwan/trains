@@ -16,6 +16,7 @@ Meteor.publish('trains', function(game_id) {
 Meteor.publish(null, function() {
   return [
     Games.find({}),
-    Meteor.users.find({})
+    Meteor.users.find({}),
+    TileTypes.find({})
   ]
 });

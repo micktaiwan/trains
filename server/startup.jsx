@@ -89,4 +89,18 @@ Meteor.startup(function() {
     }
   });
 
+  // data seed
+  if(TileTypes.find({}).count() === 0) {
+    TileTypes.insert({
+      name: 'Rails',
+      price: 1,
+      icon: 'road'
+    });
+    TileTypes.insert({
+      name: 'Station',
+      price: 150,
+      icon: 'university'
+    });
+  }
+
 });
