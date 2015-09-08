@@ -73,7 +73,6 @@ Template.game.helpers({
     return window.innerHeight - 300;
   }
 
-
 });
 
 Template.game.events({
