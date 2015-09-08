@@ -1,6 +1,6 @@
 <template name="lobby">
 
-  <div class="ui two column grid">
+  <div class="ui three column grid">
     <div class="column">
       <div class="ui raised segment">
 
@@ -22,10 +22,32 @@
         </form>
       </div>
     </div>
+
     <div class="column">
+      <div class="ui raised segment">
+        <div class="ui olive ribbon label"><i class="ui icon comment"></i> Chat</div>
+
+        <div class="ui comments">
+          {{#each chats}}
+            {{> chatMsg}}
+          {{/each}}
+        </div>
+        <form class="ui form chatmsg">
+          <div class="inline fields">
+
+            <label>Message</label>
+            <input type="text" id="chatMsg">
+
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="column">
+
       <div class="ui segment">
 
-        <div class="ui orange right ribbon label">Online users</div>
+        <div class="ui orange ribbon label">Online users</div>
 
         <div class="online-users">
           {{#each usersOnline}}
@@ -33,40 +55,17 @@
           {{/each}}
         </div>
 
-        <div class="ui teal right ribbon label">Offline users</div>
+        <div class="ui teal ribbon label">Offline users</div>
 
         <div class="online-users">
           {{#each usersOffline}}
             {{> onlineUser}}
           {{/each}}
         </div>
-
-
       </div>
+
     </div>
-
   </div>
-
-
-  <div class="ui raised segment">
-    <div class="ui olive ribbon label"><i class="ui icon comment"></i> Chat</div>
-
-    <div class="ui comments">
-      {{#each chats}}
-        {{> chatMsg}}
-      {{/each}}
-    </div>
-    <form class="ui form chatmsg">
-      <div class="inline fields">
-
-        <label>Message</label>
-        <input type="text" id="chatMsg">
-
-      </div>
-    </form>
-
-  </div>
-
 </template>
 
 <template name="gameItem">
