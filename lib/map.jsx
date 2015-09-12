@@ -3,7 +3,7 @@
  */
 "use strict";
 
-let W = 1, S = 2, E = 4, N = 8; // any rail directions is the sum of simple directions, SWE = 2 + 1 + 4 = 7
+let N = 1, E = 2, S = 4, W = 8; // any rail directions is the sum of simple directions
 
 
 class Tile {
@@ -11,8 +11,8 @@ class Tile {
   constructor(map, doc, id) {
     this.map = map;
     this.pos = {x: doc.x, y: doc.y};
-    this.id = id;
-    this.type = {rails: W+E};
+    this._id = id;
+    this.type = doc.type;
     //console.log('created Tile', this);
   }
 
@@ -52,7 +52,7 @@ class Map {
 
   removeTile(id) {
     for(let i = 0; i < this.tiles.length; i++) {
-      if(this.tiles[i].id === id) {
+      if(this.tiles[i]._id === id) {
         this.tiles.splice(i, 1);
         break;
       }
@@ -61,7 +61,7 @@ class Map {
 
   removeTrain(id) {
     for(let i = 0; i < this.trains.length; i++) {
-      if(this.trains[i].id === id) {
+      if(this.trains[i]._id === id) {
         this.trains.splice(i, 1);
         break;
       }
@@ -71,7 +71,41 @@ class Map {
   saveTileToDB(pos) {
     console.log('saveTileToDB session', this._id);
     if(this.getTile(pos)) return false;
-    Meteor.call('mapSet', pos, this._id);
+    let rail = 0;
+
+    let tile = this.getTile({x: pos.x, y: pos.y - 1});
+    if(tile) {
+      rail += N;
+      tile.type.rails |= S;
+      Meteor.call('mapUpdate', tile._id, tile.pos, tile.type, this._id); // Can't call wih simply tile as I have a error
+    }
+
+    tile = this.getTile({x: pos.x, y: pos.y + 1});
+    if(tile) {
+      rail += S;
+      tile.type.rails |= N;
+      Meteor.call('mapUpdate', tile._id, tile.pos, tile.type, this._id);
+    }
+
+    tile = this.getTile({x: pos.x - 1, y: pos.y});
+    if(tile) {
+      rail += W;
+      tile.type.rails |= E;
+      Meteor.call('mapUpdate', tile._id, tile.pos, tile.type, this._id);
+    }
+
+    tile = this.getTile({x: pos.x + 1, y: pos.y});
+    if(tile) {
+      rail += E;
+      tile.type.rails |= W;
+      Meteor.call('mapUpdate', tile._id, tile.pos, tile.type, this._id);
+    }
+
+    let type = {
+      rails: rail
+    };
+    console.log('type', type);
+    Meteor.call('mapSet', pos, type, this._id);
     return true;
   }
 

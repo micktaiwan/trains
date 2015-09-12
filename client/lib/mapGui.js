@@ -12,16 +12,28 @@ Meteor.startup(function() {
       constructor(map, doc, id) {
         super(map, doc, id);
         this.ctx = map.ctx;
+        this.img = new Image();
+        this.setImage();
+      }
+
+      setImage() {
+        this.img.src = '/rails/' + this.type.rails + '.png';
       }
 
       draw() {
-        // background
         let w = this.map.displayOptions.tileWidth;
-        //this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w);
-        this.ctx.fillStyle = "#333";
-        this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
-
-        // borders
+        this.setImage();
+        try {
+          this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w);
+        }
+        catch(e) {
+          //console.log(e);
+        }
+        //this.ctx.fillStyle = 'blue';
+        //this.ctx.font = (w/2) + "px serif";
+        //this.ctx.fillText(this.type.rails, (this.pos.x+0.25) * w, (this.pos.y + 0.5) * w);
+        //this.ctx.fillStyle = "#333";
+        //this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
       }
 
     }
@@ -70,12 +82,26 @@ Meteor.startup(function() {
         let c = this.getTile({x: doc.x, y: doc.y});
         //console.log('setTileWithId', id, doc, 'found', c);
         if(c) // if the client already have it
-          c.id = id; // make sure the object have a DB id so we can remove it later
+          c._id = id; // make sure the object have a DB id so we can remove it later
         else {
           this.tiles.push(new TileGui(this, doc, id));
           this.draw();
         }
       }
+      // coming from db
+      updateTileWithId(id, doc) {
+        let c = this.getTile({x: doc.x, y: doc.y});
+        //console.log('setTileWithId', id, doc, 'found', c);
+        if(c) { // if the client already have it
+          c._id = id; // make sure the object have a DB id so we can remove it later
+          c.type = doc.type;
+        }
+        else {
+          this.tiles.push(new TileGui(this, doc, id));
+          this.draw();
+        }
+      }
+
 
       // coming from db
       addTrain(id, doc) {
@@ -206,7 +232,7 @@ Meteor.startup(function() {
       removeTileFromEvent(event) {
         let tile = this.getTile(this.getMouseTileCoords(this.mouseCoords(event)));
         if(tile)
-          this.removeTileFromDb(tile.id);
+          this.removeTileFromDb(tile._id);
       }
 
       drawMapBorder() {
