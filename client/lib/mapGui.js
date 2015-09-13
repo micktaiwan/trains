@@ -13,7 +13,6 @@ Meteor.startup(function() {
         super(map, doc, id);
         this.ctx = map.ctx;
         this.img = new Image();
-        this.setImage();
       }
 
       setImage() {
@@ -22,18 +21,22 @@ Meteor.startup(function() {
 
       draw() {
         let w = this.map.displayOptions.tileWidth;
-        this.setImage();
-        try {
-          this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w);
+        if(!this.type || !this.type.rails || this.type == {}) {
+          this.ctx.fillStyle = "#333";
+          this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
         }
-        catch(e) {
-          //console.log(e);
+        else {
+          this.setImage();
+          try {
+            this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w);
+          }
+          catch(e) {
+            //console.log(e);
+          }
         }
         //this.ctx.fillStyle = 'blue';
         //this.ctx.font = (w/2) + "px serif";
         //this.ctx.fillText(this.type.rails, (this.pos.x+0.25) * w, (this.pos.y + 0.5) * w);
-        //this.ctx.fillStyle = "#333";
-        //this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
       }
 
     }
@@ -81,27 +84,30 @@ Meteor.startup(function() {
       setTileWithId(id, doc) {
         let c = this.getTile({x: doc.x, y: doc.y});
         //console.log('setTileWithId', id, doc, 'found', c);
-        if(c) // if the client already have it
-          c._id = id; // make sure the object have a DB id so we can remove it later
-        else {
-          this.tiles.push(new TileGui(this, doc, id));
-          this.draw();
-        }
-      }
-      // coming from db
-      updateTileWithId(id, doc) {
-        let c = this.getTile({x: doc.x, y: doc.y});
-        //console.log('setTileWithId', id, doc, 'found', c);
-        if(c) { // if the client already have it
-          c._id = id; // make sure the object have a DB id so we can remove it later
-          c.type = doc.type;
-        }
-        else {
-          this.tiles.push(new TileGui(this, doc, id));
-          this.draw();
-        }
+        //if(c) // if the client already have it
+        //  c._id = id; // make sure the object have a DB id so we can remove it later
+        //else {
+        this.tiles.push(new TileGui(this, doc, id));
+        this.draw();
+        //}
       }
 
+      // coming from db
+      /*
+       updateTileWithId(id, doc) {
+       let c = this.getTileById({x: doc.x, y: doc.y});
+       //console.log('setTileWithId', id, doc, 'found', c);
+       if(c) { // if the client already have it
+       c._id = id; // make sure the object have a DB id so we can remove it later
+       c.type = doc.type;
+       }
+       else {
+       console.error('oops');
+       //this.tiles.push(new TileGui(this, doc, id));
+       //this.draw();
+       }
+       }
+       */
 
       // coming from db
       addTrain(id, doc) {
@@ -114,6 +120,23 @@ Meteor.startup(function() {
           this.trains.push(new TrainGui(this, doc, id));
           this.draw();
         }
+      }
+
+      setTileFromEvent(event) {
+        this.saveTileToDB(this.getMouseTileCoords(this.mouseCoords(event)));
+      }
+
+      removeTileFromEvent(event) {
+        let pos = this.getMouseTileCoords(this.mouseCoords(event));
+        let tile = this.getTile(pos);
+        if(tile) {
+          console.log('removing', tile);
+          //tile.erase();
+          //this.removeTile(tile._id);
+          this.removeTileFromDb(tile._id);
+        }
+        else
+          console.log('no tile', pos);
       }
 
       resetMap() {
@@ -154,7 +177,7 @@ Meteor.startup(function() {
       removeTile(id) {
         console.log('removing tile', id, '...');
         super.removeTile(id);
-        this.draw();
+        //this.draw();
       }
 
       onMouseWheel(e) {
@@ -223,16 +246,6 @@ Meteor.startup(function() {
       onMouseUp(event) {
         this.mouseIsDown = false;
         document.body.style.cursor = 'default';
-      }
-
-      setTileFromEvent(event) {
-        this.saveTileToDB(this.getMouseTileCoords(this.mouseCoords(event)));
-      }
-
-      removeTileFromEvent(event) {
-        let tile = this.getTile(this.getMouseTileCoords(this.mouseCoords(event)));
-        if(tile)
-          this.removeTileFromDb(tile._id);
       }
 
       drawMapBorder() {

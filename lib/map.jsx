@@ -69,13 +69,14 @@ class Map {
   }
 
   saveTileToDB(pos) {
-    console.log('saveTileToDB session', this._id);
+    //console.log('saveTileToDB session', this._id);
     if(this.getTile(pos)) return false;
     let rail = 0;
 
     let tile = this.getTile({x: pos.x, y: pos.y - 1});
     if(tile) {
       rail += N;
+      if(!tile.type) tile.type = {rails: 0}; // just to migrate old maps, TODO: migrate all rails once for all at map loading
       tile.type.rails |= S;
       Meteor.call('mapUpdate', tile._id, tile.pos, tile.type, this._id); // Can't call wih simply tile as I have a error
     }
@@ -83,6 +84,7 @@ class Map {
     tile = this.getTile({x: pos.x, y: pos.y + 1});
     if(tile) {
       rail += S;
+      if(!tile.type) tile.type = {rails: 0};
       tile.type.rails |= N;
       Meteor.call('mapUpdate', tile._id, tile.pos, tile.type, this._id);
     }
@@ -90,6 +92,7 @@ class Map {
     tile = this.getTile({x: pos.x - 1, y: pos.y});
     if(tile) {
       rail += W;
+      if(!tile.type) tile.type = {rails: 0};
       tile.type.rails |= E;
       Meteor.call('mapUpdate', tile._id, tile.pos, tile.type, this._id);
     }
@@ -97,6 +100,7 @@ class Map {
     tile = this.getTile({x: pos.x + 1, y: pos.y});
     if(tile) {
       rail += E;
+      if(!tile.type) tile.type = {rails: 0};
       tile.type.rails |= W;
       Meteor.call('mapUpdate', tile._id, tile.pos, tile.type, this._id);
     }
@@ -124,7 +128,7 @@ class Map {
 
   getTile(pos) {
     for(let i = 0; i < this.tiles.length; i++) {
-      //console.log('loop', this.tiles[i]);
+      //console.log('loop', this.tiles[i].type);
       if(this.tiles[i].pos.x === pos.x && this.tiles[i].pos.y === pos.y) return this.tiles[i];
     }
     return null;
@@ -146,17 +150,9 @@ class Map {
 
 }
 
-if(Meteor
-
-    .
-    isClient
-) {
-  window
-    .
-    Tile = Tile;
-  window
-    .
-    Map = Map;
+if(Meteor.isClient) {
+  window.Tile = Tile;
+  window.Map = Map;
 }
 TrainsApp.Tile = Tile;
 TrainsApp.Map = Map;

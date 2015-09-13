@@ -26,17 +26,17 @@ Template.game.onRendered(function() {
   if(handleTiles) handleTiles.stop();
   handleTiles = Tiles.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
-      //console.log('change: added', id);
+      console.log('change: added', id);
       map.setTileWithId(id, doc);
     },
-    changed: function(id, doc) {
-      console.log('change: changed', id);
-      map.updateTileWithId(id, doc);
-    },
+    /*    changed: function(id, doc) {
+     console.log('change: changed', id, doc);
+     //map.updateTileWithId(id, doc);
+     },*/
     removed: function(id) {
       var doc = Tiles.findOne(id);
-      //console.log('change: removed', id);
-      map.removeTile(id, true);
+      console.log('change: removed', id);
+      map.removeTile(id);
     }
   });
 
