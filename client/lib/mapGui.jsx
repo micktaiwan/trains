@@ -286,7 +286,16 @@ Meteor.startup(function() {
 
       drawMouseTile(c) {
         let margin = 0;
+
+        console.log('currentTileSelection', this.currentTileSelection);
         // TODO: draw current selected tile
+        if(this.currentTileSelection === 'Rails')
+          this.ctx.fillStyle = '#333';
+        else if(this.currentTileSelection === 'Station')
+          this.ctx.fillStyle = '#500';
+
+          this.ctx.fillRect(c.x * this.displayOptions.tileWidth + margin + (this.pan.x % this.displayOptions.tileWidth), c.y * this.displayOptions.tileWidth + margin + (this.pan.y % this.displayOptions.tileWidth), this.displayOptions.tileWidth - margin * 2, this.displayOptions.tileWidth - margin * 2);
+
         this.ctx.lineWidth = 3;
         this.ctx.strokeStyle = '#500';
         this.ctx.beginPath();

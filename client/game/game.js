@@ -107,11 +107,6 @@ Template.toolsDropdown.helpers({
 
   tileTypes: function() {
     return TileTypes.find();
-  },
-
-  'click .selectTile': function() {
-    console.log(this);
-    map.get().setTileSelection(this.name);
   }
 
 });
@@ -128,6 +123,15 @@ Template.game.events({
 
   'click .center': function() {
     map.resetPosition();
+  }
+
+});
+
+Template.toolsDropdown.events({
+
+  'click .selectTile': function() {
+    console.log(this);
+    map.setTileSelection(this.name);
   },
 
   'click .selectSkinCubes': function() {
