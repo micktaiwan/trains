@@ -61,12 +61,22 @@ class Map {
   }
 
   removeTile(id) {
+    //tiles
     for(let i = 0; i < this.tiles.length; i++) {
       if(this.tiles[i]._id === id) {
         this.tiles.splice(i, 1);
         break;
       }
     }
+
+    // stations
+    for(let i = 0; i < this.stations.length; i++) {
+      if(this.stations[i]._id === id) {
+        this.stations.splice(i, 1);
+        break;
+      }
+    }
+
   }
 
   removeTrain(id) {
@@ -113,7 +123,6 @@ class Map {
     return rail;
   }
 
-
   affectNeighbors(pos, operation) {
     let rail = 0;
     rail = this.affectNeighbor(rail, pos, N, operation);
@@ -137,11 +146,12 @@ class Map {
         this.setMessage("<strong>You must place a rail near a station or another rail<strong>");
         return;
       }
-      else
-        type = {name: 'rail', rails: rail};
+      this.setMessage("");
+      type = {name: 'rail', rails: rail};
     }
     else if(this.currentTileSelection === 'Station') {
       type = {name: 'station', station: {team: 'red'}};
+      this.setMessage("");
     }
     else throw new Meteor.Error('unknown tile selection ' + this.currentTileSelection);
 
@@ -163,6 +173,14 @@ class Map {
     Meteor.call('mapRemove', id);
     return true;
   }
+
+  setTileWithId(tile) {
+    //console.log(tile);
+    this.tiles.push(tile);
+    if(tile.type.name === 'station')
+      this.stations.push(tile);
+  }
+
 
   getTile(pos) {
     for(let i = 0; i < this.tiles.length; i++) {

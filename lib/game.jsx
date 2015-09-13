@@ -8,6 +8,7 @@ class Game {
     this.map = map;
     map.setGame(this);
     this._canStart = new ReactiveVar(false);
+    this.gameStatus = new ReactiveVar('');
   }
 
   canStart() {
@@ -22,7 +23,7 @@ class Game {
       if(this.map.stations.length === 0) status += 'You should place your first station<br/>';
     }
     if(status === '') status = 'Ready';
-    Session.set('gameStatus', status); // for reactivity
+    this.gameStatus.set(status);
     return status;
   }
 }

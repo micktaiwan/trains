@@ -23,7 +23,6 @@ Meteor.startup(function() {
      */
 
     draw() {
-      setImage();
       this.ctx.fillStyle = "#777";
       let w = this.map.displayOptions.tileWidth;
       this.ctx.fillRect(this.pos.x * w + this.displayOptions.margin, this.pos.y * w + this.displayOptions.margin, w - this.displayOptions.margin * 2, w - this.displayOptions.margin * 2);

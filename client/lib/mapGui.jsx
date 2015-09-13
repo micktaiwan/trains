@@ -110,14 +110,9 @@ Meteor.startup(function() {
 
       // coming from db
       setTileWithId(id, doc) {
-        let c = this.getTile({x: doc.x, y: doc.y});
-        //console.log('setTileWithId', id, doc, 'found', c);
-        //if(c) // if the client already have it
-        //  c._id = id; // make sure the object have a DB id so we can remove it later
-        //else {
-        this.tiles.push(new TileGui(this, doc, id));
+        let tile = new TileGui(this, doc, id);
+        super.setTileWithId(tile);
         this.draw();
-        //}
       }
 
       // coming from db
@@ -135,7 +130,6 @@ Meteor.startup(function() {
           //this.draw();
         }
       }
-
 
       // coming from db
       addTrain(id, doc) {
