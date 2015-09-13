@@ -6,16 +6,22 @@
 class Game {
   constructor(map) {
     this.map = map;
+    map.setGame(this);
+    this._canStart = new ReactiveVar(false);
   }
 
   canStart() {
-    return true;
-    //return this.map.stations.length > 0;
+    this._canStart.set(true);// && this.map.stations.length > 0);
+    return this._canStart.get();
   }
 
   getStatus() {
-    let status = 'Ready';
-    if(!Meteor.user()) status = "You must be loggued to play";
+    let status = '';
+    if(!Meteor.user()) status = 'You must be loggued to play<br/>';
+    else {
+      if(this.map.stations.length === 0) status += 'You should place your first station<br/>';
+    }
+    if(status === '') status = 'Ready';
     Session.set('gameStatus', status); // for reactivity
     return status;
   }

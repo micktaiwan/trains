@@ -19,12 +19,16 @@ class Tile {
 }
 
 class Map {
-  constructor(dbid) {
+  constructor() {
     this.tiles = [];
     this.trains = [];
     this.stations = [];
-    this._id = dbid;
     this.currentTileSelection = 'Rails';
+    this.message = new ReactiveVar('');
+  }
+
+  init(dbid) {
+    this._id = dbid;
   }
 
   setTileSelection(tileName) {
@@ -119,13 +123,22 @@ class Map {
     return rail;
   }
 
+  setMessage(msg) {
+    this.message.set(msg);
+  }
+
   saveTileToDB(pos) {
     if(this.getTile(pos)) return false;
 
     let type;
     if(this.currentTileSelection === 'Rails') {
       let rail = this.affectNeighbors(pos, 'add');
-      type = {name: 'rail', rails: rail};
+      if(rail === 0) {
+        this.setMessage("<strong>You must place a rail near a station or another rail<strong>");
+        return;
+      }
+      else
+        type = {name: 'rail', rails: rail};
     }
     else if(this.currentTileSelection === 'Station') {
       type = {name: 'station', station: {team: 'red'}};

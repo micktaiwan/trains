@@ -22,7 +22,7 @@ Meteor.startup(function() {
 
       draw() {
         //console.log(this.type);
-        if(this.type.rails !== undefined) this.drawRail();
+        if(!this.type || this.type.rails !== undefined) this.drawRail();
         else if(this.type.station) this.drawStation();
         else throw new Meteor.Error('Unknown tile type ' + this.type.name);
       }
@@ -52,39 +52,31 @@ Meteor.startup(function() {
         //if(this.map.skin === 'cube' || !this.type ) {
         this.ctx.fillStyle = "#f00";
         this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
-        //}
-        /*        else {
-         this.setImage();
-         try {
-         this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w);
-         }
-         catch(e) {
-         console.error(e);
-         }
-         }*/
-        //this.ctx.fillStyle = 'blue';
-        //this.ctx.font = (w/2) + "px serif";
-        //this.ctx.fillText(this.type.rails, (this.pos.x+0.25) * w, (this.pos.y + 0.5) * w);
-
       }
 
     }
 
     class MapGui extends Map {
-      constructor(canvas_id, id, displayOptions) {
-        super(id);
+      constructor(displayOptions) {
+        super();
         displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
         this.displayOptions = {
           tileWidth: displayOptions.tileWidth || defaultTileSize
         };
-        this.canvas = $(canvas_id).get(0);
-        this.ctx = this.canvas.getContext("2d");
 
         this.mouseIsDown = false;
         this.mouseOldPos = {x: -1, y: -1};
         this.mousePos = {x: -1, y: -1};
         this.pan = {x: 0, y: 0};
+        this.skin = 'default';
 
+      }
+
+      init(canvas_id, game_id) {
+        console.log('init', game_id);
+        super.init(game_id);
+        this.canvas = $(canvas_id).get(0);
+        this.ctx = this.canvas.getContext("2d");
         // listen to mouse
         this.canvas.addEventListener("mousedown", $.proxy(this.onMouseDown, this), false);
         this.canvas.addEventListener("mouseup", $.proxy(this.onMouseUp, this), false);
@@ -93,9 +85,12 @@ Meteor.startup(function() {
         this.canvas.addEventListener("contextmenu", $.proxy(this.onContextMenu, this), false);
         //this.canvas.addEventListener("dblclick", $.proxy(this.onMouseDblClick, this), false);
         //this.canvas.addEventListener("mouseout", $.proxy(this.onMouseOut, this), false);
+        this.draw();
+        console.log('map initialized');
+      }
 
-        this.skin = 'default';
-
+      setGame(game) {
+        this.game = game;
       }
 
       onContextMenu(e) {
@@ -182,6 +177,7 @@ Meteor.startup(function() {
       }
 
       draw() {
+        if(!this.ctx) return;
         this.ctx.fillStyle = 'black';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -198,6 +194,7 @@ Meteor.startup(function() {
       }
 
       drawMouse(event) {
+        if(!this.game || !this.game.canStart()) return;
         let c = this.getMouseTileCoords(this.mouseCoords(event), true);
         //this.ctx.fillStyle = 'white';
         //this.ctx.fillText(c.x + ' ' + c.y, 20, 20);
@@ -289,6 +286,7 @@ Meteor.startup(function() {
 
       drawMouseTile(c) {
         let margin = 0;
+        // TODO: draw current selected tile
         this.ctx.lineWidth = 3;
         this.ctx.strokeStyle = '#500';
         this.ctx.beginPath();
@@ -340,9 +338,7 @@ Meteor.startup(function() {
         this.skin = skin;
       }
 
-
     }
-
 
     window.MapGui = MapGui; // TODO: put it in TrainsApp
   }

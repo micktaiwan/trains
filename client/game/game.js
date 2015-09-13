@@ -4,10 +4,18 @@ var handleTiles = null;
 var handleTrains = null;
 
 
+Template.game.onCreated(function() {
+
+  map = new MapGui();
+  game = new TrainsApp.Game(map);
+
+});
+
+
 Template.game.onRendered(function() {
 
-  //while(!this.data) {for(let i=0; i < 999999; i++){var a = 3*3;}}
-
+  console.log('data', this.data);
+  //return;
   $('.pup')
     .popup({
       inline: true,
@@ -17,11 +25,8 @@ Template.game.onRendered(function() {
 
   $('.dropdown').dropdown('restore default text');
 
-  map = new MapGui('canvas', this.data._id);
-  game = new TrainsApp.Game(map);
-  game.getStatus();
+  map.init('canvas', this.data._id);
 
-  //console.log('data', this.data);
 
   if(handleTiles) handleTiles.stop();
   handleTiles = Tiles.find({game_id: this.data._id}).observeChanges({
@@ -77,20 +82,36 @@ Template.game.helpers({
     return window.innerHeight - 300;
   },
 
+  displayGameButtons: function() {
+    return Meteor.user() && game.canStart();
+  },
+
+  gameStatus: function() {
+    return game.getStatus();
+  },
+
+  mapMessage: function() {
+    return map.message.get();
+  }
+
+});
+
+Template.toolsDropdown.onRendered(function() {
+
+  console.log('dropdown ok');
+  $('.dropdown').dropdown('restore default text');
+
+});
+
+Template.toolsDropdown.helpers({
+
   tileTypes: function() {
     return TileTypes.find();
   },
 
-  displayGameButtons: function()  {
-    return true;
-    if(game) game.getStatus();
-    return game && game.canStart();
-  },
-
-  gameStatus: function()  {
-    if(game) game.getStatus();
-    console.log(Session.get('gameStatus'));
-    return Session.get('gameStatus');
+  'click .selectTile': function() {
+    console.log(this);
+    map.get().setTileSelection(this.name);
   }
 
 });
@@ -107,11 +128,6 @@ Template.game.events({
 
   'click .center': function() {
     map.resetPosition();
-  },
-
-  'click .selectTile': function() {
-    console.log(this);
-    map.setTileSelection(this.name);
   },
 
   'click .selectSkinCubes': function() {

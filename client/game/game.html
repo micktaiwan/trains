@@ -1,9 +1,10 @@
 <template name="game">
   <h1>{{name}}</h1>
 
-  <p>{{gameStatus}}</p>
-
-
+  <div class="pull-right">
+    {{{gameStatus}}}
+    {{{mapMessage}}}
+  </div>
 
   {{#if displayGameButtons}}
     <button class="ui primary button start pup" data-content="It will start automatically in a later version :)">Start
@@ -14,21 +15,7 @@
 
   {{#if displayGameButtons}}
 
-    <div class="ui icon top left pointing dropdown button tile-menu">
-      <i class="road icon"></i>
-
-      <div class="menu">
-        <div class="header">Tile</div>
-        {{#each tileTypes }}
-          {{> tileType}}
-        {{/each }}
-        <div class="header">Skin</div>
-        <div class="item selectSkinDefault"><i class="road icon"></i> Default</div>
-        <div class="item selectSkinMine"><i class="road icon"></i> Mine</div>
-        <div class="item selectSkinCubes"><i class="square icon"></i> Cubes</div>
-      </div>
-
-    </div>
+    {{>toolsDropdown}}
 
     Current speed: 45 km/h. 1 locomotive, 0 freight cars, 0 passenger cars
   {{/if}}
@@ -61,4 +48,22 @@
 <template name="tileType">
   <div class="item selectTile"><i class="{{icon}} icon"></i><span class="description"><span
       class="tiny ui red tag label">{{price}}$</span></span> {{name}}</div>
+</template>
+
+<template name="toolsDropdown">
+
+  <div class="ui icon top left pointing dropdown button tile-menu">
+    <i class="road icon"></i>
+    <div class="menu">
+      <div class="header">Tile</div>
+      {{#each tileTypes }}
+        {{> tileType}}
+      {{/each }}
+      <div class="header">Skin</div>
+      <div class="item selectSkinDefault"><i class="road icon"></i> Default</div>
+      <div class="item selectSkinMine"><i class="road icon"></i> Mine</div>
+      <div class="item selectSkinCubes"><i class="square icon"></i> Cubes</div>
+    </div>
+  </div>
+
 </template>
