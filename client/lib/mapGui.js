@@ -21,7 +21,7 @@ Meteor.startup(function() {
 
       draw() {
         let w = this.map.displayOptions.tileWidth;
-        if(this.map.skin === 'cube' || !this.type || !this.type.rails || this.type == {}) {
+        if(this.map.skin === 'cube' || !this.type ) {
           this.ctx.fillStyle = "#333";
           this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
         }
@@ -31,7 +31,7 @@ Meteor.startup(function() {
             this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w);
           }
           catch(e) {
-            //console.log(e);
+            console.error(e);
           }
         }
         //this.ctx.fillStyle = 'blue';

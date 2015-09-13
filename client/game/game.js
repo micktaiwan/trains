@@ -21,12 +21,12 @@ Template.game.onRendered(function() {
   map = new MapGui('canvas', this.data._id);
   map.draw();
 
-  console.log('data', this.data);
+  //console.log('data', this.data);
 
   if(handleTiles) handleTiles.stop();
   handleTiles = Tiles.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
-      console.log('change: added', id);
+      //console.log('change: added', id);
       map.setTileWithId(id, doc);
     },
     changed: function(id, doc) {
