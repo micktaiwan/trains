@@ -29,10 +29,10 @@ Template.game.onRendered(function() {
       console.log('change: added', id);
       map.setTileWithId(id, doc);
     },
-    /*    changed: function(id, doc) {
-     console.log('change: changed', id, doc);
-     //map.updateTileWithId(id, doc);
-     },*/
+    changed: function(id, doc) {
+      console.log('change: changed', id, doc);
+      map.updateTileWithId(id, doc);
+    },
     removed: function(id) {
       var doc = Tiles.findOne(id);
       console.log('change: removed', id);

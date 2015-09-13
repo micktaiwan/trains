@@ -93,21 +93,21 @@ Meteor.startup(function() {
       }
 
       // coming from db
-      /*
-       updateTileWithId(id, doc) {
-       let c = this.getTileById({x: doc.x, y: doc.y});
-       //console.log('setTileWithId', id, doc, 'found', c);
-       if(c) { // if the client already have it
-       c._id = id; // make sure the object have a DB id so we can remove it later
-       c.type = doc.type;
-       }
-       else {
-       console.error('oops');
-       //this.tiles.push(new TileGui(this, doc, id));
-       //this.draw();
-       }
-       }
-       */
+      updateTileWithId(id, doc) {
+        let c = this.getTileById(id);
+        //console.log('setTileWithId', id, doc, 'found', c);
+        if(c) { // if the client already have it
+          c._id = id; // make sure the object have a DB id so we can remove it later
+          c.type = doc.type;
+          c.draw();
+        }
+        else {
+          console.error('oops');
+          //this.tiles.push(new TileGui(this, doc, id));
+          //this.draw();
+        }
+      }
+
 
       // coming from db
       addTrain(id, doc) {
