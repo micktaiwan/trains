@@ -99,7 +99,14 @@ Template.game.events({
 
   'click .selectTile': function() {
     console.log(this);
-  }
+  },
 
+  'click .selectSkinCubes': function() {
+    map.selectSkin('cube');
+  },
+
+  'click .selectSkinDefault': function() {
+    map.selectSkin('');
+  }
 
 });

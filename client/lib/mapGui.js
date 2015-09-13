@@ -21,7 +21,7 @@ Meteor.startup(function() {
 
       draw() {
         let w = this.map.displayOptions.tileWidth;
-        if(!this.type || !this.type.rails || this.type == {}) {
+        if(this.map.skin === 'cube' || !this.type || !this.type.rails || this.type == {}) {
           this.ctx.fillStyle = "#333";
           this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
         }
@@ -62,9 +62,10 @@ Meteor.startup(function() {
         this.canvas.addEventListener("mousemove", $.proxy(this.onMouseMove, this), false);
         this.canvas.addEventListener("mousewheel", $.proxy(this.onMouseWheel, this), false);
         this.canvas.addEventListener("contextmenu", $.proxy(this.onContextMenu, this), false);
-
         //this.canvas.addEventListener("dblclick", $.proxy(this.onMouseDblClick, this), false);
         //this.canvas.addEventListener("mouseout", $.proxy(this.onMouseOut, this), false);
+
+        this.skin = '';
       }
 
       onContextMenu(e) {
@@ -305,7 +306,14 @@ Meteor.startup(function() {
         return {x: cx, y: cy}
       }
 
+      selectSkin(skin) {
+        this.skin = skin;
+      }
+
+
     }
+
+
 
     window.MapGui = MapGui; // TODO: put it in TrainsApp
   }
