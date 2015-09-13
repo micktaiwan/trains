@@ -7,9 +7,9 @@ let caseEqual = function(a, b) {
   return a.x === b.x && a.y === b.y;
 };
 
-let caseCopy = function(a, b) {
-  a.x = b.x;
-  a.y = b.y;
+let caseCopy = function(to, from) {
+  to.x = from.x;
+  to.y = from.y;
 };
 
 class Train {
@@ -72,8 +72,18 @@ class Train {
     //console.log('after dir', this.dir);
   }
 
+  updateFromDB(doc) {
+    if(doc.pos) {
+      caseCopy(this.from, this.pos);
+      this.pos = doc.pos;
+    }
+    if(doc.dir) this.dir = doc.dir;
+  }
+
 }
+
 if(Meteor.isClient) {
+
   window.Train = Train;
 }
 TrainsApp.Train = Train;

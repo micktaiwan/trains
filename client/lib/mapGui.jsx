@@ -23,8 +23,14 @@ Meteor.startup(function() {
         //console.log(this.img.src);
       }
 
-      draw() {
+      draw(options) {
         //console.log(this.type);
+        options = options || {};
+        if(options.withBackground) {
+          let w = this.map.displayOptions.tileWidth;
+          this.ctx.fillStyle = "#000";
+          this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
+        }
         if(!this.type || this.type.rails !== undefined) this.drawRail();
         else if(this.type.name === 'station') this.drawStation();
         else throw new Meteor.Error('Unknown tile type ' + this.type.name);
@@ -188,6 +194,18 @@ Meteor.startup(function() {
 
         this.drawMapBorder();
       }
+
+      drawTrain(train) {
+        //console.log('drawTrain', train);
+        // redraw previous tile
+        let tile = this.getTile(train.from);
+        this.ctx.translate(this.pan.x, this.pan.y);
+        if(tile) tile.draw({withBackground: true});
+        // draw train
+        train.draw();
+        this.ctx.translate(-this.pan.x, -this.pan.y);
+      }
+
 
       drawMouse(event) {
         if(!this.game || !this.game.canStart()) return;

@@ -44,15 +44,17 @@ class Map {
   updateTrain(id, doc) {
     //console.log('updateTrain', doc);
     let train = this.getTrainById(id);
-    if(train) {
-      if(doc.pos) train.pos = doc.pos;
-      if(doc.dir) train.dir = doc.dir;
-    }
+    if(train)
+      train.updateFromDB(doc);
     else console.error('no train?');
-    this.draw();
+    this.drawTrain(train);
   }
 
   draw() {
+    console.error('method should be overridded');
+  }
+
+  drawTrain(train) {
     console.error('method should be overridded');
   }
 
