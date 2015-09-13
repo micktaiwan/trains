@@ -13,10 +13,17 @@ Meteor.startup(function() {
         margin: displayOptions.margin || 0
       };
       //this.img = new Image();
-      //this.img.src = "/img/redTrain.svg";
     }
 
+    /*
+     setImage() {
+     this.img.src = '/rails/' + this.map.skin + '/train.png';
+     //console.log(this.img.src);
+     }
+     */
+
     draw() {
+      setImage();
       this.ctx.fillStyle = "#777";
       let w = this.map.displayOptions.tileWidth;
       this.ctx.fillRect(this.pos.x * w + this.displayOptions.margin, this.pos.y * w + this.displayOptions.margin, w - this.displayOptions.margin * 2, w - this.displayOptions.margin * 2);

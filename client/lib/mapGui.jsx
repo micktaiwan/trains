@@ -16,14 +16,17 @@ Meteor.startup(function() {
       }
 
       setImage() {
-        this.img.src = '/rails/' + this.map.skin + '/' + this.type.rails + '.png';
+        if(this.type.name === 'station')
+          this.img.src = '/rails/' + this.map.skin + '/station.png';
+        else
+          this.img.src = '/rails/' + this.map.skin + '/' + this.type.rails + '.png';
         //console.log(this.img.src);
       }
 
       draw() {
         //console.log(this.type);
         if(!this.type || this.type.rails !== undefined) this.drawRail();
-        else if(this.type.station) this.drawStation();
+        else if(this.type.name === 'station') this.drawStation();
         else throw new Meteor.Error('Unknown tile type ' + this.type.name);
       }
 
@@ -36,12 +39,7 @@ Meteor.startup(function() {
         }
         else {
           this.setImage();
-          try {
-            this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w);
-          }
-          catch(e) {
-            console.error(e);
-          }
+          this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w);
         }
 
       }
@@ -49,9 +47,13 @@ Meteor.startup(function() {
       drawStation() {
         //console.log('drawing station');
         let w = this.map.displayOptions.tileWidth;
+        this.setImage();
+        this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w);
         //if(this.map.skin === 'cube' || !this.type ) {
-        this.ctx.fillStyle = "#f00";
-        this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
+        /*
+         this.ctx.fillStyle = "#f00";
+         this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
+         */
       }
 
     }
@@ -287,17 +289,21 @@ Meteor.startup(function() {
       drawMouseTile(c) {
         let margin = 0;
 
-        console.log('currentTileSelection', this.currentTileSelection);
-        // TODO: draw current selected tile
-        if(this.currentTileSelection === 'Rails')
+        // set transparency
+        this.ctx.globalAlpha = 0.5;
+        //console.log('currentTileSelection', this.currentTileSelection);
+        if(this.currentTileSelection === 'Rails') {
           this.ctx.fillStyle = '#333';
-        else if(this.currentTileSelection === 'Station')
+        }
+        else if(this.currentTileSelection === 'Station') {
           this.ctx.fillStyle = '#500';
-
-          this.ctx.fillRect(c.x * this.displayOptions.tileWidth + margin + (this.pan.x % this.displayOptions.tileWidth), c.y * this.displayOptions.tileWidth + margin + (this.pan.y % this.displayOptions.tileWidth), this.displayOptions.tileWidth - margin * 2, this.displayOptions.tileWidth - margin * 2);
+        }
+        this.ctx.fillRect(c.x * this.displayOptions.tileWidth + margin + (this.pan.x % this.displayOptions.tileWidth), c.y * this.displayOptions.tileWidth + margin + (this.pan.y % this.displayOptions.tileWidth), this.displayOptions.tileWidth - margin * 2, this.displayOptions.tileWidth - margin * 2);
+        // set back transparency
+        this.ctx.globalAlpha = 1;
 
         this.ctx.lineWidth = 3;
-        this.ctx.strokeStyle = '#500';
+        this.ctx.strokeStyle = '#300';
         this.ctx.beginPath();
         this.ctx.rect(c.x * this.displayOptions.tileWidth + margin + (this.pan.x % this.displayOptions.tileWidth), c.y * this.displayOptions.tileWidth + margin + (this.pan.y % this.displayOptions.tileWidth), this.displayOptions.tileWidth - margin * 2, this.displayOptions.tileWidth - margin * 2);
         this.ctx.stroke();
