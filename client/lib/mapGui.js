@@ -16,12 +16,21 @@ Meteor.startup(function() {
       }
 
       setImage() {
-        this.img.src = '/rails/' + this.type.rails + '.png';
+        this.img.src = '/rails/' + this.map.skin + '/' + this.type.rails + '.png';
+        //console.log(this.img.src);
       }
 
       draw() {
+        //console.log(this.type);
+        if(this.type.rails !== undefined) this.drawRail();
+        else if(this.type.station) this.drawStation();
+        else throw new Meteor.Error('Unknown tile type ' + this.type.name);
+      }
+
+      drawRail() {
+        //console.log('drawing rail');
         let w = this.map.displayOptions.tileWidth;
-        if(this.map.skin === 'cube' || !this.type ) {
+        if(this.map.skin === 'cube' || !this.type) {
           this.ctx.fillStyle = "#333";
           this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
         }
@@ -34,9 +43,29 @@ Meteor.startup(function() {
             console.error(e);
           }
         }
+
+      }
+
+      drawStation() {
+        //console.log('drawing station');
+        let w = this.map.displayOptions.tileWidth;
+        //if(this.map.skin === 'cube' || !this.type ) {
+        this.ctx.fillStyle = "#f00";
+        this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
+        //}
+        /*        else {
+         this.setImage();
+         try {
+         this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w);
+         }
+         catch(e) {
+         console.error(e);
+         }
+         }*/
         //this.ctx.fillStyle = 'blue';
         //this.ctx.font = (w/2) + "px serif";
         //this.ctx.fillText(this.type.rails, (this.pos.x+0.25) * w, (this.pos.y + 0.5) * w);
+
       }
 
     }
@@ -65,7 +94,8 @@ Meteor.startup(function() {
         //this.canvas.addEventListener("dblclick", $.proxy(this.onMouseDblClick, this), false);
         //this.canvas.addEventListener("mouseout", $.proxy(this.onMouseOut, this), false);
 
-        this.skin = '';
+        this.skin = 'default';
+
       }
 
       onContextMenu(e) {
@@ -312,7 +342,6 @@ Meteor.startup(function() {
 
 
     }
-
 
 
     window.MapGui = MapGui; // TODO: put it in TrainsApp

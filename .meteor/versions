@@ -13,7 +13,7 @@ caching-html-compiler@1.0.1-rc.0
 callback-hook@1.0.4-rc.0
 check@1.0.6-rc.0
 coffeescript@1.0.8-rc.4
-dayd:stats@0.0.7
+dayd:stats@0.0.81
 ddp@1.2.1-rc.0
 ddp-client@1.2.1-rc.2
 ddp-common@1.2.1-rc.0

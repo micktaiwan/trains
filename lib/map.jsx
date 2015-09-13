@@ -22,7 +22,13 @@ class Map {
   constructor(dbid) {
     this.tiles = [];
     this.trains = [];
+    this.stations = [];
     this._id = dbid;
+    this.currentTileSelection = 'Rails';
+  }
+
+  setTileSelection(tileName) {
+    this.currentTileSelection = tileName;
   }
 
   resetMap() {
@@ -115,10 +121,20 @@ class Map {
 
   saveTileToDB(pos) {
     if(this.getTile(pos)) return false;
-    let rail = this.affectNeighbors(pos, 'add');
-    let type = {rails: rail};
+
+    let type;
+    if(this.currentTileSelection === 'Rails') {
+      let rail = this.affectNeighbors(pos, 'add');
+      type = {name: 'rail', rails: rail};
+    }
+    else if(this.currentTileSelection === 'Station') {
+      type = {name: 'station', station: {team: 'red'}};
+    }
+    else throw new Meteor.Error('unknown tile selection ' + this.currentTileSelection);
+
     Meteor.call('mapSet', pos, type, this._id);
     return true;
+
   }
 
   addTrainToDB(train) {

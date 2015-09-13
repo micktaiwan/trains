@@ -1,7 +1,7 @@
-var game;
-var map;
-var handleTiles;
-var handleTrains;
+var game = null;
+var map = null;
+var handleTiles = null;
+var handleTrains = null;
 
 
 Template.game.onRendered(function() {
@@ -17,16 +17,16 @@ Template.game.onRendered(function() {
 
   $('.dropdown').dropdown('restore default text');
 
-  game = new Game();
   map = new MapGui('canvas', this.data._id);
-  map.draw();
+  game = new TrainsApp.Game(map);
+  game.getStatus();
 
   //console.log('data', this.data);
 
   if(handleTiles) handleTiles.stop();
   handleTiles = Tiles.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
-      //console.log('change: added', id);
+      //console.log('change: added', id, doc);
       map.setTileWithId(id, doc);
     },
     changed: function(id, doc) {
@@ -79,6 +79,18 @@ Template.game.helpers({
 
   tileTypes: function() {
     return TileTypes.find();
+  },
+
+  displayGameButtons: function()  {
+    return true;
+    if(game) game.getStatus();
+    return game && game.canStart();
+  },
+
+  gameStatus: function()  {
+    if(game) game.getStatus();
+    console.log(Session.get('gameStatus'));
+    return Session.get('gameStatus');
   }
 
 });
@@ -99,6 +111,7 @@ Template.game.events({
 
   'click .selectTile': function() {
     console.log(this);
+    map.setTileSelection(this.name);
   },
 
   'click .selectSkinCubes': function() {
@@ -106,7 +119,11 @@ Template.game.events({
   },
 
   'click .selectSkinDefault': function() {
-    map.selectSkin('');
+    map.selectSkin('default');
+  },
+
+  'click .selectSkinMine': function() {
+    map.selectSkin('mine');
   }
 
 });
