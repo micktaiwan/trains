@@ -68,47 +68,55 @@ class Map {
     }
   }
 
-  saveTileToDB(pos) {
-    //console.log('saveTileToDB session', this._id);
-    if(this.getTile(pos)) return false;
-    let rail = 0;
+  affectNeighbor(rail, pos, dir, operation) {
 
-    let tile = this.getTile({x: pos.x, y: pos.y - 1});
+    let newPos, oppDir;
+    switch(dir) {
+      case N:
+        newPos = {x: pos.x, y: pos.y - 1};
+        oppDir = S;
+        break;
+      case S:
+        newPos = {x: pos.x, y: pos.y + 1};
+        oppDir = N;
+        break;
+      case W:
+        newPos = {x: pos.x - 1, y: pos.y};
+        oppDir = E;
+        break;
+      case E:
+        newPos = {x: pos.x + 1, y: pos.y};
+        oppDir = W;
+        break;
+    }
+
+    let tile = this.getTile(newPos);
     if(tile) {
-      rail += N;
+      rail += dir;
       if(!tile.type) tile.type = {rails: 0}; // just to migrate old maps, TODO: migrate all rails once for all at map loading
-      tile.type.rails |= S;
+      if(operation === 'add')
+        tile.type.rails |= oppDir;
+      if(operation === 'sub')
+        tile.type.rails ^= oppDir;
       Meteor.call('mapUpdate', tile._id, tile.pos, tile.type, this._id); // Can't call wih simply tile as I have a error
     }
+    return rail;
+  }
 
-    tile = this.getTile({x: pos.x, y: pos.y + 1});
-    if(tile) {
-      rail += S;
-      if(!tile.type) tile.type = {rails: 0};
-      tile.type.rails |= N;
-      Meteor.call('mapUpdate', tile._id, tile.pos, tile.type, this._id);
-    }
 
-    tile = this.getTile({x: pos.x - 1, y: pos.y});
-    if(tile) {
-      rail += W;
-      if(!tile.type) tile.type = {rails: 0};
-      tile.type.rails |= E;
-      Meteor.call('mapUpdate', tile._id, tile.pos, tile.type, this._id);
-    }
+  affectNeighbors(pos, operation) {
+    let rail = 0;
+    rail = this.affectNeighbor(rail, pos, N, operation);
+    rail = this.affectNeighbor(rail, pos, E, operation);
+    rail = this.affectNeighbor(rail, pos, S, operation);
+    rail = this.affectNeighbor(rail, pos, W, operation);
+    return rail;
+  }
 
-    tile = this.getTile({x: pos.x + 1, y: pos.y});
-    if(tile) {
-      rail += E;
-      if(!tile.type) tile.type = {rails: 0};
-      tile.type.rails |= W;
-      Meteor.call('mapUpdate', tile._id, tile.pos, tile.type, this._id);
-    }
-
-    let type = {
-      rails: rail
-    };
-    console.log('type', type);
+  saveTileToDB(pos) {
+    if(this.getTile(pos)) return false;
+    let rail = this.affectNeighbors(pos, 'add');
+    let type = {rails: rail};
     Meteor.call('mapSet', pos, type, this._id);
     return true;
   }
@@ -119,9 +127,10 @@ class Map {
     return true;
   }
 
-
   removeTileFromDb(id) {
-    //if(!this.getCase(pos)) return false;
+    let pos = this.getTileById(id).pos;
+    this.removeTile(id);
+    this.affectNeighbors(pos, 'sub');
     Meteor.call('mapRemove', id);
     return true;
   }
@@ -130,6 +139,13 @@ class Map {
     for(let i = 0; i < this.tiles.length; i++) {
       //console.log('loop', this.tiles[i].type);
       if(this.tiles[i].pos.x === pos.x && this.tiles[i].pos.y === pos.y) return this.tiles[i];
+    }
+    return null;
+  }
+
+  getTileById(id) {
+    for(let i = 0; i < this.tiles.length; i++) {
+      if(this.tiles[i]._id === id) return this.tiles[i];
     }
     return null;
   }
