@@ -9,6 +9,7 @@ class Game {
     map.setGame(this);
     this._canStart = new ReactiveVar(false);
     this.gameStatus = new ReactiveVar('');
+    this.setStatus();
   }
 
   canStart() {
@@ -16,15 +17,15 @@ class Game {
     return this._canStart.get();
   }
 
-  getStatus() {
+  setStatus() {
     let status = '';
     if(!Meteor.user()) status = 'You must be loggued to play<br/>';
     else {
-      if(this.map.stations.length === 0) status += 'You should place your first station<br/>';
+      if(this.map.stations.length === 0) status = 'You should place your first station<br/>';
+      else if(this.map.tiles.length < 3) status = 'You should build more rails<br/>';
     }
-    if(status === '') status = 'Ready';
+    if(status === '') status = 'Ready<br/>';
     this.gameStatus.set(status);
-    return status;
   }
 }
 

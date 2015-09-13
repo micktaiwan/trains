@@ -38,6 +38,7 @@ class Map {
   resetMap() {
     this.tiles.length = 0;
     this.trains.length = 0;
+    this.stations.length = 0;
     Meteor.call('mapReset', this._id);
   }
 
@@ -181,6 +182,10 @@ class Map {
     this.tiles.push(tile);
     if(tile.type.name === 'station')
       this.stations.push(tile);
+
+    // for each game change, also set game status
+    if(this.game) this.game.setStatus();
+
   }
 
 

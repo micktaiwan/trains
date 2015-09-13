@@ -87,7 +87,7 @@ Template.game.helpers({
   },
 
   gameStatus: function() {
-    return game.getStatus();
+    return game.gameStatus.get();
   },
 
   mapMessage: function() {
