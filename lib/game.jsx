@@ -12,9 +12,19 @@ class Game {
     this.setStatus();
   }
 
-  canStart() {
-    this._canStart.set(true);// && this.map.stations.length > 0);
+  canTrainStart() {
+    this._canStart.set(Meteor.user() && this.map.stations.length > 0);
     return this._canStart.get();
+  }
+
+  canModifyMap() {
+    return Meteor.user();
+  }
+
+  hasJoined() {
+    return false;
+    var u = Meteor.user();
+    return u;
   }
 
   setStatus() {

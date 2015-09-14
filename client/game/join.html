@@ -1,0 +1,46 @@
+<template name="join">
+  <div class="ui basic modal">
+    <i class="close icon"></i>
+
+    <div class="header">
+      Join game
+    </div>
+    <div class="content">
+      <div class="description">
+        <div class="ui grid">
+
+          <div class="twelve wide column">
+            <p>Choose your team</p>
+            <button class="ui blue button">Blue</button>
+            <button class="ui red button">Red</button>
+          </div>
+
+          <div class="four wide column">
+            <p>Or create a new team</p>
+            <form class="ui form newteam">
+              <div class="fields">
+                <input type="text" id="teamName">
+              </div>
+            </form>
+          </div>
+
+        </div>
+      </div>
+
+
+    </div>
+
+    <div class="actions">
+      <div class="two fluid ui inverted buttons">
+        <div class="ui red basic inverted button">
+          <i class="remove icon"></i>
+          No
+        </div>
+        <div class="ui green basic inverted button">
+          <i class="checkmark icon"></i>
+          Yes
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

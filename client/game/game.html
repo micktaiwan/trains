@@ -1,4 +1,5 @@
 <template name="game">
+
   <h1>{{name}}</h1>
 
   <div class="pull-right">
@@ -6,18 +7,27 @@
     {{{mapMessage}}}
   </div>
 
-  {{#if displayGameButtons}}
-    <button class="ui primary button start pup" data-content="It will start automatically in a later version :)">Start
-      train
-    </button>
-  {{/if}}
   <button class="ui button center pup" data-content="Reset zoom and pan">Center Map</button>
 
-  {{#if displayGameButtons}}
+  {{#if hasJoined }}
 
-    {{>toolsDropdown}}
+    {{#if displayGameButtons}}
+      <button class="ui primary button start pup" data-content="It will start automatically in a later version :)">Start
+        train
+      </button>
+    {{/if}}
 
-    Current speed: 45 km/h. 1 locomotive, 0 freight cars, 0 passenger cars
+    {{#if displayGameButtons}}
+
+      {{>toolsDropdown}}
+
+      Current speed: 45 km/h. 1 locomotive, 0 freight cars, 0 passenger cars
+    {{/if}}
+
+  {{else}}
+    {{#if currentUser }}
+      <button class="ui primary button join pup" data-content="Join a team or create a new one!">Join</button>
+    {{/if}}
   {{/if}}
   <br/>
   <br/>
@@ -43,12 +53,16 @@
     <i class="road icon"></i> Tiles
     <div class="detail">{{railsCount}}</div>
   </div>
+
+  {{>join}}
+
 </template>
 
 <template name="toolsDropdown">
 
   <div class="ui icon top left pointing dropdown button tile-menu">
     <i class="road icon"></i>
+
     <div class="menu">
       <div class="header">Tile</div>
       {{#each tileTypes }}

@@ -151,10 +151,12 @@ Meteor.startup(function() {
       }
 
       setTileFromEvent(event) {
+        if(!this.game.canModifyMap()) return;
         this.saveTileToDB(this.getMouseTileCoords(this.mouseCoords(event)));
       }
 
       removeTileFromEvent(event) {
+        if(!this.game.canModifyMap()) return;
         let pos = this.getMouseTileCoords(this.mouseCoords(event));
         let tile = this.getTile(pos);
         if(tile) {
@@ -193,6 +195,7 @@ Meteor.startup(function() {
         this.ctx.translate(-this.pan.x, -this.pan.y);
 
         this.drawMapBorder();
+        //console.log('draw');
       }
 
       drawTrain(train) {
@@ -208,7 +211,7 @@ Meteor.startup(function() {
 
 
       drawMouse(event) {
-        if(!this.game || !this.game.canStart()) return;
+        if(!this.game.canModifyMap()) return;
         let c = this.getMouseTileCoords(this.mouseCoords(event), true);
         //this.ctx.fillStyle = 'white';
         //this.ctx.fillText(c.x + ' ' + c.y, 20, 20);

@@ -35,12 +35,12 @@ Template.game.onRendered(function() {
       map.setTileWithId(id, doc);
     },
     changed: function(id, doc) {
-      console.log('change: changed', id, doc);
+      //console.log('change: changed', id, doc);
       map.updateTileWithId(id, doc);
     },
     removed: function(id) {
       var doc = Tiles.findOne(id);
-      console.log('change: removed', id);
+      //console.log('change: removed', id);
       map.removeTile(id);
     }
   });
@@ -83,7 +83,11 @@ Template.game.helpers({
   },
 
   displayGameButtons: function() {
-    return Meteor.user() && game.canStart();
+    return game.canModifyMap();
+  },
+
+  hasJoined: function() {
+    return game.hasJoined();
   },
 
   gameStatus: function() {
@@ -98,7 +102,7 @@ Template.game.helpers({
 
 Template.toolsDropdown.onRendered(function() {
 
-  console.log('dropdown ok');
+  //console.log('dropdown ok');
   $('.dropdown').dropdown('restore default text');
 
 });
@@ -123,6 +127,10 @@ Template.game.events({
 
   'click .center': function() {
     map.resetPosition();
+  },
+
+  'click .join': function() {
+    $('.ui.basic.modal').modal('show');
   }
 
 });
