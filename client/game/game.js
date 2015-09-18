@@ -11,7 +11,6 @@ Template.game.onCreated(function() {
 
 });
 
-
 Template.game.onRendered(function() {
 
   console.log('data', this.data);
@@ -100,21 +99,6 @@ Template.game.helpers({
 
 });
 
-Template.toolsDropdown.onRendered(function() {
-
-  //console.log('dropdown ok');
-  $('.dropdown').dropdown('restore default text');
-
-});
-
-Template.toolsDropdown.helpers({
-
-  tileTypes: function() {
-    return TileTypes.find();
-  }
-
-});
-
 Template.game.events({
 
   'click .reset': function() {
@@ -130,7 +114,22 @@ Template.game.events({
   },
 
   'click .join': function() {
-    $('.ui.basic.modal').modal('show');
+    $('.join-modal').modal('show');
+  }
+
+});
+
+Template.toolsDropdown.onRendered(function() {
+
+  //console.log('dropdown ok');
+  $('.dropdown').dropdown('restore default text');
+
+});
+
+Template.toolsDropdown.helpers({
+
+  tileTypes: function() {
+    return TileTypes.find();
   }
 
 });

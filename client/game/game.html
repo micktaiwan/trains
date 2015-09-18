@@ -27,6 +27,7 @@
   {{else}}
     {{#if currentUser }}
       <button class="ui primary button join pup" data-content="Join a team or create a new one!">Join</button>
+      {{>join}}
     {{/if}}
   {{/if}}
   <br/>
@@ -53,8 +54,6 @@
     <i class="road icon"></i> Tiles
     <div class="detail">{{railsCount}}</div>
   </div>
-
-  {{>join}}
 
 </template>
 
