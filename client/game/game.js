@@ -1,7 +1,7 @@
-var game = null;
-var map = null;
-var handleTiles = null;
-var handleTrains = null;
+let game = null;
+let map = null;
+let handleTiles = null;
+let handleTrains = null;
 
 
 Template.game.onCreated(function() {
@@ -14,6 +14,7 @@ Template.game.onCreated(function() {
 Template.game.onRendered(function() {
 
   console.log('data', this.data);
+  let that = this;
   //return;
   $('.pup')
     .popup({
@@ -26,7 +27,6 @@ Template.game.onRendered(function() {
 
   map.init('canvas', this.data._id);
 
-
   if(handleTiles) handleTiles.stop();
   handleTiles = Tiles.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
@@ -38,7 +38,7 @@ Template.game.onRendered(function() {
       map.updateTileWithId(id, doc);
     },
     removed: function(id) {
-      var doc = Tiles.findOne(id);
+      let doc = Tiles.findOne(id);
       //console.log('change: removed', id);
       map.removeTile(id);
     }
@@ -55,7 +55,7 @@ Template.game.onRendered(function() {
       map.updateTrain(id, doc);
     },
     removed: function(id) {
-      var doc = Tiles.findOne(id);
+      let doc = Tiles.findOne(id);
       //console.log('change: removed', id);
       map.removeTrain(id);
     }
@@ -95,6 +95,11 @@ Template.game.helpers({
 
   mapMessage: function() {
     return map.message.get();
+  },
+
+  teams: function() {
+    console.log(Teams.find({game_id: this._id}).count());
+    return Teams.find({game_id: this._id});
   }
 
 });
@@ -113,8 +118,8 @@ Template.game.events({
     map.resetPosition();
   },
 
-  'click .join': function() {
-    $('.join-modal').modal('show');
+  'click .open-join-modal': function() {
+    $('.join-modal').show();
   }
 
 });

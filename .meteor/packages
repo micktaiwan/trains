@@ -1,19 +1,17 @@
-# Meteor packages used by this project, one per line.
-# Check this file (and the other files in this directory) into your repository.
-#
-# 'meteor add' and 'meteor remove' will edit this file for you,
-# but you can also edit it by hand.
+# grigio:babel # transcripting ES6 to ES5 for server scripts
+# universe:modules
+# less
+# semantic:ui-css
+
 
 meteor-platform
-grigio:babel # transcripting ES6 to ES5 for server scripts
+ecmascript
+iron:router
+semantic:ui
+dayd:stats
+momentjs:moment
+reactive-var
 accounts-password
 iandouglas:accounts-ui-semantic-ui
 mizzao:user-status
-iron:router
-#less
 flemay:less-autoprefixer
-dayd:stats
-semantic:ui
-#semantic:ui-css
-momentjs:moment
-reactive-var

@@ -3,14 +3,17 @@
  */
 
 Meteor.publish('tiles', function(game_id) {
-  //console.log('publishing tiles for', game_id);
   return Tiles.find({game_id: game_id});
 });
 
 Meteor.publish('trains', function(game_id) {
-  //console.log('publishing trains for', game_id);
   return Trains.find({game_id: game_id});
 });
+
+Meteor.publish('teams', function(game_id) {
+  return Teams.find({game_id: game_id});
+});
+
 
 // publications to every client without needing a subscription
 Meteor.publish(null, function() {

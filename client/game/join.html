@@ -1,46 +1,50 @@
 <template name="join">
-  <div class="ui modal join-modal">
-    <i class="close icon"></i>
-
+  <div class="join-modal">
     <div class="header">
-      Join game
+
+      <div class="ui cancel button pull-right vertical-align">
+        <i class="remove icon"></i>
+        Cancel
+      </div>
+
+      <div class="title">Join game</div>
+
     </div>
     <div class="content">
+
+        <p>Create a new team</p>
+
+        <form class="ui form newteam">
+          <div class="fields">
+            <input type="text" id="teamName">
+          </div>
+        </form>
+
       <div class="description">
-        <div class="ui grid">
-
-          <div class="twelve wide column">
-            <p>Choose your team</p>
-            <button class="ui blue button">Blue</button>
-            <button class="ui red button">Red</button>
-          </div>
-
-          <div class="four wide column">
-            <p>Or create a new team</p>
-            <form class="ui form newteam">
-              <div class="fields">
-                <input type="text" id="teamName">
-              </div>
-            </form>
-          </div>
-
-        </div>
+        <p>Or join a existing team</p>
+        {{#each teams}}
+          {{>joinButton}}
+        {{/each}}
       </div>
-
 
     </div>
 
-    <div class="actions">
-      <div class="two fluid ui inverted buttons">
-        <div class="ui red basic inverted button">
-          <i class="remove icon"></i>
-          No
-        </div>
-        <div class="ui green basic inverted button">
-          <i class="checkmark icon"></i>
-          Yes
-        </div>
-      </div>
+  </div>
+</template>
+
+<template name="joinButton">
+
+  <div class="team">
+    <div class="name">{{name}}</div>
+    <div class="content">
+      Cash: 0$<br/>
+      Stations: 0<br/>
+      Rails: 0<br/>
+      Players:<br/>
+    </div>
+    <div class="buttons">
+      <button class="ui blue button join" data-teamId="{{_id}}">Join</button>
     </div>
   </div>
+
 </template>
