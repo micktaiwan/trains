@@ -83,6 +83,7 @@ Meteor.startup(function() {
       init(canvas_id, game_id) {
         console.log('init', game_id);
         super.init(game_id);
+        this.game.canModifyMap(); // just to trigger reactivity and  depending helpers
         this.canvas = $(canvas_id).get(0);
         this.ctx = this.canvas.getContext("2d");
         // listen to mouse

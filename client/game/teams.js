@@ -4,8 +4,9 @@ Template.teams.helpers({
     return Teams.find({game_id: this._id});
   },
 
-  isPlayer: function() {
-    return this.players.find(function(p) {
+  display: function() {
+    console.log(Meteor.userId());
+    return Meteor.userId() && !this.players.some(function(p) {
       return p._id == Meteor.userId()
     });
   }
@@ -41,8 +42,8 @@ Template.team.helpers({
     return this.members;
   },
 
-  isPlayer: function() {
-    return this.game().players.find(function(p) {
+  display: function() {
+    return Meteor.userId() && !this.game().players.some(function(p) {
       return p._id == Meteor.userId()
     });
   }

@@ -4,7 +4,7 @@
 
       <div class="ui cancel button pull-right vertical-align">
         <i class="remove icon"></i>
-        Cancel
+        Close
       </div>
 
       <div class="title">Teams</div>
@@ -12,7 +12,7 @@
     </div>
     <div class="content">
 
-      {{#unless isPlayer }}
+      {{#if display}}
         <p>Create a new team</p>
 
         <form class="ui form newteam">
@@ -20,7 +20,7 @@
             <input type="text" id="teamName">
           </div>
         </form>
-      {{/unless}}
+      {{/if}}
       <div class="description">
         {{#each teams}}
           {{>team}}
@@ -48,9 +48,9 @@
 
     </div>
     <div class="buttons">
-      {{#unless isPlayer}}
+      {{#if display}}
         <button class="ui blue button join" data-teamId="{{_id}}">Join</button>
-      {{/unless}}
+      {{/if}}
     </div>
   </div>
 

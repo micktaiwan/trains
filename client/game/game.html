@@ -8,28 +8,19 @@
   </div>
 
   <button class="ui button center pup" data-content="Reset zoom and pan">Center Map</button>
+  <button class="ui primary button open-join-modal pup" data-content="Display Teams">Teams</button>
+  {{>teams}}
 
-  {{#if hasJoined }}
+  {{#if displayGameButtons}}
+    <button class="ui primary button start pup" data-content="It will start automatically in a later version :)">Start
+      train
+    </button>
 
-    {{#if displayGameButtons}}
-      <button class="ui primary button start pup" data-content="It will start automatically in a later version :)">Start
-        train
-      </button>
-    {{/if}}
+    {{>toolsDropdown}}
 
-    {{#if displayGameButtons}}
-
-      {{>toolsDropdown}}
-
-      Current speed: 45 km/h. 1 locomotive, 0 freight cars, 0 passenger cars
-    {{/if}}
-
-  {{else}}
-    {{#if currentUser }}
-      <button class="ui primary button open-join-modal pup" data-content="Display Teams">Teams</button>
-      {{>teams}}
-    {{/if}}
+    Current speed: 45 km/h. 1 locomotive, 0 freight cars, 0 passenger cars
   {{/if}}
+
   <br/>
   <br/>
   <canvas width="{{screenWidth}}" height="{{screenHeigth}}"></canvas>

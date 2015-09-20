@@ -82,11 +82,9 @@ Template.game.helpers({
   },
 
   displayGameButtons: function() {
+    console.log('displayGameButtons');
+    game._canModifyMapDep.depend();
     return game.canModifyMap();
-  },
-
-  hasJoined: function() {
-    return game.hasJoined();
   },
 
   gameStatus: function() {
