@@ -14,6 +14,7 @@ callback-hook@1.0.4-rc.0
 check@1.0.6-rc.0
 coffeescript@1.0.8-rc.5
 dayd:stats@0.0.85
+dburles:collection-helpers@1.0.3
 ddp@1.2.1-rc.0
 ddp-client@1.2.1-rc.2
 ddp-common@1.2.1-rc.0

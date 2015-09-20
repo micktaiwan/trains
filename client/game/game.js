@@ -95,11 +95,6 @@ Template.game.helpers({
 
   mapMessage: function() {
     return map.message.get();
-  },
-
-  teams: function() {
-    console.log(Teams.find({game_id: this._id}).count());
-    return Teams.find({game_id: this._id});
   }
 
 });
@@ -119,7 +114,7 @@ Template.game.events({
   },
 
   'click .open-join-modal': function() {
-    $('.join-modal').show();
+    $('.teams-modal').show();
   }
 
 });

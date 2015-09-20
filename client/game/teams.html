@@ -1,5 +1,5 @@
-<template name="join">
-  <div class="join-modal">
+<template name="teams">
+  <div class="teams-modal">
     <div class="header">
 
       <div class="ui cancel button pull-right vertical-align">
@@ -7,11 +7,12 @@
         Cancel
       </div>
 
-      <div class="title">Join game</div>
+      <div class="title">Teams</div>
 
     </div>
     <div class="content">
 
+      {{#unless isPlayer }}
         <p>Create a new team</p>
 
         <form class="ui form newteam">
@@ -19,11 +20,10 @@
             <input type="text" id="teamName">
           </div>
         </form>
-
+      {{/unless}}
       <div class="description">
-        <p>Or join a existing team</p>
         {{#each teams}}
-          {{>joinButton}}
+          {{>team}}
         {{/each}}
       </div>
 
@@ -32,7 +32,7 @@
   </div>
 </template>
 
-<template name="joinButton">
+<template name="team">
 
   <div class="team">
     <div class="name">{{name}}</div>
@@ -40,11 +40,26 @@
       Cash: 0$<br/>
       Stations: 0<br/>
       Rails: 0<br/>
-      Players:<br/>
+      Members:
+
+      {{#each members}}
+        {{>member}}
+      {{/each}}
+
     </div>
     <div class="buttons">
-      <button class="ui blue button join" data-teamId="{{_id}}">Join</button>
+      {{#unless isPlayer}}
+        <button class="ui blue button join" data-teamId="{{_id}}">Join</button>
+      {{/unless}}
     </div>
+  </div>
+
+</template>
+
+<template name="member">
+
+  <div class="member">
+    <div class="name">{{name}}</div>
   </div>
 
 </template>
