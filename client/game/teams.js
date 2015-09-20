@@ -6,9 +6,9 @@ Template.teams.helpers({
 
   display: function() {
     console.log(Meteor.userId());
-    return Meteor.userId() && !this.players.some(function(p) {
+    return Meteor.userId() && (!this.players || !this.players.some(function(p) {
       return p._id == Meteor.userId()
-    });
+    }));
   }
 
 });
@@ -43,9 +43,9 @@ Template.team.helpers({
   },
 
   display: function() {
-    return Meteor.userId() && !this.game().players.some(function(p) {
+    return Meteor.userId() && (!this.game().players || !this.game().players.some(function(p) {
       return p._id == Meteor.userId()
-    });
+    }));
   }
 
 });
