@@ -14,8 +14,6 @@ Template.game.onCreated(function() {
 Template.game.onRendered(function() {
 
   console.log('data', this.data);
-  let that = this;
-  //return;
   $('.pup')
     .popup({
       inline: true,
