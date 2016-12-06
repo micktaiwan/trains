@@ -17,10 +17,10 @@
 ---------------------*/
 
 /* Default site.variables */
-@import "@{themesFolder}/default/globals/site.variables";
+@import "@{themesFolder}/default/globals/site.variables.import.less";
 
 /* Packaged site.variables */
-@import "@{themesFolder}/@{site}/globals/site.variables";
+@import "@{themesFolder}/@{site}/globals/site.variables.import.less";
 
 /* Component's site.variables */
 @import (optional) "@{themesFolder}/@{theme}/globals/site.variables";
@@ -34,7 +34,7 @@
 ---------------------*/
 
 /* Default */
-@import "@{themesFolder}/default/@{type}s/@{element}.variables";
+@import "@{themesFolder}/default/@{type}s/@{element}.variables.import.less";
 
 /* Packaged Theme */
 @import (optional) "@{themesFolder}/@{theme}/@{type}s/@{element}.variables";

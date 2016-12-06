@@ -4,15 +4,30 @@
 # semantic:ui-css
 
 
-meteor-platform
-ecmascript
+ecmascript@0.6.1
 iron:router
 semantic:ui
 dayd:stats
 momentjs:moment
-reactive-var
-accounts-password
+reactive-var@1.0.11
+accounts-password@1.3.3
 iandouglas:accounts-ui-semantic-ui
 mizzao:user-status
 flemay:less-autoprefixer
 dburles:collection-helpers
+meteor-base
+mobile-experience
+mongo
+blaze-html-templates
+session
+jquery
+tracker
+logging
+reload
+random
+ejson
+spacebars
+check
+standard-minifier-css
+standard-minifier-js
+shell-server
