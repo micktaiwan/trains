@@ -84,7 +84,7 @@
 <template name="chatMsg">
   <div class="comment">
     <div class="content">
-      <div class="metadata"><span class="date">{{formatTime time}}</span></div>
+      <div class="metadata"><span class="date">{{formatDate time 'DD-MMM-YYYY HH:mm'}}</span></div>
       <span class="author">{{user.name}}</span>
       <span class="text"> {{msg}} </span>
     </div>

@@ -5,9 +5,10 @@ Template.teams.helpers({
   },
 
   display: function() {
-    console.log(Meteor.userId());
-    return Meteor.userId() && (!this.players || !this.players.some(function(p) {
-      return p._id == Meteor.userId()
+    const uid = Meteor.userId();
+    // console.log(uid);
+    return uid && (!this.players || !this.players.some(function(p) {
+      return p._id === uid;
     }));
   }
 
@@ -44,9 +45,8 @@ Template.team.helpers({
 
   display: function() {
     return Meteor.userId() && (!this.game().players || !this.game().players.some(function(p) {
-      return p._id == Meteor.userId()
+      return p._id === Meteor.userId()
     }));
   }
 
 });
-

@@ -21,7 +21,7 @@ Meteor.startup(function() {
     }
 
     onTime(that) {
-      //console.log('onTime', that.map._id, that.pos, that.dir, that.map.tileCount());
+      // console.log('onTime', that.map._id, that.pos, that.dir, that.map.tileCount());
       that.move();
       Trains.update({_id: that._id}, {$set: {pos: that.pos, dir: that.dir}});
     }
@@ -46,16 +46,16 @@ Meteor.startup(function() {
     }
   } // class
 
-  var trains = [];
+  const trains = [];
 
 
-  var getTrain = function(train_id) {
-    for(var i = 0; i < trains.length; i++) if(trains[i]._id === train_id) return trains[i];
+  const getTrain = function(train_id) {
+    for(let i = 0; i < trains.length; i++) if(trains[i]._id === train_id) return trains[i];
     return null;
   };
 
 
-  var createTrain = function(train_id, doc) {
+  const createTrain = function(train_id, doc) {
     // console.log('create train', train_id, doc);
     let train = getTrain(train_id);
     if(train) return train;
@@ -65,11 +65,11 @@ Meteor.startup(function() {
     return train;
   };
 
-  var removeTrain = function(train_id, doc) {
+  const removeTrain = function(train_id, doc) {
     let train = getTrain(train_id);
     if(!train) return train;
     // found
-    for(var i = 0; i < trains.length; i++) if(trains[i]._id === train_id) {
+    for(let i = 0; i < trains.length; i++) if(trains[i]._id === train_id) {
       trains[i].stop();
       trains.splice(i, 1);
       break;
