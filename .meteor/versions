@@ -1,6 +1,5 @@
 accounts-base@1.3.6
 accounts-password@1.4.2
-aldeed:simple-schema@1.3.3
 allow-deny@1.0.9
 autoupdate@1.3.12
 babel-compiler@6.20.0
@@ -14,7 +13,6 @@ boilerplate-generator@1.2.0
 caching-compiler@1.1.9
 caching-html-compiler@1.1.2
 callback-hook@1.0.10
-cfs:http-methods@0.0.32
 check@1.2.5
 coffeescript@1.12.7_3
 coffeescript-compiler@1.12.7_3
@@ -35,7 +33,6 @@ ejson@1.0.14
 email@1.2.3
 flemay:less-autoprefixer@1.2.0
 geojson-utils@1.0.10
-hitchcott:app-dump@0.4.3
 hot-code-push@1.0.4
 html-tools@1.0.11
 htmljs@1.0.11
@@ -52,18 +49,14 @@ iron:router@1.1.2
 iron:url@1.1.0
 jquery@1.11.10
 launch-screen@1.1.1
-less@2.7.9
 livedata@1.0.18
 localstorage@1.1.1
 logging@1.1.19
 meteor@1.7.2
 meteor-base@1.1.0
-meteorhacks:ssr@2.2.0
-meteorspark:util@0.2.0
 minifier-css@1.2.16
 minifier-js@2.1.4
 minimongo@1.3.3
-mizzao:bootboxjs@4.4.0
 mizzao:timesync@0.5.0
 mizzao:user-status@0.6.7
 mobile-experience@1.0.5
@@ -77,10 +70,8 @@ mongo-id@1.0.6
 npm-bcrypt@0.9.3
 npm-mongo@2.2.33
 observe-sequence@1.0.16
-orbiter:core@0.0.2
 ordered-dict@1.0.9
 promise@0.9.0
-raix:eventemitter@0.1.3
 random@1.0.10
 rate-limit@1.0.8
 reactive-dict@1.1.9
@@ -99,7 +90,6 @@ spacebars-compiler@1.1.3
 srp@1.0.10
 standard-minifier-css@1.3.5
 standard-minifier-js@2.1.2
-tap:i18n@1.8.2
 templating@1.3.2
 templating-compiler@1.3.3
 templating-runtime@1.3.2
