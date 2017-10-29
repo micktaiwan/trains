@@ -48,7 +48,7 @@ Template.onlineUser.helpers({
 
 Template.gameItem.helpers({
 
-  // TODO: if we use these helpers we must publish all tiles and train... find another way
+  // TODO: if we use these helpers we must publish all tiles and train... find another way: store these info in the game
   railsCount: function() {
     return Tiles.find({game_id: this._id}).count();
   },
@@ -64,7 +64,7 @@ Template.lobby.events({
 
   'submit .newgame': function(e) {
     e.preventDefault();
-    var name = $('#gameName').val();
+    const name = $('#gameName').val();
     Meteor.call('gameCreate', name, function(err, rv) {
       Router.go('/game/' + rv);
     });
@@ -72,7 +72,7 @@ Template.lobby.events({
 
   'submit .chatmsg': function(e) {
     e.preventDefault();
-    var msg = $('#chatMsg').val();
+    const msg = $('#chatMsg').val();
     Meteor.call('chatPost', msg, 'lobby', function(err, rv) {
       $('#chatMsg').val('');
     });

@@ -71,11 +71,11 @@ Template.game.helpers({
     return Tiles.find().count();
   },
 
-  screenWidth: function() {
-    return window.innerWidth - 20;
+  canvasWidth: function() {
+    return window.innerWidth - 60;
   },
 
-  screenHeigth: function() {
+  canvasHeigth: function() {
     return window.innerHeight - 300;
   },
 

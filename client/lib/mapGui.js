@@ -5,7 +5,7 @@
 
 Meteor.startup(function() {
 
-    var defaultTileSize = 50;
+    const defaultTileSize = 50;
 
     class TileGui extends Tile {
 
@@ -109,7 +109,7 @@ Meteor.startup(function() {
 
       // create a new train
       createTrain() {
-        if(this.trains.length == 0) { // for now only one train
+        if(this.trains.length === 0) { // for now only one train
           this.addTrainToDB({pos: {x: 1, y: 1}, dir: {x: 1, y: 0}}); // TODO: let the server set the position
         }
         this.draw();
@@ -132,7 +132,7 @@ Meteor.startup(function() {
           c.draw();
         }
         else {
-          console.error('oops');
+          console.error('updateTileWithId: oops');
           //this.tiles.push(new TileGui(this, doc, id));
           //this.draw();
         }
@@ -230,7 +230,7 @@ Meteor.startup(function() {
         e.preventDefault();
         let oldPos = this.relMouseCoords(e);
 
-        let factor = Math.round((this.displayOptions.tileWidth / (e.wheelDelta / 60)));
+        const factor = Math.round((this.displayOptions.tileWidth / (e.wheelDelta / 60)));
         this.displayOptions.tileWidth += factor;
         if(this.displayOptions.tileWidth < 1)
           this.displayOptions.tileWidth = 1;
