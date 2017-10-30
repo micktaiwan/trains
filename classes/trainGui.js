@@ -13,6 +13,9 @@ export class TrainGui extends Train {
       margin: displayOptions.margin || 0.15 // %
     };
     //this.img = new Image();
+    this.moveProgression = 0; // % between from case to to case
+    this.moveSpeed = 0; // % steps
+    this.moveAcc = 10;
   }
 
   /*
@@ -22,7 +25,10 @@ export class TrainGui extends Train {
    }
    */
 
+  // animate the move
+  // will cut the animation into this.moveProgress steps
   draw() {
+    // the pos is the destination
     this.ctx.fillStyle = "#aaf";
     let w = this.map.displayOptions.tileWidth;
     const margin = w * this.displayOptions.margin;

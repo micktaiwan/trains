@@ -35,10 +35,8 @@ export class Train {
   }
 
   move() {
-    for(let i = 1; i <= 4; i++) {
-      if(this.dirMove()) return;
+    while(!this.dirMove())
       this.changeDir();
-    }
   }
 
   // move in the current direction
@@ -47,13 +45,11 @@ export class Train {
     tmp.x += this.dir.x;
     tmp.y += this.dir.y;
     //console.log('tmp', tmp);
-    if(!caseEqual(this.from, tmp) && this.map.getTile(tmp)) {
-      caseCopy(this.from, this.pos);
-      caseCopy(this.pos, tmp);
-      //console.log('after move', this.pos);
-      return true;
-    }
-    return false;
+    if(caseEqual(this.from, tmp) || !this.map.getTile(tmp)) return false;
+    caseCopy(this.from, this.pos);
+    caseCopy(this.pos, tmp);
+    //console.log('after move', this.pos);
+    return true;
   }
 
   changeDir() {

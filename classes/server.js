@@ -8,7 +8,7 @@ export class ServerTrain extends Train {
   constructor(train_id, trainObj) {
     //console.log('ServerTrain constructor', trainObj);
     super(new Map(trainObj.game_id), trainObj, train_id);
-    this.interval = 500;
+    this.interval = 1000;
     let that = this;
     this.timerHandle = Meteor.setInterval(function() {
       ServerTrain.onTime(that);
