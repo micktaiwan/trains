@@ -1,9 +1,8 @@
 /**
  * Created by mfaivremacon on 31/08/2015.
  */
-"use strict";
 
-let N = 1, E = 2, S = 4, W = 8; // any rail direction is the sum of simple directions
+const N = 1, E = 2, S = 4, W = 8; // any rail direction is the sum of simple directions
 
 export class Tile {
 
@@ -18,6 +17,7 @@ export class Tile {
 }
 
 export class Map {
+
   constructor() {
     this.tiles = [];
     this.trains = [];
@@ -183,9 +183,7 @@ export class Map {
 
     // for each game change, also set game status
     if(this.game) this.game.setStatus();
-
   }
-
 
   getTile(pos) {
     for(let i = 0; i < this.tiles.length; i++) {

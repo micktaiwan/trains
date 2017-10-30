@@ -1,7 +1,7 @@
 /**
  * Created by mfaivremacon on 31/08/2015.
  */
-"use strict";
+
 import {Map, Tile} from './map';
 import {TrainGui} from './trainGui';
 

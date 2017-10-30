@@ -1,7 +1,6 @@
 /**
  * Created by mfaivremacon on 01/09/2015.
  */
-"use strict";
 
 let caseEqual = function(a, b) {
   return a.x === b.x && a.y === b.y;
