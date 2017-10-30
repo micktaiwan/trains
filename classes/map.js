@@ -3,10 +3,9 @@
  */
 "use strict";
 
-let N = 1, E = 2, S = 4, W = 8; // any rail directions is the sum of simple directions
+let N = 1, E = 2, S = 4, W = 8; // any rail direction is the sum of simple directions
 
-
-class Tile {
+export class Tile {
 
   constructor(map, doc, id) {
     this.map = map;
@@ -18,7 +17,7 @@ class Tile {
 
 }
 
-class Map {
+export class Map {
   constructor() {
     this.tiles = [];
     this.trains = [];
@@ -46,8 +45,7 @@ class Map {
   updateTrain(id, doc) {
     //console.log('updateTrain', doc);
     let train = this.getTrainById(id);
-    if(train)
-      train.updateFromDB(doc);
+    if(train) train.updateFromDB(doc);
     else console.error('no train?');
     this.drawTrain(train);
   }
@@ -219,10 +217,3 @@ class Map {
   }
 
 }
-
-if(Meteor.isClient) {
-  window.Tile = Tile;
-  window.Map = Map;
-}
-TrainsApp.Tile = Tile;
-TrainsApp.Map = Map;

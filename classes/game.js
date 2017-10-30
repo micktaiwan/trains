@@ -3,7 +3,7 @@
  */
 "use strict";
 
-class Game {
+export class Game {
   constructor(map) {
     this.map = map;
     map.setGame(this);
@@ -49,9 +49,3 @@ class Game {
     this.gameStatus.set(status);
   }
 }
-
-Meteor.startup(function() {
-
-  TrainsApp.Game = Game;
-
-});

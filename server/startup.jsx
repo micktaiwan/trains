@@ -2,15 +2,16 @@
  * Created by mfaivremacon on 03/09/2015.
  */
 
-"use strict";
+import {Train} from '../classes/train';
+import {Map, Tile} from '../classes/map';
 
 // for each train in the map, move it
 Meteor.startup(function() {
 
-  class ServerTrain extends TrainsApp.Train {
+  class ServerTrain extends Train {
     constructor(train_id, trainObj) {
       //console.log('ServerTrain constructor', trainObj);
-      super(new TrainsApp.Map(trainObj.game_id), trainObj, train_id);
+      super(new Map(trainObj.game_id), trainObj, train_id);
       this.interval = 400;
       let that = this;
       this.observeChanges(that);
@@ -34,7 +35,7 @@ Meteor.startup(function() {
       Tiles.find({game_id: that.game_id}).observeChanges({
         added: function(id, doc) {
           //console.log('change: added', id, doc);
-          that.map.tiles.push(new TrainsApp.Tile(that.map, doc, id));
+          that.map.tiles.push(new Tile(that.map, doc, id));
         },
         removed: function(id) {
           let doc = Tiles.findOne(id);

@@ -12,7 +12,7 @@ let caseCopy = function(to, from) {
   to.y = from.y;
 };
 
-class Train {
+export class Train {
   constructor(map, doc, id) {
     //console.log('new train', id, doc, map);
     this.game_id = doc.game_id;
@@ -81,9 +81,3 @@ class Train {
   }
 
 }
-
-if(Meteor.isClient) {
-
-  window.Train = Train;
-}
-TrainsApp.Train = Train;

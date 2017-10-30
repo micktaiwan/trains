@@ -1,25 +1,26 @@
+import {MapGui} from '../../../classes/mapGui';
+import {Game} from '../../../classes/game';
+
 let game = null;
 let map = null;
 let handleTiles = null;
 let handleTrains = null;
 
-
 Template.game.onCreated(function() {
 
   map = new MapGui();
-  game = new TrainsApp.Game(map);
+  game = new Game(map);
 
 });
 
 Template.game.onRendered(function() {
 
   console.log('data', this.data);
-  $('.pup')
-    .popup({
-      inline: true,
-      hoverable: true,
-      position: 'bottom left'
-    });
+  $('.pup').popup({
+    inline: true,
+    hoverable: true,
+    position: 'bottom left'
+  });
 
   $('.dropdown').dropdown('restore default text');
 
