@@ -65,6 +65,7 @@ export class TileGui extends Tile {
 }
 
 export class MapGui extends Map {
+
   constructor(displayOptions) {
     super();
     displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
@@ -77,7 +78,11 @@ export class MapGui extends Map {
     this.mousePos = {x: -1, y: -1};
     this.pan = {x: 0, y: 0};
     this.skin = 'default';
+  }
 
+  static onContextMenu(e) {
+    e.preventDefault();
+    return false;
   }
 
   init(canvas_id, game_id) {
@@ -91,20 +96,16 @@ export class MapGui extends Map {
     this.canvas.addEventListener("mouseup", $.proxy(this.onMouseUp, this), false);
     this.canvas.addEventListener("mousemove", $.proxy(this.onMouseMove, this), false);
     this.canvas.addEventListener("mousewheel", $.proxy(this.onMouseWheel, this), false);
-    this.canvas.addEventListener("contextmenu", $.proxy(this.onContextMenu, this), false);
+    this.canvas.addEventListener("contextmenu", $.proxy(MapGui.onContextMenu, this), false);
     //this.canvas.addEventListener("dblclick", $.proxy(this.onMouseDblClick, this), false);
     //this.canvas.addEventListener("mouseout", $.proxy(this.onMouseOut, this), false);
     this.draw();
     console.log('map initialized');
+    // window.requestAnimationFrame(this.draw);
   }
 
   setGame(game) {
     this.game = game;
-  }
-
-  onContextMenu(e) {
-    e.preventDefault();
-    return false;
   }
 
   // create a new train
@@ -134,7 +135,7 @@ export class MapGui extends Map {
     else {
       console.error('updateTileWithId: oops');
       //this.tiles.push(new TileGui(this, doc, id));
-      //this.draw();
+      this.draw();
     }
   }
 
@@ -162,8 +163,6 @@ export class MapGui extends Map {
     let tile = this.getTile(pos);
     if(tile) {
       console.log('removing', tile);
-      //tile.erase();
-      //this.removeTile(tile._id);
       this.removeTileFromDb(tile._id);
     }
     else
@@ -196,7 +195,16 @@ export class MapGui extends Map {
     this.ctx.translate(-this.pan.x, -this.pan.y);
 
     this.drawMapBorder();
-    //console.log('draw');
+    // window.requestAnimationFrame(this.draw);
+  }
+
+  drawSection(posArray) {
+    if(!this.ctx) return;
+    const self = this;
+    posArray.forEach(function(pos) {
+      const t = self.getTile(pos);
+      if(t) t.draw({withBackground: true});
+    });
   }
 
   drawTrain(train) {
@@ -223,7 +231,7 @@ export class MapGui extends Map {
   removeTile(id) {
     console.log('removing tile', id, '...');
     super.removeTile(id);
-    //this.draw();
+    this.draw();
   }
 
   onMouseWheel(e) {

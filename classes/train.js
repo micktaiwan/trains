@@ -12,6 +12,7 @@ let caseCopy = function(to, from) {
 };
 
 export class Train {
+
   constructor(map, doc, id) {
     //console.log('new train', id, doc, map);
     this.game_id = doc.game_id;
@@ -20,6 +21,7 @@ export class Train {
     this.pos = doc.pos || {x: 1, y: 1};
     this.dir = doc.dir || {x: 1, y: 0};
     this.from = {x: -1, y: -1};
+    this.moveInterval = 1000; // will tell the gui when te next move will be done
   }
 
   getDBObj() {
@@ -34,9 +36,14 @@ export class Train {
     this.pos.x = this.pos.y = 1;
   }
 
-  move() {
-    while(!this.dirMove())
-      this.changeDir();
+  move(interval) {
+    this.moveInterval = interval;
+    console.log('moveInterval', this.moveInterval);
+    // const backup = {x: this.dir.x, y: this.dir.y};
+    while(!this.dirMove()) {
+      // caseCopy(this.dir, backup);
+      this.changeDir(); // FIXME P0: could choose a dir that is not valid
+    }
   }
 
   // move in the current direction
@@ -45,7 +52,7 @@ export class Train {
     tmp.x += this.dir.x;
     tmp.y += this.dir.y;
     //console.log('tmp', tmp);
-    if(caseEqual(this.from, tmp) || !this.map.getTile(tmp)) return false;
+    if(!this.map.getTile(tmp)) return false; // caseEqual(this.from, tmp) ||
     caseCopy(this.from, this.pos);
     caseCopy(this.pos, tmp);
     //console.log('after move', this.pos);
@@ -53,9 +60,9 @@ export class Train {
   }
 
   changeDir() {
-    let arr = [-1, 1];
-    let r = Math.floor(Math.random() * 2);
-    let rand = arr[r];
+    const arr = [-1, 1];
+    const r = Math.floor(Math.random() * 2);
+    const rand = arr[r];
     if(this.dir.x !== 0) {
       this.dir.x = 0;
       this.dir.y = rand;

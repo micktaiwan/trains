@@ -5,6 +5,7 @@
 import {Train} from './train';
 
 export class TrainGui extends Train {
+
   constructor(map, doc, id, displayOptions) {
     super(map, doc, id);
     this.ctx = map.ctx;
@@ -16,6 +17,11 @@ export class TrainGui extends Train {
     this.moveProgression = 0; // % between from case to to case
     this.moveSpeed = 0; // % steps
     this.moveAcc = 10;
+    this.currentDrawStep = 0;
+    this.moveTotalSteps = 10;
+    this.currentDrawStep = 0;
+    this.animateWait = 100;
+    this.animating = false;
   }
 
   /*
@@ -25,47 +31,57 @@ export class TrainGui extends Train {
    }
    */
 
-  // animate the move
-  // will cut the animation into this.moveProgress steps
-  draw() {
+  doDraw() {
+    // console.log('draw', this.currentDrawStep);
     // the pos is the destination
+    this.map.drawSection([this.pos, this.from]);
+    // this.map.draw();
     this.ctx.fillStyle = "#aaf";
     let w = this.map.displayOptions.tileWidth;
     const margin = w * this.displayOptions.margin;
-    this.ctx.fillRect(this.pos.x * w + margin, this.pos.y * w + margin, w - margin * 2, w - margin * 2);
 
-    /*      let half = 0.5;
-          let center = {x: this.pos.x + half, y: this.pos.y + half};
-          let tip = {x: (center.x + this.dir.x * 0.7) * w, y: (center.y + this.dir.y * 0.7 ) * w};
+    let x, y;
 
-          let p1, p2;
-          if(this.dir.x == 1) {
-            p1 = {x: (this.pos.x + 1) * w, y: this.pos.y * w};
-            p2 = {x: (this.pos.x + 1) * w, y: (this.pos.y + 1) * w}
-          }
-          else if(this.dir.x == -1) {
-            p1 = {x: (this.pos.x) * w, y: this.pos.y * w};
-            p2 = {x: (this.pos.x) * w, y: (this.pos.y + 1) * w}
-          }
-          else if(this.dir.y == 1) {
-            p1 = {x: (this.pos.x) * w, y: (this.pos.y + 1) * w};
-            p2 = {x: (this.pos.x + 1) * w, y: (this.pos.y + 1) * w}
-          }
-          else if(this.dir.y == -1) {
-            p1 = {x: (this.pos.x) * w, y: this.pos.y * w};
-            p2 = {x: (this.pos.x + 1) * w, y: (this.pos.y) * w}
-          }
+    x = this.pos.x * w + margin;
+    if(this.dir.x === 1)
+      x = this.pos.x * w - (this.moveTotalSteps - this.currentDrawStep) * w / this.moveTotalSteps + margin;
+    else if(this.dir.x === -1)
+      x = (this.pos.x + 1) * w - (this.currentDrawStep) * w / this.moveTotalSteps + margin;
 
-          var path = new Path2D();
-          /!*this.ctx.beginPath();*!/
-          path.moveTo(p1.x, p1.y);
-          path.lineTo(tip.x, tip.y);
-          path.lineTo(p2.x, p2.y);
-          this.ctx.fill(path);
-          */
+    y = this.pos.y * w + margin;
+    if(this.dir.y === 1)
+      y = this.pos.y * w - (this.moveTotalSteps - this.currentDrawStep) * w / this.moveTotalSteps + margin;
+    else if(this.dir.y === -1)
+      y = (this.pos.y + 1) * w - (this.currentDrawStep) * w / this.moveTotalSteps + margin;
 
-    //this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w+10);
-    //this.move();
+    this.ctx.fillRect(x, y, w - margin * 2, w - margin * 2);
+  }
+
+  animate() {
+    this.animating = true;
+    // console.log('animate', this.currentDrawStep, this.animateWait);
+    this.doDraw();
+    const self = this;
+    this.currentDrawStep += 1;
+    if(this.currentDrawStep < this.moveTotalSteps) {
+      Meteor.setTimeout(function() {
+        self.animate();
+      }, this.animateWait);
+    }
+    else {
+      this.currentDrawStep = 0;
+      this.animating = false;
+    }
+  }
+
+  // animate the move
+  // will cut the animation into this.moveInterval / this.moveTotalSteps steps
+  draw() {
+    // this.moveTotalSteps = 10;
+    this.animateWait = this.moveInterval / this.moveTotalSteps;
+    console.log(this.moveInterval, this.moveTotalSteps, this.animateWait);
+    if(!this.animating) this.animate();
+    else this.doDraw();
   }
 
 }
