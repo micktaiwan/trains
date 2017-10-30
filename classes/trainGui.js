@@ -10,7 +10,7 @@ export class TrainGui extends Train {
     this.ctx = map.ctx;
     displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
     this.displayOptions = {
-      margin: displayOptions.margin || 8
+      margin: displayOptions.margin || 0.15 // %
     };
     //this.img = new Image();
   }
@@ -25,7 +25,8 @@ export class TrainGui extends Train {
   draw() {
     this.ctx.fillStyle = "#aaf";
     let w = this.map.displayOptions.tileWidth;
-    this.ctx.fillRect(this.pos.x * w + this.displayOptions.margin, this.pos.y * w + this.displayOptions.margin, w - this.displayOptions.margin * 2, w - this.displayOptions.margin * 2);
+    const margin = w * this.displayOptions.margin;
+    this.ctx.fillRect(this.pos.x * w + margin, this.pos.y * w + margin, w - margin * 2, w - margin * 2);
 
     /*      let half = 0.5;
           let center = {x: this.pos.x + half, y: this.pos.y + half};

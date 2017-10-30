@@ -35,6 +35,7 @@ const removeTrain = function(train_id, doc) {
 // for each train in the map, move it
 Meteor.startup(function() {
 
+  // server observes for new trains
   Trains.find().observeChanges({
     added: function(train_id, doc) {
       //console.log('server: added', train_id, doc);
@@ -47,7 +48,7 @@ Meteor.startup(function() {
     }
   });
 
-  // data seed
+  // tile types data seed
   if(TileTypes.find({}).count() === 0) {
     TileTypes.insert({
       name: 'Rails',
