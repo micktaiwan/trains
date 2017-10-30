@@ -1,15 +1,16 @@
 import {Train} from '../classes/train';
 import {Map, Tile} from '../classes/map';
 
+
+// a server train is a train with a map
+// a map automatically subscribe to its tiles so a train's map with always be up to date
 export class ServerTrain extends Train {
 
   constructor(train_id, trainObj) {
     //console.log('ServerTrain constructor', trainObj);
-    super(new Map(), trainObj, train_id);
+    super(new Map(trainObj.game_id), trainObj, train_id);
     this.interval = 400;
     let that = this;
-    this.observeChanges(that);
-
     this.timerHandle = Meteor.setInterval(function() {
       that.onTime(that);
     }, this.interval);
@@ -25,19 +26,5 @@ export class ServerTrain extends Train {
     Meteor.clearInterval(this.timerHandle);
   }
 
-  observeChanges(that) {
-    Tiles.find({game_id: that.game_id}).observeChanges({
-      added: function(id, doc) {
-        //console.log('change: added', id, doc);
-        that.map.tiles.push(new Tile(that.map, doc, id));
-      },
-      removed: function(id) {
-        let doc = Tiles.findOne(id);
-        //console.log('change: removed', id);
-        that.map.removeTile(id);
-      }
-
-    });
-  }
 
 }

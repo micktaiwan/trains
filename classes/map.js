@@ -16,19 +16,23 @@ export class Tile {
 
 }
 
+// a map is a set of tiles belonging to a game_id
 export class Map {
 
-  constructor() {
+  constructor(game_id) {
+    console.log('Map#constructor: game_id', game_id);
+    this._id = game_id;
     this.tiles = [];
     this.trains = [];
     this.stations = [];
     this.currentTileSelection = 'Rails';
     this.message = new ReactiveVar('');
+    this.observeChanges();
   }
 
-  init(dbid) {
-    console.log('Map#init: dbid', dbid);
-    this._id = dbid;
+  init(game_id) {
+    console.log('Map#init: game_id', game_id);
+    this._id = game_id;
   }
 
   setTileSelection(tileName) {
@@ -212,6 +216,23 @@ export class Map {
       if(this.trains[i]._id === id) return this.trains[i];
     }
     return null;
+  }
+
+  // subscribe to map (or "game") tiles
+  observeChanges() {
+    const self = this;
+    Tiles.find({game_id: self._id}).observeChanges({
+      added: function(id, doc) {
+        //console.log('change: added', id, doc);
+        self.tiles.push(new Tile(self, doc, id));
+      },
+      removed: function(id) {
+        let doc = Tiles.findOne(id);
+        //console.log('change: removed', id);
+        self.removeTile(id);
+      }
+
+    });
   }
 
 }
