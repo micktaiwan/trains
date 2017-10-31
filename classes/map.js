@@ -51,14 +51,10 @@ export class Map {
     let train = this.getTrainById(id);
     if(train) train.updateFromDB(doc);
     else console.error('no train?');
-    this.drawTrain(train);
+    train.draw();
   }
 
   draw() {
-    console.error('method should be overridded');
-  }
-
-  drawTrain(train) {
     console.error('method should be overridded');
   }
 
@@ -119,7 +115,7 @@ export class Map {
     let tile = this.getTile(newPos);
     if(tile) {
       rail += dir;
-      if(!tile.type) tile.type = {rails: 0}; // just to migrate old maps, TODO: migrate all rails once for all at map loading
+      // if(!tile.type) tile.type = {rails: 0}; // just to migrate old maps, TODO: migrate all rails once for all at map loading
       if(operation === 'add')
         tile.type.rails |= oppDir;
       if(operation === 'sub')

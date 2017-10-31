@@ -18,7 +18,7 @@ export class TrainGui extends Train {
     this.moveSpeed = 0; // % steps
     this.moveAcc = 10;
     this.currentDrawStep = 0;
-    this.moveTotalSteps = 10;
+    this.moveTotalSteps = 20;
     this.currentDrawStep = 0;
     this.animateWait = 100;
     this.animating = false;
@@ -34,6 +34,7 @@ export class TrainGui extends Train {
   doDraw() {
     // console.log('draw', this.currentDrawStep);
     // the pos is the destination
+    this.map.dotranslate();
     this.map.drawSection([this.pos, this.from]);
     // this.map.draw();
     this.ctx.fillStyle = "#aaf";
@@ -55,6 +56,7 @@ export class TrainGui extends Train {
       y = (this.pos.y + 1) * w - (this.currentDrawStep) * w / this.moveTotalSteps + margin;
 
     this.ctx.fillRect(x, y, w - margin * 2, w - margin * 2);
+    this.map.untranslate();
   }
 
   animate() {
@@ -79,7 +81,7 @@ export class TrainGui extends Train {
   draw() {
     // this.moveTotalSteps = 10;
     this.animateWait = this.moveInterval / this.moveTotalSteps;
-    console.log(this.moveInterval, this.moveTotalSteps, this.animateWait);
+    // console.log(this.moveInterval, this.moveTotalSteps, this.animateWait);
     if(!this.animating) this.animate();
     else this.doDraw();
   }

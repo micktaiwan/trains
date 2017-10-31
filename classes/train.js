@@ -21,7 +21,7 @@ export class Train {
     this.pos = doc.pos || {x: 1, y: 1};
     this.dir = doc.dir || {x: 1, y: 0};
     this.from = {x: -1, y: -1};
-    this.moveInterval = 1000; // will tell the gui when te next move will be done
+    this.moveInterval = doc.interval; // will tell the gui when te next move will be done
   }
 
   getDBObj() {
@@ -36,13 +36,11 @@ export class Train {
     this.pos.x = this.pos.y = 1;
   }
 
-  move(interval) {
-    this.moveInterval = interval;
-    console.log('moveInterval', this.moveInterval);
+  move() {
     // const backup = {x: this.dir.x, y: this.dir.y};
     while(!this.dirMove()) {
       // caseCopy(this.dir, backup);
-      this.changeDir(); // FIXME P0: could choose a dir that is not valid
+      this.changeDir(); // FIXME P3: could choose a dir that is not valid
     }
   }
 
@@ -80,6 +78,7 @@ export class Train {
       this.pos = doc.pos;
     }
     if(doc.dir) this.dir = doc.dir;
+    if(doc.interval) this.moveInterval = doc.interval;
   }
 
 }

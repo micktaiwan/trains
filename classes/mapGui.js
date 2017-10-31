@@ -162,7 +162,7 @@ export class MapGui extends Map {
     let pos = this.getMouseTileCoords(this.mouseCoords(event));
     let tile = this.getTile(pos);
     if(tile) {
-      console.log('removing', tile);
+      // console.log('removing', tile);
       this.removeTileFromDb(tile._id);
     }
     else
@@ -180,19 +180,27 @@ export class MapGui extends Map {
     this.draw();
   }
 
+  dotranslate() {
+    this.ctx.translate(this.pan.x, this.pan.y);
+  }
+
+  untranslate() {
+    this.ctx.translate(-this.pan.x, -this.pan.y);
+  }
+
   draw() {
     if(!this.ctx) return;
     this.ctx.fillStyle = 'black';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    this.ctx.translate(this.pan.x, this.pan.y);
-    for(let i = 0; i < this.tiles.length; i++) {
+    this.dotranslate();
+    for(let i = 0; i < this.tiles.length; i++)
       this.tiles[i].draw();
-    }
-    for(let i = 0; i < this.trains.length; i++) {
+    this.untranslate();
+
+    for(let i = 0; i < this.trains.length; i++)
       this.trains[i].draw();
-    }
-    this.ctx.translate(-this.pan.x, -this.pan.y);
+
 
     this.drawMapBorder();
     // window.requestAnimationFrame(this.draw);
@@ -207,18 +215,6 @@ export class MapGui extends Map {
     });
   }
 
-  drawTrain(train) {
-    //console.log('drawTrain', train);
-    // redraw previous tile
-    let tile = this.getTile(train.from);
-    this.ctx.translate(this.pan.x, this.pan.y);
-    if(tile) tile.draw({withBackground: true});
-    // draw train
-    train.draw();
-    this.ctx.translate(-this.pan.x, -this.pan.y);
-  }
-
-
   drawMouse(event) {
     if(!this.game.canModifyMap()) return;
     let c = this.getMouseTileCoords(this.mouseCoords(event), true);
@@ -229,7 +225,7 @@ export class MapGui extends Map {
 
   // we have been notified that another client removed this tile
   removeTile(id) {
-    console.log('removing tile', id, '...');
+    // console.log('removing tile', id, '...');
     super.removeTile(id);
     this.draw();
   }
