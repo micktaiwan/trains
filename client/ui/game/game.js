@@ -97,6 +97,7 @@ Template.game.helpers({
   },
 
   trainSpeed() {
+    // FIXME P0: the train speed is server side !
     const caseLengthInMeters = Helpers.caseRealMeters;
     const timeInSeconds = Helpers.moveInterval / 1000;
     return Math.round((caseLengthInMeters / 1000) / (timeInSeconds / 3600));
@@ -120,7 +121,18 @@ Template.game.events({
 
   'click .open-join-modal': function() {
     $('.teams-modal').show();
+  },
+
+  'click .js-add-speed'() {
+    // FIXME P0: the train speed is server side !
+    console.log('test');
+    Helpers.moveInterval = 400;
+  },
+
+  'click .js-remove-speed'() {
+    Helpers.moveInterval = 1000;
   }
+
 
 });
 
