@@ -2,7 +2,7 @@
  * Created by mfaivremacon on 03/09/2015.
  */
 
-import {ServerTrain} from '../classes/server';
+import {ServerTrain} from '../classes/serverTrain';
 
 const trains = [];
 

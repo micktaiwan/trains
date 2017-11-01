@@ -8,8 +8,8 @@ const Interval = 1000;
 export class ServerTrain extends Train {
 
   constructor(train_id, trainObj) {
-    //console.log('ServerTrain constructor', trainObj);
-    super(new Map(trainObj.game_id), trainObj, train_id);
+    console.log('ServerTrain constructor', trainObj);
+    super(new Map(trainObj.game_id, true), trainObj, train_id);
     this.interval = Interval;
     const self = this;
     this.timerHandle = Meteor.setInterval(function() {
@@ -19,8 +19,7 @@ export class ServerTrain extends Train {
 
   static onTime(train) {
     // console.log('onTime', that.map._id, that.pos, that.dir, that.map.tileCount());
-    train.move();
-    Trains.update({_id: train._id}, {$set: {pos: train.pos, dir: train.dir, interval: Interval}});
+    if(train.move()) Trains.update({_id: train._id}, {$set: {pos: train.pos, dir: train.dir, interval: Interval}});
   }
 
   stop() {

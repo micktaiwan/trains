@@ -40,7 +40,7 @@ export class TileGui extends Tile {
     //console.log('drawing rail');
     let w = this.map.displayOptions.tileWidth;
     if(this.map.skin === 'cube' || !this.type) {
-      this.ctx.fillStyle = "#333";
+      this.ctx.fillStyle = "#666";
       this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
     }
     else {
@@ -66,8 +66,8 @@ export class TileGui extends Tile {
 
 export class MapGui extends Map {
 
-  constructor(displayOptions) {
-    super();
+  constructor(gameId, displayOptions) {
+    super(gameId);
     displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
     this.displayOptions = {
       tileWidth: displayOptions.tileWidth || defaultTileSize
@@ -88,7 +88,7 @@ export class MapGui extends Map {
   init(canvas_id, game_id) {
     console.log('init', game_id);
     super.init(game_id);
-    this.game.canModifyMap(); // just to trigger reactivity and  depending helpers
+    this.game.canModifyMap(); // just to trigger reactivity and depending helpers
     this.canvas = $(canvas_id).get(0);
     this.ctx = this.canvas.getContext("2d");
     // listen to mouse
@@ -118,14 +118,13 @@ export class MapGui extends Map {
 
   // coming from db
   setTileWithId(id, doc) {
-    let tile = new TileGui(this, doc, id);
+    const tile = new TileGui(this, doc, id);
     super.setTileWithId(tile);
-    this.draw();
   }
 
   // coming from db
   updateTileWithId(id, doc) {
-    let c = this.getTileById(id);
+    const c = this.getTileById(id);
     //console.log('setTileWithId', id, doc, 'found', c);
     if(c) { // if the client already have it
       c._id = id; // make sure the object have a DB id so we can remove it later
@@ -138,18 +137,24 @@ export class MapGui extends Map {
       this.draw();
     }
   }
-
   // coming from db
   addTrain(id, doc) {
-    let pos = doc.pos;
-    let c = this.getTrain(pos);
+    const pos = doc.pos;
+    const c = this.getTrain(pos);
     //console.log('addTrain', id, doc, 'found', c);
     if(c) // if the client already have it
       c.id = id; // make sure the object have a DB id so we can remove it later
     else {
       this.trains.push(new TrainGui(this, doc, id));
-      this.draw();
     }
+  }
+
+  updateTrain(id, doc) {
+    //console.log('updateTrain', doc);
+    let train = this.getTrainById(id);
+    if(!train) return console.error('updateTrain: no train');
+    train.updateFromDB(doc);
+    train.draw();
   }
 
   setTileFromEvent(event) {
@@ -159,14 +164,12 @@ export class MapGui extends Map {
 
   removeTileFromEvent(event) {
     if(!this.game.canModifyMap()) return;
-    let pos = this.getMouseTileCoords(this.mouseCoords(event));
-    let tile = this.getTile(pos);
+    const pos = this.getMouseTileCoords(this.mouseCoords(event));
+    const tile = this.getTile(pos);
     if(tile) {
       // console.log('removing', tile);
       this.removeTileFromDb(tile._id);
     }
-    else
-      console.log('no tile', pos);
   }
 
   resetMap() {
@@ -201,7 +204,6 @@ export class MapGui extends Map {
     for(let i = 0; i < this.trains.length; i++)
       this.trains[i].draw();
 
-
     this.drawMapBorder();
     // window.requestAnimationFrame(this.draw);
   }
@@ -217,7 +219,7 @@ export class MapGui extends Map {
 
   drawMouse(event) {
     if(!this.game.canModifyMap()) return;
-    let c = this.getMouseTileCoords(this.mouseCoords(event), true);
+    const c = this.getMouseTileCoords(this.mouseCoords(event), true);
     //this.ctx.fillStyle = 'white';
     //this.ctx.fillText(c.x + ' ' + c.y, 20, 20);
     this.drawMouseTile(c);
@@ -232,9 +234,9 @@ export class MapGui extends Map {
 
   onMouseWheel(e) {
     e.preventDefault();
-    let oldPos = this.relMouseCoords(e);
+    const oldPos = this.relMouseCoords(e);
 
-    const factor = Math.round((this.displayOptions.tileWidth / (e.wheelDelta / 60)));
+    const factor = Math.round((this.displayOptions.tileWidth / (e.wheelDelta / 30)));
     this.displayOptions.tileWidth += factor;
     if(this.displayOptions.tileWidth < 1)
       this.displayOptions.tileWidth = 1;
@@ -242,7 +244,7 @@ export class MapGui extends Map {
       this.displayOptions.tileWidth = 200;
 
     // zoom depends on mouse position
-    let newPos = this.relMouseCoords(e);
+    const newPos = this.relMouseCoords(e);
     this.pan.x += (newPos.x - oldPos.x) / (defaultTileSize / this.displayOptions.tileWidth);
     this.pan.y += (newPos.y - oldPos.y) / (defaultTileSize / this.displayOptions.tileWidth);
 
@@ -254,9 +256,6 @@ export class MapGui extends Map {
     this.mouseOldPos = this.mousePos;
     this.mousePos = this.mouseCoords(e);
     this.mouseMovement = {x: this.mousePos.x - this.mouseOldPos.x, y: this.mousePos.y - this.mouseOldPos.y};
-    this.draw();
-
-    if(!e.ctrlKey) this.drawMouse(e);
     if(this.mouseIsDown) {
       if(e.ctrlKey) { // pan map
         this.pan.x += this.mouseMovement.x;
@@ -273,6 +272,8 @@ export class MapGui extends Map {
           this.removeTileFromEvent(e);
       }
     }
+    this.draw();
+    if(!e.ctrlKey) this.drawMouse(e);
   }
 
   onMouseDown(e) {
@@ -289,6 +290,7 @@ export class MapGui extends Map {
     }
     this.button = e.which;
     this.draw();
+    this.drawMouse(e);
     this.mouseIsDown = true;
     document.body.style.cursor = 'none';
   }

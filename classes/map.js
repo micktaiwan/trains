@@ -19,15 +19,18 @@ export class Tile {
 // a map is a set of tiles belonging to a game_id
 export class Map {
 
-  constructor(game_id) {
-    console.log('Map#constructor: game_id', game_id);
+  // a map can observe the tiles itself
+  // but if the case will create simple Tiles, not GuiTiles
+  // useful for server maps used in serverTrains
+  constructor(game_id, observeChanges) {
+    console.log('Map#constructor: game_id', game_id, observeChanges);
     this._id = game_id;
     this.tiles = [];
     this.trains = [];
     this.stations = [];
     this.currentTileSelection = 'Rails';
     this.message = new ReactiveVar('');
-    this.observeChanges();
+    if(observeChanges) this.observeChanges();
   }
 
   init(game_id) {
@@ -44,14 +47,6 @@ export class Map {
     this.trains.length = 0;
     this.stations.length = 0;
     Meteor.call('mapReset', this._id);
-  }
-
-  updateTrain(id, doc) {
-    //console.log('updateTrain', doc);
-    let train = this.getTrainById(id);
-    if(train) train.updateFromDB(doc);
-    else console.error('no train?');
-    train.draw();
   }
 
   draw() {
@@ -138,24 +133,22 @@ export class Map {
     this.message.set(msg);
   }
 
-  saveTileToDB(pos) {
+  saveTileToDB(pos, type) {
     if(this.getTile(pos)) return false;
 
-    let type;
-    if(this.currentTileSelection === 'Rails') {
-      let rail = this.affectNeighbors(pos, 'add');
-      if(rail === 0) {
-        return this.setMessage("<strong>You must place a rail near a station or another rail<strong>");
+    if(!type) {
+      if(this.currentTileSelection === 'Rails') {
+        let rail = this.affectNeighbors(pos, 'add');
+        if(rail === 0) return this.setMessage("<strong>You must place a rail near a station or another rail<strong>");
+        this.setMessage("");
+        type = {name: 'rail', rails: rail};
       }
-      this.setMessage("");
-      type = {name: 'rail', rails: rail};
+      else if(this.currentTileSelection === 'Station') {
+        type = {name: 'station', station: {team: 'red'}};
+        this.setMessage("");
+      }
+      else throw new Meteor.Error('unknown tile selection ' + this.currentTileSelection);
     }
-    else if(this.currentTileSelection === 'Station') {
-      type = {name: 'station', station: {team: 'red'}};
-      this.setMessage("");
-    }
-    else throw new Meteor.Error('unknown tile selection ' + this.currentTileSelection);
-
     Meteor.call('mapSet', pos, type, this._id);
     return true;
 
@@ -176,7 +169,7 @@ export class Map {
   }
 
   setTileWithId(tile) {
-    //console.log(tile);
+    // console.log(tile);
     this.tiles.push(tile);
     if(tile.type.name === 'station')
       this.stations.push(tile);
@@ -219,16 +212,27 @@ export class Map {
     const self = this;
     Tiles.find({game_id: self._id}).observeChanges({
       added: function(id, doc) {
-        //console.log('change: added', id, doc);
+        // console.log('change: added', id, doc);
         self.tiles.push(new Tile(self, doc, id));
       },
       removed: function(id) {
-        let doc = Tiles.findOne(id);
         //console.log('change: removed', id);
         self.removeTile(id);
       }
-
     });
+  }
+
+  addRandomStation() {
+    if(0 !== Math.floor(Math.random() * 30)) return;
+    const x = Math.floor(Math.random() * 30);
+    const y = Math.floor(Math.random() * 30);
+    console.log('adding station', x, y);
+
+    this.saveTileToDB({x: x, y: y}, {name: 'station', station: {team: null}});
+  }
+
+  addRandomPassenger() {
+
   }
 
 }

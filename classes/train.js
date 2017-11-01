@@ -1,15 +1,7 @@
 /**
  * Created by mfaivremacon on 01/09/2015.
  */
-
-let caseEqual = function(a, b) {
-  return a.x === b.x && a.y === b.y;
-};
-
-let caseCopy = function(to, from) {
-  to.x = from.x;
-  to.y = from.y;
-};
+import {Helpers} from './helpers';
 
 export class Train {
 
@@ -22,6 +14,7 @@ export class Train {
     this.dir = doc.dir || {x: 1, y: 0};
     this.from = {x: -1, y: -1};
     this.moveInterval = doc.interval; // will tell the gui when te next move will be done
+    this.hasMoved = false;
   }
 
   getDBObj() {
@@ -38,23 +31,31 @@ export class Train {
 
   move() {
     // const backup = {x: this.dir.x, y: this.dir.y};
-    while(!this.dirMove()) {
+    for(let i = 0; i < 1; i++) {
+      if(this.dirMove()) {
+        this.hasMoved = true;
+        return true;
+      }
       // caseCopy(this.dir, backup);
       this.changeDir(); // FIXME P3: could choose a dir that is not valid
     }
+    this.hasMoved = false;
+    return false;
   }
 
   // move in the current direction
   dirMove() {
-    let tmp = {x: this.pos.x, y: this.pos.y};
-    tmp.x += this.dir.x;
-    tmp.y += this.dir.y;
-    //console.log('tmp', tmp);
-    if(!this.map.getTile(tmp)) return false; // caseEqual(this.from, tmp) ||
-    caseCopy(this.from, this.pos);
-    caseCopy(this.pos, tmp);
-    //console.log('after move', this.pos);
+    const dest = this.getDest(this.pos);
+    if(!this.map.getTile(dest)) console.log('no dest case');
+    if(Helpers.caseEqual(this.from, dest) || !this.map.getTile(dest)) return false;
+    Helpers.caseCopy(this.from, this.pos);
+    Helpers.caseCopy(this.pos, dest);
     return true;
+  }
+
+  // return pos + dir case
+  getDest(pos) {
+    return {x: pos.x + this.dir.x, y: pos.y + this.dir.y};
   }
 
   changeDir() {
@@ -74,8 +75,9 @@ export class Train {
 
   updateFromDB(doc) {
     if(doc.pos) {
-      caseCopy(this.from, this.pos);
+      Helpers.caseCopy(this.from, this.pos);
       this.pos = doc.pos;
+      this.hasMoved = true;
     }
     if(doc.dir) this.dir = doc.dir;
     if(doc.interval) this.moveInterval = doc.interval;

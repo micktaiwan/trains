@@ -8,7 +8,8 @@ let handleTrains = null;
 
 Template.game.onCreated(function() {
 
-  map = new MapGui();
+  // console.log('Template.game.onCreated data', this.data);
+  map = new MapGui(this.data._id);
   game = new Game(map);
 
 });
@@ -25,37 +26,37 @@ Template.game.onRendered(function() {
   $('.dropdown').dropdown('restore default text');
 
   map.init('canvas', this.data._id);
-
+  // subscribe to map (or "game") tiles
   if(handleTiles) handleTiles.stop();
   handleTiles = Tiles.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
-      //console.log('change: added', id, doc);
+      // console.log('tiles change: added', id, doc);
       map.setTileWithId(id, doc);
     },
     changed: function(id, doc) {
-      //console.log('change: changed', id, doc);
+      // console.log('tiles change: changed', id, doc);
       map.updateTileWithId(id, doc);
     },
     removed: function(id) {
-      let doc = Tiles.findOne(id);
-      //console.log('change: removed', id);
+      // console.log('tiles change: removed', id);
       map.removeTile(id);
     }
+
   });
 
   if(handleTrains) handleTrains.stop();
   handleTrains = Trains.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
-      //console.log('change: added', id);
+      // console.log('trains change: added', id);
       map.addTrain(id, doc);
     },
     changed: function(id, doc) {
-      //console.log('change: changed', id, doc);
+      // console.log('trains change: changed', id, doc);
       map.updateTrain(id, doc);
     },
     removed: function(id) {
       let doc = Tiles.findOne(id);
-      //console.log('change: removed', id);
+      // console.log('trains change: removed', id);
       map.removeTrain(id);
     }
   });
@@ -64,6 +65,7 @@ Template.game.onRendered(function() {
 
 Template.game.onDestroyed(function() {
   if(handleTiles) handleTiles.stop();
+  if(handleTrains) handleTrains.stop();
 });
 
 Template.game.helpers({

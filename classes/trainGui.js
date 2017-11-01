@@ -3,10 +3,11 @@
  */
 
 import {Train} from './train';
+import {Helpers} from './helpers';
 
 export class TrainGui extends Train {
 
-  constructor(map, doc, id, displayOptions) {
+constructor(map, doc, id, displayOptions) {
     super(map, doc, id);
     this.ctx = map.ctx;
     displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
@@ -79,10 +80,19 @@ export class TrainGui extends Train {
   // animate the move
   // will cut the animation into this.moveInterval / this.moveTotalSteps steps
   draw() {
-    // this.moveTotalSteps = 10;
     this.animateWait = this.moveInterval / this.moveTotalSteps;
     // console.log(this.moveInterval, this.moveTotalSteps, this.animateWait);
-    if(!this.animating) this.animate();
+    if(!this.animating) {
+      if(this.hasMoved) {
+        console.log('moved');
+        this.hasMoved = false;
+        this.animate();
+      }
+      else {
+        this.doDraw();
+        console.log('not moved');
+      }
+    }
     else this.doDraw();
   }
 

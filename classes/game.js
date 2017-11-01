@@ -3,6 +3,7 @@
  */
 
 export class Game {
+
   constructor(map) {
     this.map = map;
     map.setGame(this);
@@ -11,6 +12,18 @@ export class Game {
     this._canModifyMapDep = new Tracker.Dependency();
     this.gameStatus = new ReactiveVar('');
     this.setStatus();
+    // launch clock
+    const self = this;
+    this.clock = new Date();
+    // this.clockHandle = Meteor.setInterval(function() {
+    //   self.onTime();
+    // }, 1000);
+  }
+
+  onTime() {
+    console.log('game on time');
+    // this.map.addRandomStation();
+    // this.map.addRandomPassenger();
   }
 
   canTrainStart() {
@@ -47,4 +60,5 @@ export class Game {
     if(status === '') status = 'Ready<br/>';
     this.gameStatus.set(status);
   }
+
 }
