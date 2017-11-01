@@ -63,16 +63,17 @@ constructor(map, doc, id, displayOptions) {
   animate() {
     this.animating = true;
     // console.log('animate', this.currentDrawStep, this.animateWait);
+    this.currentDrawStep += 1;
     this.doDraw();
     const self = this;
-    this.currentDrawStep += 1;
     if(this.currentDrawStep < this.moveTotalSteps) {
       Meteor.setTimeout(function() {
         self.animate();
       }, this.animateWait);
     }
     else {
-      this.currentDrawStep = 0;
+      this.currentDrawStep = this.moveTotalSteps;
+      this.doDraw();
       this.animating = false;
     }
   }
@@ -84,16 +85,12 @@ constructor(map, doc, id, displayOptions) {
     // console.log(this.moveInterval, this.moveTotalSteps, this.animateWait);
     if(!this.animating) {
       if(this.hasMoved) {
-        console.log('moved');
         this.hasMoved = false;
+        this.currentDrawStep = 0;
         this.animate();
       }
-      else {
-        this.doDraw();
-        console.log('not moved');
-      }
     }
-    else this.doDraw();
+    this.doDraw();
   }
 
 }

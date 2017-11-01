@@ -31,7 +31,7 @@ export class Train {
 
   move() {
     // const backup = {x: this.dir.x, y: this.dir.y};
-    for(let i = 0; i < 1; i++) {
+    for(let i = 0; i < 10; i++) { // FIXME P1: just because changeDir could return a bad dir
       if(this.dirMove()) {
         this.hasMoved = true;
         return true;
@@ -46,7 +46,6 @@ export class Train {
   // move in the current direction
   dirMove() {
     const dest = this.getDest(this.pos);
-    if(!this.map.getTile(dest)) console.log('no dest case');
     if(Helpers.caseEqual(this.from, dest) || !this.map.getTile(dest)) return false;
     Helpers.caseCopy(this.from, this.pos);
     Helpers.caseCopy(this.pos, dest);
