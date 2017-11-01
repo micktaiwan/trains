@@ -1,5 +1,6 @@
 import {MapGui} from '../../../classes/mapGui';
 import {Game} from '../../../classes/game';
+import {Helpers} from '../../../classes/helpers';
 
 let game = null;
 let map = null;
@@ -93,6 +94,12 @@ Template.game.helpers({
 
   mapMessage: function() {
     return map.message.get();
+  },
+
+  trainSpeed() {
+    const caseLengthInMeters = Helpers.caseRealMeters;
+    const timeInSeconds = Helpers.moveInterval / 1000;
+    return Math.round((caseLengthInMeters / 1000) / (timeInSeconds / 3600));
   }
 
 });

@@ -3,25 +3,21 @@
  */
 
 import {Train} from './train';
-import {Helpers} from './helpers';
 
 export class TrainGui extends Train {
 
-constructor(map, doc, id, displayOptions) {
+  constructor(map, doc, id, displayOptions) {
     super(map, doc, id);
     this.ctx = map.ctx;
     displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
     this.displayOptions = {
       margin: displayOptions.margin || 0.15 // %
     };
-    //this.img = new Image();
-    this.moveProgression = 0; // % between from case to to case
-    this.moveSpeed = 0; // % steps
-    this.moveAcc = 10;
-    this.currentDrawStep = 0;
-    this.moveTotalSteps = 20;
-    this.currentDrawStep = 0;
-    this.animateWait = 100;
+    // this.img = new Image();
+    // this.moveSpeed = 0; // % steps
+    // this.moveAcc = 10;
+    this.currentDrawStep = this.moveTotalSteps = 20; // default values that are calculated later
+    this.animateWait = 100; // constant: draw every animateWait ms
     this.animating = false;
   }
 
@@ -62,7 +58,6 @@ constructor(map, doc, id, displayOptions) {
 
   animate() {
     this.animating = true;
-    // console.log('animate', this.currentDrawStep, this.animateWait);
     this.currentDrawStep += 1;
     this.doDraw();
     const self = this;
@@ -79,9 +74,9 @@ constructor(map, doc, id, displayOptions) {
   }
 
   // animate the move
-  // will cut the animation into this.moveInterval / this.moveTotalSteps steps
+  // will cut the animation into moveTotalSteps steps
   draw() {
-    this.animateWait = this.moveInterval / this.moveTotalSteps;
+    this.moveTotalSteps = this.moveInterval / this.animateWait;
     // console.log(this.moveInterval, this.moveTotalSteps, this.animateWait);
     if(!this.animating) {
       if(this.hasMoved) {
