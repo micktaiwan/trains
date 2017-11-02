@@ -53,13 +53,16 @@ export class TileGui extends Tile {
   drawStation() {
     //console.log('drawing station');
     let w = this.map.displayOptions.tileWidth;
-    this.setImage();
-    this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w);
-    //if(this.map.skin === 'cube' || !this.type ) {
-    /*
+
+    if(this.map.skin === 'cube' || !this.type ) {
      this.ctx.fillStyle = "#f00";
      this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
-     */
+}
+else {
+        this.setImage();
+        this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w);
+    }
+
   }
 
 }
@@ -111,7 +114,7 @@ export class MapGui extends Map {
   // create a new train
   createTrain() {
     if(this.trains.length === 0) { // for now only one train
-      this.addTrainToDB({pos: {x: 1, y: 1}, dir: {x: 1, y: 0}}); // TODO: let the server set the position
+      this.addTrainToDB({pos: {x: 1, y: 1}, dir: {x: 1, y: 0}}); // FIXME P1: let the server set the position
     }
     this.draw();
   }

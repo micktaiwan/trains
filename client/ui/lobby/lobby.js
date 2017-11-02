@@ -48,7 +48,7 @@ Template.onlineUser.helpers({
 
 Template.gameItem.helpers({
 
-  // TODO: if we use these helpers we must publish all tiles and train... find another way: store these info in the game
+  // FIXME P2: if we use these helpers we must publish all tiles and train... find another way: store these info in the game
   railsCount: function() {
     return Tiles.find({game_id: this._id}).count();
   },
@@ -62,7 +62,7 @@ Template.gameItem.helpers({
 
 Template.lobby.events({
 
-  'submit .newgame': function(e) {
+  'submit .newgame': function(e) { //FIXME P0: check if loggued
     e.preventDefault();
     const name = $('#gameName').val();
     Meteor.call('gameCreate', name, function(err, rv) {

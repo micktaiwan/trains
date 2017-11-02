@@ -110,7 +110,6 @@ export class Map {
     let tile = this.getTile(newPos);
     if(tile) {
       rail += dir;
-      // if(!tile.type) tile.type = {rails: 0}; // just to migrate old maps, TODO: migrate all rails once for all at map loading
       if(operation === 'add')
         tile.type.rails |= oppDir;
       if(operation === 'sub')
