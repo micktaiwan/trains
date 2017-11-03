@@ -17,7 +17,7 @@ export class ServerTrain extends Train {
   }
 
   static onTime(train) {
-    // console.log('onTime', that.map._id, that.pos, that.dir, that.map.tileCount());
+    // console.log('onTime', that.map._id, that.pos, that.dir, that.map.pointCount());
     if(train.move()) Trains.update({_id: train._id}, {$set: {pos: train.pos, dir: train.dir, interval: Helpers.moveInterval}});
   }
 

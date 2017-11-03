@@ -145,7 +145,7 @@ Template.toolsDropdown.onRendered(function() {
 
 Template.toolsDropdown.helpers({
 
-  tileTypes: function() {
+  pointTypes: function() {
     return PointTypes.find();
   }
 

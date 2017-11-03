@@ -48,7 +48,7 @@ Meteor.startup(function() {
     }
   });
 
-  // tile types data seed
+  // point types data seed
   if(PointTypes.find({}).count() === 0) {
     PointTypes.insert({
       name: 'Rails',

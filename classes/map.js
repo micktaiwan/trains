@@ -38,8 +38,8 @@ export class Map {
     this._id = game_id;
   }
 
-  setPointSelection(tileName) {
-    this.currentPointSelection = tileName;
+  setPointSelection(pointName) {
+    this.currentPointSelection = pointName;
   }
 
   resetMap() {
@@ -53,7 +53,7 @@ export class Map {
     console.error('method should be overridded');
   }
 
-  tileCount() {
+  pointCount() {
     return this.points.length;
   }
 
@@ -107,14 +107,14 @@ export class Map {
         break;
     }
 
-    let tile = this.getPoint(newPos);
-    if(tile) {
+    let point = this.getPoint(newPos);
+    if(point) {
       rail += dir;
       if(operation === 'add')
-        tile.type.rails |= oppDir;
+        point.type.rails |= oppDir;
       if(operation === 'sub')
-        tile.type.rails ^= oppDir;
-      Meteor.call('mapUpdate', tile._id, tile.pos, tile.type, this._id); // Can't call wih simply tile as I have a error
+        point.type.rails ^= oppDir;
+      Meteor.call('mapUpdate', point._id, point.pos, point.type, this._id); // Can't call wih simply point as I have a error
     }
     return rail;
   }
@@ -146,7 +146,7 @@ export class Map {
         type = {name: 'station', station: {team: 'red'}};
         this.setMessage("");
       }
-      else throw new Meteor.Error('unknown tile selection ' + this.currentPointSelection);
+      else throw new Meteor.Error('unknown point selection ' + this.currentPointSelection);
     }
     Meteor.call('mapSet', pos, type, this._id);
     return true;
@@ -167,11 +167,11 @@ export class Map {
     return true;
   }
 
-  setPointWithId(tile) {
-    // console.log(tile);
-    this.points.push(tile);
-    if(tile.type.name === 'station')
-      this.stations.push(tile);
+  setPointWithId(point) {
+    // console.log(point);
+    this.points.push(point);
+    if(point.type.name === 'station')
+      this.stations.push(point);
 
     // for each game change, also set game status
     if(this.game) this.game.setStatus();

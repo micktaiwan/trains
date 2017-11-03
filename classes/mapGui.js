@@ -15,28 +15,28 @@ export class PointGui extends Point {
   }
 
   draw(options) {
-    //console.log(this.type);
+    // console.log(this);
     options = options || {};
     if(options.withBackground) {
-      let w = this.map.displayOptions.tileWidth;
+      let w = this.map.displayOptions.pointWidth;
       this.ctx.fillStyle = "#000";
       this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
     }
-    if(!this.type || this.type.rails !== undefined) this.drawRail();
+    if(this.type.name === 'rail') this.drawRail();
     else if(this.type.name === 'station') this.drawStation();
-    else throw new Meteor.Error('Unknown tile type ' + this.type.name);
+    else throw new Meteor.Error('Unknown point type ' + this.type.name);
   }
 
   drawRail() {
     //console.log('drawing rail');
-    const w = this.map.displayOptions.tileWidth;
+    const w = this.map.displayOptions.pointWidth;
     this.ctx.fillStyle = "#666";
     this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
   }
 
   drawStation() {
-    //console.log('drawing station');
-    const w = this.map.displayOptions.tileWidth;
+    // console.log('drawing station');
+    const w = this.map.displayOptions.pointWidth;
     this.ctx.fillStyle = "#f00";
     this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
   }
@@ -49,7 +49,7 @@ export class MapGui extends Map {
     super(gameId);
     displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
     this.displayOptions = {
-      tileWidth: displayOptions.tileWidth || defaultPointSize
+      pointWidth: displayOptions.pointWidth || defaultPointSize
     };
 
     this.mouseIsDown = false;
@@ -97,8 +97,8 @@ export class MapGui extends Map {
 
   // coming from db
   setPointWithId(id, doc) {
-    const tile = new PointGui(this, doc, id);
-    super.setPointWithId(tile);
+    const point = new PointGui(this, doc, id);
+    super.setPointWithId(point);
   }
 
   // coming from db
@@ -145,10 +145,10 @@ export class MapGui extends Map {
   removePointFromEvent(event) {
     if(!this.game.canModifyMap()) return;
     const pos = this.getMousePointCoords(this.mouseCoords(event));
-    const tile = this.getPoint(pos);
-    if(tile) {
-      // console.log('removing', tile);
-      this.removePointFromDb(tile._id);
+    const point = this.getPoint(pos);
+    if(point) {
+      // console.log('removing', point);
+      this.removePointFromDb(point._id);
     }
   }
 
@@ -158,7 +158,7 @@ export class MapGui extends Map {
   }
 
   resetPosition() {
-    this.displayOptions.tileWidth = 50;
+    this.displayOptions.pointWidth = 50;
     this.pan = {x: 0, y: 0};
     this.draw();
   }
@@ -205,9 +205,9 @@ export class MapGui extends Map {
     this.drawMousePoint(c);
   }
 
-  // we have been notified that another client removed this tile
+  // we have been notified that another client removed this point
   removePoint(id) {
-    // console.log('removing tile', id, '...');
+    // console.log('removing point', id, '...');
     super.removePoint(id);
     this.draw();
   }
@@ -216,17 +216,17 @@ export class MapGui extends Map {
     e.preventDefault();
     const oldPos = this.relMouseCoords(e);
 
-    const factor = Math.round((this.displayOptions.tileWidth / (e.wheelDelta / 30)));
-    this.displayOptions.tileWidth += factor;
-    if(this.displayOptions.tileWidth < 1)
-      this.displayOptions.tileWidth = 1;
-    if(this.displayOptions.tileWidth > 200)
-      this.displayOptions.tileWidth = 200;
+    const factor = Math.round((this.displayOptions.pointWidth / (e.wheelDelta / 30)));
+    this.displayOptions.pointWidth += factor;
+    if(this.displayOptions.pointWidth < 1)
+      this.displayOptions.pointWidth = 1;
+    if(this.displayOptions.pointWidth > 200)
+      this.displayOptions.pointWidth = 200;
 
     // zoom depends on mouse position
     const newPos = this.relMouseCoords(e);
-    this.pan.x += (newPos.x - oldPos.x) / (defaultPointSize / this.displayOptions.tileWidth);
-    this.pan.y += (newPos.y - oldPos.y) / (defaultPointSize / this.displayOptions.tileWidth);
+    this.pan.x += (newPos.x - oldPos.x) / (defaultPointSize / this.displayOptions.pointWidth);
+    this.pan.y += (newPos.y - oldPos.y) / (defaultPointSize / this.displayOptions.pointWidth);
 
     this.draw();
     this.drawMouse(e);
@@ -300,35 +300,35 @@ export class MapGui extends Map {
     else if(this.currentPointSelection === 'Station') {
       this.ctx.fillStyle = '#500';
     }
-    this.ctx.fillRect(c.x * this.displayOptions.tileWidth + margin + (this.pan.x % this.displayOptions.tileWidth), c.y * this.displayOptions.tileWidth + margin + (this.pan.y % this.displayOptions.tileWidth), this.displayOptions.tileWidth - margin * 2, this.displayOptions.tileWidth - margin * 2);
+    this.ctx.fillRect(c.x * this.displayOptions.pointWidth + margin + (this.pan.x % this.displayOptions.pointWidth), c.y * this.displayOptions.pointWidth + margin + (this.pan.y % this.displayOptions.pointWidth), this.displayOptions.pointWidth - margin * 2, this.displayOptions.pointWidth - margin * 2);
     // set back transparency
     this.ctx.globalAlpha = 1;
 
     this.ctx.lineWidth = 3;
     this.ctx.strokeStyle = '#300';
     this.ctx.beginPath();
-    this.ctx.rect(c.x * this.displayOptions.tileWidth + margin + (this.pan.x % this.displayOptions.tileWidth), c.y * this.displayOptions.tileWidth + margin + (this.pan.y % this.displayOptions.tileWidth), this.displayOptions.tileWidth - margin * 2, this.displayOptions.tileWidth - margin * 2);
+    this.ctx.rect(c.x * this.displayOptions.pointWidth + margin + (this.pan.x % this.displayOptions.pointWidth), c.y * this.displayOptions.pointWidth + margin + (this.pan.y % this.displayOptions.pointWidth), this.displayOptions.pointWidth - margin * 2, this.displayOptions.pointWidth - margin * 2);
     this.ctx.stroke();
   }
 
   getMousePointCoords(coords, ignorePan) {
     if(ignorePan) {
       return {
-        x: Math.floor((coords.x - (this.pan.x % this.displayOptions.tileWidth)) / this.displayOptions.tileWidth),
-        y: Math.floor((coords.y - (this.pan.y % this.displayOptions.tileWidth)) / this.displayOptions.tileWidth)
+        x: Math.floor((coords.x - (this.pan.x % this.displayOptions.pointWidth)) / this.displayOptions.pointWidth),
+        y: Math.floor((coords.y - (this.pan.y % this.displayOptions.pointWidth)) / this.displayOptions.pointWidth)
       };
 
     }
     return {
-      x: Math.floor((coords.x - this.pan.x) / this.displayOptions.tileWidth),
-      y: Math.floor((coords.y - this.pan.y) / this.displayOptions.tileWidth)
+      x: Math.floor((coords.x - this.pan.x) / this.displayOptions.pointWidth),
+      y: Math.floor((coords.y - this.pan.y) / this.displayOptions.pointWidth)
     };
   }
 
-  // mouse coords relative to a tile size and panning
+  // mouse coords relative to a point size and panning
   relMouseCoords(e) {
     let c = this.mouseCoords(e);
-    let factor = defaultPointSize / this.displayOptions.tileWidth;
+    let factor = defaultPointSize / this.displayOptions.pointWidth;
     c.x = (c.x * factor) - (this.pan.x * factor);
     c.y = (c.y * factor) - (this.pan.y * factor);
     return c;
