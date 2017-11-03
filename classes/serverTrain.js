@@ -3,7 +3,7 @@ import {Map} from '../classes/map';
 import {Helpers} from '../classes/helpers';
 
 // a server train is a train with a map
-// a map automatically subscribe to its tiles so a train's map with always be up to date
+// a map automatically subscribe to its points so a train's map with always be up to date
 export class ServerTrain extends Train {
 
   constructor(train_id, trainObj) {

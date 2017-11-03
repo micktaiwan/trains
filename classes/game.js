@@ -55,7 +55,7 @@ export class Game {
     else {
       if(!this.canModifyMap()) status = 'You can not modify this map';
       if(this.map.stations.length === 0) status = 'You should place your first station<br/>';
-      else if(this.map.tiles.length < 3) status = 'You should build more rails<br/>';
+      else if(this.map.points.length < 3) status = 'You should build more rails<br/>';
     }
     if(status === '') status = 'Ready<br/>';
     this.gameStatus.set(status);

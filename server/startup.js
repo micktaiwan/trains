@@ -42,20 +42,20 @@ Meteor.startup(function() {
       createTrain(train_id, doc);
     },
     removed: function(id) {
-      let doc = Tiles.findOne(id);
+      let doc = Points.findOne(id);
       //console.log('server: removed', id);
       removeTrain(id);
     }
   });
 
   // tile types data seed
-  if(TileTypes.find({}).count() === 0) {
-    TileTypes.insert({
+  if(PointTypes.find({}).count() === 0) {
+    PointTypes.insert({
       name: 'Rails',
       price: 1,
       icon: 'road'
     });
-    TileTypes.insert({
+    PointTypes.insert({
       name: 'Station',
       price: 150,
       icon: 'university'

@@ -4,7 +4,7 @@ import {Helpers} from '../../../classes/helpers';
 
 let game = null;
 let map = null;
-let handleTiles = null;
+let handlePoints = null;
 let handleTrains = null;
 
 Template.game.onCreated(function() {
@@ -27,20 +27,20 @@ Template.game.onRendered(function() {
   $('.dropdown').dropdown('restore default text');
 
   map.init('canvas', this.data._id);
-  // subscribe to map (or "game") tiles
-  if(handleTiles) handleTiles.stop();
-  handleTiles = Tiles.find({game_id: this.data._id}).observeChanges({
+  // subscribe to map (or "game") points
+  if(handlePoints) handlePoints.stop();
+  handlePoints = Points.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
-      // console.log('tiles change: added', id, doc);
-      map.setTileWithId(id, doc);
+      // console.log('points change: added', id, doc);
+      map.setPointWithId(id, doc);
     },
     changed: function(id, doc) {
-      // console.log('tiles change: changed', id, doc);
-      map.updateTileWithId(id, doc);
+      // console.log('points change: changed', id, doc);
+      map.updatePointWithId(id, doc);
     },
     removed: function(id) {
-      // console.log('tiles change: removed', id);
-      map.removeTile(id);
+      // console.log('points change: removed', id);
+      map.removePoint(id);
     }
 
   });
@@ -56,7 +56,7 @@ Template.game.onRendered(function() {
       map.updateTrain(id, doc);
     },
     removed: function(id) {
-      let doc = Tiles.findOne(id);
+      let doc = Points.findOne(id);
       // console.log('trains change: removed', id);
       map.removeTrain(id);
     }
@@ -65,14 +65,14 @@ Template.game.onRendered(function() {
 });
 
 Template.game.onDestroyed(function() {
-  if(handleTiles) handleTiles.stop();
+  if(handlePoints) handlePoints.stop();
   if(handleTrains) handleTrains.stop();
 });
 
 Template.game.helpers({
 
   railsCount: function() {
-    return Tiles.find().count();
+    return Points.find().count();
   },
 
   canvasWidth: function() {
@@ -146,16 +146,16 @@ Template.toolsDropdown.onRendered(function() {
 Template.toolsDropdown.helpers({
 
   tileTypes: function() {
-    return TileTypes.find();
+    return PointTypes.find();
   }
 
 });
 
 Template.toolsDropdown.events({
 
-  'click .selectTile': function() {
+  'click .selectPoint': function() {
     console.log(this);
-    map.setTileSelection(this.name);
+    map.setPointSelection(this.name);
   },
 
   'click .selectSkinCubes': function() {

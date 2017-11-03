@@ -46,7 +46,7 @@ export class Train {
   // move in the current direction
   dirMove() {
     const dest = this.getDest(this.pos);
-    if(Helpers.caseEqual(this.from, dest) || !this.map.getTile(dest)) return false;
+    if(Helpers.caseEqual(this.from, dest) || !this.map.getPoint(dest)) return false;
     Helpers.caseCopy(this.from, this.pos);
     Helpers.caseCopy(this.pos, dest);
     return true;

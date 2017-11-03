@@ -4,31 +4,31 @@
 
 const N = 1, E = 2, S = 4, W = 8; // any rail direction is the sum of simple directions
 
-export class Tile {
+export class Point {
 
   constructor(map, doc, id) {
     this.map = map;
     this.pos = {x: doc.x, y: doc.y};
     this._id = id;
     this.type = doc.type;
-    //console.log('created Tile', this);
+    //console.log('created Point', this);
   }
 
 }
 
-// a map is a set of tiles belonging to a game_id
+// a map is a set of points belonging to a game_id
 export class Map {
 
-  // a map can observe the tiles itself
-  // but if the case will create simple Tiles, not GuiTiles
+  // a map can observe the points itself
+  // but if the case will create simple Points, not GuiPoints
   // useful for server maps used in serverTrains
   constructor(game_id, observeChanges) {
     console.log('Map#constructor: game_id', game_id, observeChanges);
     this._id = game_id;
-    this.tiles = [];
+    this.points = [];
     this.trains = [];
     this.stations = [];
-    this.currentTileSelection = 'Rails';
+    this.currentPointSelection = 'Rails';
     this.message = new ReactiveVar('');
     if(observeChanges) this.observeChanges();
   }
@@ -38,12 +38,12 @@ export class Map {
     this._id = game_id;
   }
 
-  setTileSelection(tileName) {
-    this.currentTileSelection = tileName;
+  setPointSelection(tileName) {
+    this.currentPointSelection = tileName;
   }
 
   resetMap() {
-    this.tiles.length = 0;
+    this.points.length = 0;
     this.trains.length = 0;
     this.stations.length = 0;
     Meteor.call('mapReset', this._id);
@@ -54,14 +54,14 @@ export class Map {
   }
 
   tileCount() {
-    return this.tiles.length;
+    return this.points.length;
   }
 
-  removeTile(id) {
-    //tiles
-    for(let i = 0; i < this.tiles.length; i++) {
-      if(this.tiles[i]._id === id) {
-        this.tiles.splice(i, 1);
+  removePoint(id) {
+    //points
+    for(let i = 0; i < this.points.length; i++) {
+      if(this.points[i]._id === id) {
+        this.points.splice(i, 1);
         break;
       }
     }
@@ -107,7 +107,7 @@ export class Map {
         break;
     }
 
-    let tile = this.getTile(newPos);
+    let tile = this.getPoint(newPos);
     if(tile) {
       rail += dir;
       if(operation === 'add')
@@ -132,21 +132,21 @@ export class Map {
     this.message.set(msg);
   }
 
-  saveTileToDB(pos, type) {
-    if(this.getTile(pos)) return false;
+  savePointToDB(pos, type) {
+    if(this.getPoint(pos)) return false;
 
     if(!type) {
-      if(this.currentTileSelection === 'Rails') {
+      if(this.currentPointSelection === 'Rails') {
         let rail = this.affectNeighbors(pos, 'add');
         if(rail === 0) return this.setMessage("<strong>You must place a rail near a station or another rail<strong>");
         this.setMessage("");
         type = {name: 'rail', rails: rail};
       }
-      else if(this.currentTileSelection === 'Station') {
+      else if(this.currentPointSelection === 'Station') {
         type = {name: 'station', station: {team: 'red'}};
         this.setMessage("");
       }
-      else throw new Meteor.Error('unknown tile selection ' + this.currentTileSelection);
+      else throw new Meteor.Error('unknown tile selection ' + this.currentPointSelection);
     }
     Meteor.call('mapSet', pos, type, this._id);
     return true;
@@ -159,17 +159,17 @@ export class Map {
     return true;
   }
 
-  removeTileFromDb(id) {
-    let pos = this.getTileById(id).pos;
-    this.removeTile(id);
+  removePointFromDb(id) {
+    let pos = this.getPointById(id).pos;
+    this.removePoint(id);
     this.affectNeighbors(pos, 'sub');
     Meteor.call('mapRemove', id);
     return true;
   }
 
-  setTileWithId(tile) {
+  setPointWithId(tile) {
     // console.log(tile);
-    this.tiles.push(tile);
+    this.points.push(tile);
     if(tile.type.name === 'station')
       this.stations.push(tile);
 
@@ -177,17 +177,17 @@ export class Map {
     if(this.game) this.game.setStatus();
   }
 
-  getTile(pos) {
-    for(let i = 0; i < this.tiles.length; i++) {
-      //console.log('loop', this.tiles[i].type);
-      if(this.tiles[i].pos.x === pos.x && this.tiles[i].pos.y === pos.y) return this.tiles[i];
+  getPoint(pos) {
+    for(let i = 0; i < this.points.length; i++) {
+      //console.log('loop', this.points[i].type);
+      if(this.points[i].pos.x === pos.x && this.points[i].pos.y === pos.y) return this.points[i];
     }
     return null;
   }
 
-  getTileById(id) {
-    for(let i = 0; i < this.tiles.length; i++) {
-      if(this.tiles[i]._id === id) return this.tiles[i];
+  getPointById(id) {
+    for(let i = 0; i < this.points.length; i++) {
+      if(this.points[i]._id === id) return this.points[i];
     }
     return null;
   }
@@ -206,17 +206,17 @@ export class Map {
     return null;
   }
 
-  // subscribe to map (or "game") tiles
+  // subscribe to map (or "game") points
   observeChanges() {
     const self = this;
-    Tiles.find({game_id: self._id}).observeChanges({
+    Points.find({game_id: self._id}).observeChanges({
       added: function(id, doc) {
         // console.log('change: added', id, doc);
-        self.tiles.push(new Tile(self, doc, id));
+        self.points.push(new Point(self, doc, id));
       },
       removed: function(id) {
         //console.log('change: removed', id);
-        self.removeTile(id);
+        self.removePoint(id);
       }
     });
   }
@@ -227,7 +227,7 @@ export class Map {
     const y = Math.floor(Math.random() * 30);
     console.log('adding station', x, y);
 
-    this.saveTileToDB({x: x, y: y}, {name: 'station', station: {team: null}});
+    this.savePointToDB({x: x, y: y}, {name: 'station', station: {team: null}});
   }
 
   addRandomPassenger() {

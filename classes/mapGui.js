@@ -2,25 +2,16 @@
  * Created by mfaivremacon on 31/08/2015.
  */
 
-import {Map, Tile} from './map';
+import {Map, Point} from './map';
 import {TrainGui} from './trainGui';
 
-const defaultTileSize = 50;
+const defaultPointSize = 50;
 
-export class TileGui extends Tile {
+export class PointGui extends Point {
 
   constructor(map, doc, id) {
     super(map, doc, id);
     this.ctx = map.ctx;
-    this.img = new Image();
-  }
-
-  setImage() {
-    if(this.type.name === 'station')
-      this.img.src = '/rails/' + this.map.skin + '/station.png';
-    else
-      this.img.src = '/rails/' + this.map.skin + '/' + this.type.rails + '.png';
-    //console.log(this.img.src);
   }
 
   draw(options) {
@@ -38,31 +29,16 @@ export class TileGui extends Tile {
 
   drawRail() {
     //console.log('drawing rail');
-    let w = this.map.displayOptions.tileWidth;
-    if(this.map.skin === 'cube' || !this.type) {
-      this.ctx.fillStyle = "#666";
-      this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
-    }
-    else {
-      this.setImage();
-      this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w);
-    }
-
+    const w = this.map.displayOptions.tileWidth;
+    this.ctx.fillStyle = "#666";
+    this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
   }
 
   drawStation() {
     //console.log('drawing station');
-    let w = this.map.displayOptions.tileWidth;
-
-    if(this.map.skin === 'cube' || !this.type ) {
-     this.ctx.fillStyle = "#f00";
-     this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
-}
-else {
-        this.setImage();
-        this.ctx.drawImage(this.img, this.pos.x * w, this.pos.y * w, w, w);
-    }
-
+    const w = this.map.displayOptions.tileWidth;
+    this.ctx.fillStyle = "#f00";
+    this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
   }
 
 }
@@ -73,7 +49,7 @@ export class MapGui extends Map {
     super(gameId);
     displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
     this.displayOptions = {
-      tileWidth: displayOptions.tileWidth || defaultTileSize
+      tileWidth: displayOptions.tileWidth || defaultPointSize
     };
 
     this.mouseIsDown = false;
@@ -120,26 +96,27 @@ export class MapGui extends Map {
   }
 
   // coming from db
-  setTileWithId(id, doc) {
-    const tile = new TileGui(this, doc, id);
-    super.setTileWithId(tile);
+  setPointWithId(id, doc) {
+    const tile = new PointGui(this, doc, id);
+    super.setPointWithId(tile);
   }
 
   // coming from db
-  updateTileWithId(id, doc) {
-    const c = this.getTileById(id);
-    //console.log('setTileWithId', id, doc, 'found', c);
+  updatePointWithId(id, doc) {
+    const c = this.getPointById(id);
+    //console.log('setPointWithId', id, doc, 'found', c);
     if(c) { // if the client already have it
       c._id = id; // make sure the object have a DB id so we can remove it later
       c.type = doc.type;
       c.draw();
     }
     else {
-      console.error('updateTileWithId: oops');
-      //this.tiles.push(new TileGui(this, doc, id));
+      console.error('updatePointWithId: oops');
+      //this.points.push(new PointGui(this, doc, id));
       this.draw();
     }
   }
+
   // coming from db
   addTrain(id, doc) {
     const pos = doc.pos;
@@ -160,18 +137,18 @@ export class MapGui extends Map {
     train.draw();
   }
 
-  setTileFromEvent(event) {
+  setPointFromEvent(event) {
     if(!this.game.canModifyMap()) return;
-    this.saveTileToDB(this.getMouseTileCoords(this.mouseCoords(event)));
+    this.savePointToDB(this.getMousePointCoords(this.mouseCoords(event)));
   }
 
-  removeTileFromEvent(event) {
+  removePointFromEvent(event) {
     if(!this.game.canModifyMap()) return;
-    const pos = this.getMouseTileCoords(this.mouseCoords(event));
-    const tile = this.getTile(pos);
+    const pos = this.getMousePointCoords(this.mouseCoords(event));
+    const tile = this.getPoint(pos);
     if(tile) {
       // console.log('removing', tile);
-      this.removeTileFromDb(tile._id);
+      this.removePointFromDb(tile._id);
     }
   }
 
@@ -200,8 +177,8 @@ export class MapGui extends Map {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     this.dotranslate();
-    for(let i = 0; i < this.tiles.length; i++)
-      this.tiles[i].draw();
+    for(let i = 0; i < this.points.length; i++)
+      this.points[i].draw();
     this.untranslate();
 
     for(let i = 0; i < this.trains.length; i++)
@@ -215,23 +192,23 @@ export class MapGui extends Map {
     if(!this.ctx) return;
     const self = this;
     posArray.forEach(function(pos) {
-      const t = self.getTile(pos);
+      const t = self.getPoint(pos);
       if(t) t.draw({withBackground: true});
     });
   }
 
   drawMouse(event) {
     if(!this.game.canModifyMap()) return;
-    const c = this.getMouseTileCoords(this.mouseCoords(event), true);
+    const c = this.getMousePointCoords(this.mouseCoords(event), true);
     //this.ctx.fillStyle = 'white';
     //this.ctx.fillText(c.x + ' ' + c.y, 20, 20);
-    this.drawMouseTile(c);
+    this.drawMousePoint(c);
   }
 
   // we have been notified that another client removed this tile
-  removeTile(id) {
+  removePoint(id) {
     // console.log('removing tile', id, '...');
-    super.removeTile(id);
+    super.removePoint(id);
     this.draw();
   }
 
@@ -248,8 +225,8 @@ export class MapGui extends Map {
 
     // zoom depends on mouse position
     const newPos = this.relMouseCoords(e);
-    this.pan.x += (newPos.x - oldPos.x) / (defaultTileSize / this.displayOptions.tileWidth);
-    this.pan.y += (newPos.y - oldPos.y) / (defaultTileSize / this.displayOptions.tileWidth);
+    this.pan.x += (newPos.x - oldPos.x) / (defaultPointSize / this.displayOptions.tileWidth);
+    this.pan.y += (newPos.y - oldPos.y) / (defaultPointSize / this.displayOptions.tileWidth);
 
     this.draw();
     this.drawMouse(e);
@@ -266,13 +243,13 @@ export class MapGui extends Map {
       }
       else { // edit map
         if(this.button === 1)
-          this.setTileFromEvent(e);
+          this.setPointFromEvent(e);
         else if(this.button === 2) { // middle button = pan
           this.pan.x += this.mouseMovement.x;
           this.pan.y += this.mouseMovement.y;
         }
         else if(this.button === 3)
-          this.removeTileFromEvent(e);
+          this.removePointFromEvent(e);
       }
     }
     this.draw();
@@ -284,10 +261,10 @@ export class MapGui extends Map {
     if(!e.ctrlKey) {
       switch(e.which) {
         case 1: // left button
-          this.setTileFromEvent(e);
+          this.setPointFromEvent(e);
           break;
         case 3: // right button
-          this.removeTileFromEvent(e);
+          this.removePointFromEvent(e);
           break;
       }
     }
@@ -311,16 +288,16 @@ export class MapGui extends Map {
     this.ctx.stroke();
   }
 
-  drawMouseTile(c) {
+  drawMousePoint(c) {
     let margin = 0;
 
     // set transparency
     this.ctx.globalAlpha = 0.5;
-    //console.log('currentTileSelection', this.currentTileSelection);
-    if(this.currentTileSelection === 'Rails') {
+    //console.log('currentPointSelection', this.currentPointSelection);
+    if(this.currentPointSelection === 'Rails') {
       this.ctx.fillStyle = '#333';
     }
-    else if(this.currentTileSelection === 'Station') {
+    else if(this.currentPointSelection === 'Station') {
       this.ctx.fillStyle = '#500';
     }
     this.ctx.fillRect(c.x * this.displayOptions.tileWidth + margin + (this.pan.x % this.displayOptions.tileWidth), c.y * this.displayOptions.tileWidth + margin + (this.pan.y % this.displayOptions.tileWidth), this.displayOptions.tileWidth - margin * 2, this.displayOptions.tileWidth - margin * 2);
@@ -334,7 +311,7 @@ export class MapGui extends Map {
     this.ctx.stroke();
   }
 
-  getMouseTileCoords(coords, ignorePan) {
+  getMousePointCoords(coords, ignorePan) {
     if(ignorePan) {
       return {
         x: Math.floor((coords.x - (this.pan.x % this.displayOptions.tileWidth)) / this.displayOptions.tileWidth),
@@ -351,7 +328,7 @@ export class MapGui extends Map {
   // mouse coords relative to a tile size and panning
   relMouseCoords(e) {
     let c = this.mouseCoords(e);
-    let factor = defaultTileSize / this.displayOptions.tileWidth;
+    let factor = defaultPointSize / this.displayOptions.tileWidth;
     c.x = (c.x * factor) - (this.pan.x * factor);
     c.y = (c.y * factor) - (this.pan.y * factor);
     return c;

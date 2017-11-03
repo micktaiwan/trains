@@ -45,7 +45,7 @@
     </button>
   </div>
   <div class="ui black label">
-    <i class="road icon"></i> Tiles
+    <i class="road icon"></i> Points
     <div class="detail">{{railsCount}}</div>
   </div>
 
@@ -57,7 +57,7 @@
     <i class="road icon"></i>
 
     <div class="menu">
-      <div class="header">Tile</div>
+      <div class="header">Point</div>
       {{#each tileTypes }}
         {{> tileType}}
       {{/each }}
@@ -71,6 +71,6 @@
 </template>
 
 <template name="tileType">
-  <div class="item selectTile"><i class="{{icon}} icon"></i><span class="description"><span
+  <div class="item selectPoint"><i class="{{icon}} icon"></i><span class="description"><span
       class="tiny ui red tag label">{{price}}$</span></span> {{name}}</div>
 </template>
