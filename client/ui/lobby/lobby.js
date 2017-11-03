@@ -48,9 +48,9 @@ Template.onlineUser.helpers({
 
 Template.gameItem.helpers({
 
-  // FIXME P2: if we use these helpers we must publish all points and train... find another way: store these info in the game
+  // FIXME P2: if we use these helpers we must publish all segments and train... find another way: store these info in the game
   railsCount: function() {
-    return Points.find({game_id: this._id}).count();
+    return Segments.find({game_id: this._id}).count();
   },
 
   trainPos: function() {

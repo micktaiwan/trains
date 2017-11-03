@@ -13,4 +13,10 @@ export class Helpers {
     to.y = from.y;
   }
 
+  static drawPoint(ctx, x, y, size) {
+    ctx.beginPath();
+    ctx.arc(x, y, size, 0, 2 * Math.PI, true);
+    ctx.fill();
+  }
+
 }

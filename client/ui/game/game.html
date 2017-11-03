@@ -45,7 +45,7 @@
     </button>
   </div>
   <div class="ui black label">
-    <i class="road icon"></i> Points
+    <i class="road icon"></i> Segments
     <div class="detail">{{railsCount}}</div>
   </div>
 
@@ -53,13 +53,13 @@
 
 <template name="toolsDropdown">
 
-  <div class="ui icon top left pointing dropdown button point-menu">
+  <div class="ui icon top left segmenting dropdown button segment-menu">
     <i class="road icon"></i>
 
     <div class="menu">
-      <div class="header">Point</div>
-      {{#each pointTypes }}
-        {{> pointType}}
+      <div class="header">Segment</div>
+      {{#each segmentTypes }}
+        {{> segmentType}}
       {{/each }}
       <div class="header">Skin</div>
       <div class="item selectSkinDefault"><i class="road icon"></i> Default</div>
@@ -70,7 +70,7 @@
 
 </template>
 
-<template name="pointType">
-  <div class="item selectPoint"><i class="{{icon}} icon"></i><span class="description"><span
+<template name="segmentType">
+  <div class="item selectSegment"><i class="{{icon}} icon"></i><span class="description"><span
       class="tiny ui red tag label">{{price}}$</span></span> {{name}}</div>
 </template>

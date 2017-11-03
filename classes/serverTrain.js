@@ -3,7 +3,7 @@ import {Map} from '../classes/map';
 import {Helpers} from '../classes/helpers';
 
 // a server train is a train with a map
-// a map automatically subscribe to its points so a train's map with always be up to date
+// a map automatically subscribe to its segments so a train's map with always be up to date
 export class ServerTrain extends Train {
 
   constructor(train_id, trainObj) {
@@ -17,7 +17,7 @@ export class ServerTrain extends Train {
   }
 
   static onTime(train) {
-    // console.log('onTime', that.map._id, that.pos, that.dir, that.map.pointCount());
+    // console.log('onTime', that.map._id, that.pos, that.dir, that.map.segmentCount());
     if(train.move()) Trains.update({_id: train._id}, {$set: {pos: train.pos, dir: train.dir, interval: Helpers.moveInterval}});
   }
 

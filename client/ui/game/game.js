@@ -4,7 +4,7 @@ import {Helpers} from '../../../classes/helpers';
 
 let game = null;
 let map = null;
-let handlePoints = null;
+let handleSegments = null;
 let handleTrains = null;
 
 Template.game.onCreated(function() {
@@ -27,20 +27,20 @@ Template.game.onRendered(function() {
   $('.dropdown').dropdown('restore default text');
 
   map.init('canvas', this.data._id);
-  // subscribe to map (or "game") points
-  if(handlePoints) handlePoints.stop();
-  handlePoints = Points.find({game_id: this.data._id}).observeChanges({
+  // subscribe to map (or "game") segments
+  if(handleSegments) handleSegments.stop();
+  handleSegments = Segments.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
-      // console.log('points change: added', id, doc);
-      map.setPointWithId(id, doc);
+      console.log('segments change: added', id, doc);
+      map.setSegmentWithId(id, doc);
     },
     changed: function(id, doc) {
-      // console.log('points change: changed', id, doc);
-      map.updatePointWithId(id, doc);
+      console.log('segments change: changed', id, doc);
+      map.updateSegmentWithId(id, doc);
     },
     removed: function(id) {
-      // console.log('points change: removed', id);
-      map.removePoint(id);
+      console.log('segments change: removed', id);
+      map.removeSegment(id);
     }
 
   });
@@ -56,7 +56,7 @@ Template.game.onRendered(function() {
       map.updateTrain(id, doc);
     },
     removed: function(id) {
-      let doc = Points.findOne(id);
+      let doc = Segments.findOne(id);
       // console.log('trains change: removed', id);
       map.removeTrain(id);
     }
@@ -65,14 +65,14 @@ Template.game.onRendered(function() {
 });
 
 Template.game.onDestroyed(function() {
-  if(handlePoints) handlePoints.stop();
+  if(handleSegments) handleSegments.stop();
   if(handleTrains) handleTrains.stop();
 });
 
 Template.game.helpers({
 
   railsCount: function() {
-    return Points.find().count();
+    return Segments.find().count();
   },
 
   canvasWidth: function() {
@@ -145,17 +145,17 @@ Template.toolsDropdown.onRendered(function() {
 
 Template.toolsDropdown.helpers({
 
-  pointTypes: function() {
-    return PointTypes.find();
+  segmentTypes: function() {
+    return []; // FIXME P2: SegmentTypes.find();
   }
 
 });
 
 Template.toolsDropdown.events({
 
-  'click .selectPoint': function() {
+  'click .selectSegment': function() {
     console.log(this);
-    map.setPointSelection(this.name);
+    map.setSegmentSelection(this.name);
   },
 
   'click .selectSkinCubes': function() {

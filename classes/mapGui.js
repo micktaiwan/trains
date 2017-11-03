@@ -2,45 +2,37 @@
  * Created by mfaivremacon on 31/08/2015.
  */
 
-import {Map, Point} from './map';
+import {Map, Point, Segment} from './map';
 import {TrainGui} from './trainGui';
+import {Helpers} from "./helpers";
 
-const defaultPointSize = 50;
+const defaultSegmentSize = 50;
 
-export class PointGui extends Point {
+export class SegmentGui extends Segment {
 
   constructor(map, doc, id) {
     super(map, doc, id);
     this.ctx = map.ctx;
   }
 
+  drawSegment(x, y, size) {
+  }
+
   draw(options) {
     // console.log(this);
     options = options || {};
     if(options.withBackground) {
-      let w = this.map.displayOptions.pointWidth;
+      let w = this.map.displayOptions.segmentWidth;
       this.ctx.fillStyle = "#000";
-      this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
+      this.ctx.fillRect(this.pos.x, this.pos.y, w, w);
     }
-    if(this.type.name === 'rail') this.drawRail();
-    else if(this.type.name === 'station') this.drawStation();
-    else throw new Meteor.Error('Unknown point type ' + this.type.name);
-  }
-
-  drawRail() {
-    //console.log('drawing rail');
-    const w = this.map.displayOptions.pointWidth;
+    const w = this.map.displayOptions.segmentWidth;
     this.ctx.fillStyle = "#666";
-    this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
+    const self = this;
+    _.each(this.points, function(p) {
+      Helpers.drawPoint(self.ctx, p.pos.x, p.pos.y, w);
+    });
   }
-
-  drawStation() {
-    // console.log('drawing station');
-    const w = this.map.displayOptions.pointWidth;
-    this.ctx.fillStyle = "#f00";
-    this.ctx.fillRect(this.pos.x * w, this.pos.y * w, w, w);
-  }
-
 }
 
 export class MapGui extends Map {
@@ -49,14 +41,13 @@ export class MapGui extends Map {
     super(gameId);
     displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
     this.displayOptions = {
-      pointWidth: displayOptions.pointWidth || defaultPointSize
+      segmentWidth: displayOptions.segmentWidth || defaultSegmentSize
     };
 
     this.mouseIsDown = false;
     this.mouseOldPos = {x: -1, y: -1};
     this.mousePos = {x: -1, y: -1};
     this.pan = {x: 0, y: 0};
-    this.skin = 'default';
   }
 
   static onContextMenu(e) {
@@ -96,23 +87,23 @@ export class MapGui extends Map {
   }
 
   // coming from db
-  setPointWithId(id, doc) {
-    const point = new PointGui(this, doc, id);
-    super.setPointWithId(point);
+  setSegmentWithId(id, doc) {
+    const segment = new SegmentGui(this, doc, id);
+    super.setSegmentWithId(segment);
   }
 
   // coming from db
-  updatePointWithId(id, doc) {
-    const c = this.getPointById(id);
-    //console.log('setPointWithId', id, doc, 'found', c);
+  updateSegmentWithId(id, doc) {
+    const c = this.getSegmentById(id);
+    //console.log('setSegmentWithId', id, doc, 'found', c);
     if(c) { // if the client already have it
       c._id = id; // make sure the object have a DB id so we can remove it later
       c.type = doc.type;
       c.draw();
     }
     else {
-      console.error('updatePointWithId: oops');
-      //this.points.push(new PointGui(this, doc, id));
+      console.error('updateSegmentWithId: oops');
+      //this.segments.push(new SegmentGui(this, doc, id));
       this.draw();
     }
   }
@@ -137,19 +128,29 @@ export class MapGui extends Map {
     train.draw();
   }
 
-  setPointFromEvent(event) {
+  constinueSegmentFromEvent(event) {
+    const c = this.relMouseCoords(e);
+    const endPoint = new Point({x: c.x, y: c.y});
+    endPoint.draw();
+  }
+
+  // given a mouse down, start creating a segment
+  startSegmentCreationFromEvent(e) {
     if(!this.game.canModifyMap()) return;
-    this.savePointToDB(this.getMousePointCoords(this.mouseCoords(event)));
+    const c = this.relMouseCoords(e);
+    const startPoint = new Point({x: c.x, y: c.y});
+    const segment = new SegmentGui(this, {points: [startPoint]});
+    this.saveSegmentToDB(segment);
   }
 
   removePointFromEvent(event) {
     if(!this.game.canModifyMap()) return;
-    const pos = this.getMousePointCoords(this.mouseCoords(event));
-    const point = this.getPoint(pos);
-    if(point) {
-      // console.log('removing', point);
-      this.removePointFromDb(point._id);
-    }
+    // const pos = this.getMouseSegmentCoords(this.mouseCoords(event));
+    // const segment = this.getSegment(pos);
+    // if(segment) {
+    //   // console.log('removing', segment);
+    //   this.removeSegmentFromDb(segment._id);
+    // }
   }
 
   resetMap() {
@@ -158,7 +159,7 @@ export class MapGui extends Map {
   }
 
   resetPosition() {
-    this.displayOptions.pointWidth = 50;
+    this.displayOptions.segmentWidth = 50;
     this.pan = {x: 0, y: 0};
     this.draw();
   }
@@ -177,8 +178,8 @@ export class MapGui extends Map {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     this.dotranslate();
-    for(let i = 0; i < this.points.length; i++)
-      this.points[i].draw();
+    for(let i = 0; i < this.segments.length; i++)
+      this.segments[i].draw();
     this.untranslate();
 
     for(let i = 0; i < this.trains.length; i++)
@@ -188,27 +189,29 @@ export class MapGui extends Map {
     // window.requestAnimationFrame(this.draw);
   }
 
+  drawMouse(event) {
+    if(!this.game.canModifyMap()) return;
+    const c = this.mouseCoords(event);
+    this.ctx.fillStyle = 'white';
+    // display coords
+    this.ctx.fillText((c.x + this.pan.x) + ' ' + (c.y + this.pan.y), 20, 20);
+    // display mouse
+    Helpers.drawPoint(this.ctx, c.x, c.y, this.displayOptions.segmentWidth);
+  }
+
   drawSection(posArray) {
     if(!this.ctx) return;
     const self = this;
     posArray.forEach(function(pos) {
-      const t = self.getPoint(pos);
+      const t = self.getSegment(pos);
       if(t) t.draw({withBackground: true});
     });
   }
 
-  drawMouse(event) {
-    if(!this.game.canModifyMap()) return;
-    const c = this.getMousePointCoords(this.mouseCoords(event), true);
-    //this.ctx.fillStyle = 'white';
-    //this.ctx.fillText(c.x + ' ' + c.y, 20, 20);
-    this.drawMousePoint(c);
-  }
-
-  // we have been notified that another client removed this point
-  removePoint(id) {
-    // console.log('removing point', id, '...');
-    super.removePoint(id);
+  // we have been notified that another client removed this segment
+  removeSegment(id) {
+    // console.log('removing segment', id, '...');
+    super.removeSegment(id);
     this.draw();
   }
 
@@ -216,17 +219,17 @@ export class MapGui extends Map {
     e.preventDefault();
     const oldPos = this.relMouseCoords(e);
 
-    const factor = Math.round((this.displayOptions.pointWidth / (e.wheelDelta / 30)));
-    this.displayOptions.pointWidth += factor;
-    if(this.displayOptions.pointWidth < 1)
-      this.displayOptions.pointWidth = 1;
-    if(this.displayOptions.pointWidth > 200)
-      this.displayOptions.pointWidth = 200;
+    const factor = Math.round((this.displayOptions.segmentWidth / (e.wheelDelta / 30)));
+    this.displayOptions.segmentWidth += factor;
+    if(this.displayOptions.segmentWidth < 1)
+      this.displayOptions.segmentWidth = 1;
+    if(this.displayOptions.segmentWidth > 100)
+      this.displayOptions.segmentWidth = 100;
 
     // zoom depends on mouse position
     const newPos = this.relMouseCoords(e);
-    this.pan.x += (newPos.x - oldPos.x) / (defaultPointSize / this.displayOptions.pointWidth);
-    this.pan.y += (newPos.y - oldPos.y) / (defaultPointSize / this.displayOptions.pointWidth);
+    this.pan.x += (newPos.x - oldPos.x) / (defaultSegmentSize / this.displayOptions.segmentWidth);
+    this.pan.y += (newPos.y - oldPos.y) / (defaultSegmentSize / this.displayOptions.segmentWidth);
 
     this.draw();
     this.drawMouse(e);
@@ -243,7 +246,7 @@ export class MapGui extends Map {
       }
       else { // edit map
         if(this.button === 1)
-          this.setPointFromEvent(e);
+          this.continueSegmentFromEvent(e);
         else if(this.button === 2) { // middle button = pan
           this.pan.x += this.mouseMovement.x;
           this.pan.y += this.mouseMovement.y;
@@ -258,10 +261,10 @@ export class MapGui extends Map {
 
   onMouseDown(e) {
     e.preventDefault();
-    if(!e.ctrlKey) {
+    if(!e.ctrlKey) { // Ctrl is for panning
       switch(e.which) {
         case 1: // left button
-          this.setPointFromEvent(e);
+          this.startSegmentCreationFromEvent(e);
           break;
         case 3: // right button
           this.removePointFromEvent(e);
@@ -288,47 +291,23 @@ export class MapGui extends Map {
     this.ctx.stroke();
   }
 
-  drawMousePoint(c) {
-    let margin = 0;
-
-    // set transparency
-    this.ctx.globalAlpha = 0.5;
-    //console.log('currentPointSelection', this.currentPointSelection);
-    if(this.currentPointSelection === 'Rails') {
-      this.ctx.fillStyle = '#333';
-    }
-    else if(this.currentPointSelection === 'Station') {
-      this.ctx.fillStyle = '#500';
-    }
-    this.ctx.fillRect(c.x * this.displayOptions.pointWidth + margin + (this.pan.x % this.displayOptions.pointWidth), c.y * this.displayOptions.pointWidth + margin + (this.pan.y % this.displayOptions.pointWidth), this.displayOptions.pointWidth - margin * 2, this.displayOptions.pointWidth - margin * 2);
-    // set back transparency
-    this.ctx.globalAlpha = 1;
-
-    this.ctx.lineWidth = 3;
-    this.ctx.strokeStyle = '#300';
-    this.ctx.beginPath();
-    this.ctx.rect(c.x * this.displayOptions.pointWidth + margin + (this.pan.x % this.displayOptions.pointWidth), c.y * this.displayOptions.pointWidth + margin + (this.pan.y % this.displayOptions.pointWidth), this.displayOptions.pointWidth - margin * 2, this.displayOptions.pointWidth - margin * 2);
-    this.ctx.stroke();
-  }
-
-  getMousePointCoords(coords, ignorePan) {
+  getMouseSegmentCoords(coords, ignorePan) {
     if(ignorePan) {
       return {
-        x: Math.floor((coords.x - (this.pan.x % this.displayOptions.pointWidth)) / this.displayOptions.pointWidth),
-        y: Math.floor((coords.y - (this.pan.y % this.displayOptions.pointWidth)) / this.displayOptions.pointWidth)
+        x: Math.floor((coords.x - (this.pan.x % this.displayOptions.segmentWidth)) / this.displayOptions.segmentWidth),
+        y: Math.floor((coords.y - (this.pan.y % this.displayOptions.segmentWidth)) / this.displayOptions.segmentWidth)
       };
-
     }
     return {
-      x: Math.floor((coords.x - this.pan.x) / this.displayOptions.pointWidth),
-      y: Math.floor((coords.y - this.pan.y) / this.displayOptions.pointWidth)
+      x: Math.floor((coords.x - this.pan.x) / this.displayOptions.segmentWidth),
+      y: Math.floor((coords.y - this.pan.y) / this.displayOptions.segmentWidth)
     };
   }
 
-  // mouse coords relative to a point size and panning
+  // mouse coords relative to a segment size and panning
   relMouseCoords(e) {
     let c = this.mouseCoords(e);
-    let factor = defaultPointSize / this.displayOptions.pointWidth;
+    let factor = defaultSegmentSize / this.displayOptions.segmentWidth;
     c.x = (c.x * factor) - (this.pan.x * factor);
     c.y = (c.y * factor) - (this.pan.y * factor);
     return c;

@@ -42,24 +42,26 @@ Meteor.startup(function() {
       createTrain(train_id, doc);
     },
     removed: function(id) {
-      let doc = Points.findOne(id);
+      let doc = Segments.findOne(id);
       //console.log('server: removed', id);
       removeTrain(id);
     }
   });
 
-  // point types data seed
-  if(PointTypes.find({}).count() === 0) {
-    PointTypes.insert({
-      name: 'Rails',
-      price: 1,
-      icon: 'road'
-    });
-    PointTypes.insert({
-      name: 'Station',
-      price: 150,
-      icon: 'university'
-    });
-  }
+  // segment types data seed
+  /*
+    if(SegmentTypes.find({}).count() === 0) {
+      SegmentTypes.insert({
+        name: 'Rails',
+        price: 1,
+        icon: 'road'
+      });
+      SegmentTypes.insert({
+        name: 'Station',
+        price: 150,
+        icon: 'university'
+      });
+    }
+  */
 
 });

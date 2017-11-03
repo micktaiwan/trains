@@ -35,7 +35,7 @@ export class TrainGui extends Train {
     this.map.drawSection([this.pos, this.from]);
     // this.map.draw();
     this.ctx.fillStyle = "#aaf";
-    let w = this.map.displayOptions.pointWidth;
+    let w = this.map.displayOptions.segmentWidth;
     const margin = w * this.displayOptions.margin;
 
     let x, y;
