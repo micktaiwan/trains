@@ -31,15 +31,15 @@ Template.game.onRendered(function() {
   if(handleSegments) handleSegments.stop();
   handleSegments = Segments.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
-      console.log('segments change: added', id, doc);
+      console.log('segments: added', id, doc);
       map.setSegmentWithId(id, doc);
     },
     changed: function(id, doc) {
-      console.log('segments change: changed', id, doc);
+      console.log('segments: changed', id, doc);
       map.updateSegmentWithId(id, doc);
     },
     removed: function(id) {
-      console.log('segments change: removed', id);
+      console.log('segments: removed', id);
       map.removeSegment(id);
     }
 
@@ -48,16 +48,16 @@ Template.game.onRendered(function() {
   if(handleTrains) handleTrains.stop();
   handleTrains = Trains.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
-      // console.log('trains change: added', id);
+      // console.log('trains: added', id);
       map.addTrain(id, doc);
     },
     changed: function(id, doc) {
-      // console.log('trains change: changed', id, doc);
+      // console.log('trains: changed', id, doc);
       map.updateTrain(id, doc);
     },
     removed: function(id) {
       let doc = Segments.findOne(id);
-      // console.log('trains change: removed', id);
+      // console.log('trains: removed', id);
       map.removeTrain(id);
     }
   });

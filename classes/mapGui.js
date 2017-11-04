@@ -6,7 +6,7 @@ import {Map, Point, Segment} from './map';
 import {TrainGui} from './trainGui';
 import {Helpers} from "./helpers";
 
-const defaultSegmentSize = 50;
+const defaultZoom = 1;
 
 export class SegmentGui extends Segment {
 
@@ -15,22 +15,20 @@ export class SegmentGui extends Segment {
     this.ctx = map.ctx;
   }
 
-  drawSegment(x, y, size) {
-  }
-
   draw(options) {
     // console.log(this);
-    options = options || {};
-    if(options.withBackground) {
-      let w = this.map.displayOptions.segmentWidth;
-      this.ctx.fillStyle = "#000";
-      this.ctx.fillRect(this.pos.x, this.pos.y, w, w);
-    }
-    const w = this.map.displayOptions.segmentWidth;
+    // options = options || {};
+    const z = this.map.displayOptions.zoom;
+    /*
+        if(options.withBackground) {
+          this.ctx.fillStyle = "#000";
+          this.ctx.fillRect(this.pos.x, this.pos.y, z, z);
+        }
+    */
     this.ctx.fillStyle = "#666";
     const self = this;
     _.each(this.points, function(p) {
-      Helpers.drawPoint(self.ctx, p.pos.x, p.pos.y, w);
+      Helpers.drawPoint(self.ctx, p.pos.x * z, p.pos.y * z, z * 5);
     });
   }
 }
@@ -41,7 +39,7 @@ export class MapGui extends Map {
     super(gameId);
     displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
     this.displayOptions = {
-      segmentWidth: displayOptions.segmentWidth || defaultSegmentSize
+      zoom: displayOptions.zoom || defaultZoom
     };
 
     this.mouseIsDown = false;
@@ -94,18 +92,10 @@ export class MapGui extends Map {
 
   // coming from db
   updateSegmentWithId(id, doc) {
-    const c = this.getSegmentById(id);
+    const s = this.getSegmentById(id);
     //console.log('setSegmentWithId', id, doc, 'found', c);
-    if(c) { // if the client already have it
-      c._id = id; // make sure the object have a DB id so we can remove it later
-      c.type = doc.type;
-      c.draw();
-    }
-    else {
-      console.error('updateSegmentWithId: oops');
-      //this.segments.push(new SegmentGui(this, doc, id));
-      this.draw();
-    }
+    if(!s) throw new Error('no segment ?');
+    s.points = doc.points;
   }
 
   // coming from db
@@ -159,7 +149,7 @@ export class MapGui extends Map {
   }
 
   resetPosition() {
-    this.displayOptions.segmentWidth = 50;
+    this.displayOptions.zoom = defaultZoom;
     this.pan = {x: 0, y: 0};
     this.draw();
   }
@@ -186,17 +176,21 @@ export class MapGui extends Map {
       this.trains[i].draw();
 
     this.drawMapBorder();
+    this.drawCenter();
     // window.requestAnimationFrame(this.draw);
   }
 
   drawMouse(event) {
     if(!this.game.canModifyMap()) return;
-    const c = this.mouseCoords(event);
+    const c = this.snappedMouseCoords(event);
+    const r = this.relMouseCoords(event);
     this.ctx.fillStyle = 'white';
     // display coords
-    this.ctx.fillText((c.x + this.pan.x) + ' ' + (c.y + this.pan.y), 20, 20);
+    this.ctx.fillText('pos: ' + r.x + ', ' + r.y, 20, 20);
+    this.ctx.fillText('pan: ' + (this.pan.x) + ', ' + (this.pan.y), 20, 40);
+    this.ctx.fillText('zoom: ' + (this.displayOptions.zoom), 20, 60);
     // display mouse
-    Helpers.drawPoint(this.ctx, c.x, c.y, this.displayOptions.segmentWidth);
+    Helpers.drawPoint(this.ctx, c.x, c.y, 5 * this.displayOptions.zoom);
   }
 
   drawSection(posArray) {
@@ -215,21 +209,24 @@ export class MapGui extends Map {
     this.draw();
   }
 
+  // Zoom
   onMouseWheel(e) {
     e.preventDefault();
     const oldPos = this.relMouseCoords(e);
 
-    const factor = Math.round((this.displayOptions.segmentWidth / (e.wheelDelta / 30)));
-    this.displayOptions.segmentWidth += factor;
-    if(this.displayOptions.segmentWidth < 1)
-      this.displayOptions.segmentWidth = 1;
-    if(this.displayOptions.segmentWidth > 100)
-      this.displayOptions.segmentWidth = 100;
+    const factor = Math.round((this.displayOptions.zoom / (e.wheelDelta / 60)) * 100) / 100;
+    console.log(factor);
+    this.displayOptions.zoom += factor;
+    if(this.displayOptions.zoom < 0.01)
+      this.displayOptions.zoom = 0.01;
+    if(this.displayOptions.zoom > 50)
+      this.displayOptions.zoom = 50;
 
     // zoom depends on mouse position
     const newPos = this.relMouseCoords(e);
-    this.pan.x += (newPos.x - oldPos.x) / (defaultSegmentSize / this.displayOptions.segmentWidth);
-    this.pan.y += (newPos.y - oldPos.y) / (defaultSegmentSize / this.displayOptions.segmentWidth);
+    console.log(oldPos, newPos);
+    this.pan.x += (newPos.x - oldPos.x) / (defaultZoom / this.displayOptions.zoom);
+    this.pan.y += (newPos.y - oldPos.y) / (defaultZoom / this.displayOptions.zoom);
 
     this.draw();
     this.drawMouse(e);
@@ -291,25 +288,47 @@ export class MapGui extends Map {
     this.ctx.stroke();
   }
 
+  drawCenter() {
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeStyle = '#999';
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.pan.x - 5, this.pan.y);
+    this.ctx.lineTo(this.pan.x + 5, this.pan.y);
+    this.ctx.moveTo(this.pan.x, this.pan.y - 5);
+    this.ctx.lineTo(this.pan.x, this.pan.y + 5);
+    this.ctx.stroke();
+  }
+
   getMouseSegmentCoords(coords, ignorePan) {
     if(ignorePan) {
       return {
-        x: Math.floor((coords.x - (this.pan.x % this.displayOptions.segmentWidth)) / this.displayOptions.segmentWidth),
-        y: Math.floor((coords.y - (this.pan.y % this.displayOptions.segmentWidth)) / this.displayOptions.segmentWidth)
+        x: Math.floor((coords.x - (this.pan.x % this.displayOptions.zoom)) / this.displayOptions.zoom),
+        y: Math.floor((coords.y - (this.pan.y % this.displayOptions.zoom)) / this.displayOptions.zoom)
       };
     }
     return {
-      x: Math.floor((coords.x - this.pan.x) / this.displayOptions.segmentWidth),
-      y: Math.floor((coords.y - this.pan.y) / this.displayOptions.segmentWidth)
+      x: Math.floor((coords.x - this.pan.x) / this.displayOptions.zoom),
+      y: Math.floor((coords.y - this.pan.y) / this.displayOptions.zoom)
     };
   }
 
-  // mouse coords relative to a segment size and panning
+  // real mouse coords snap to grid
+  snappedMouseCoords(e) {
+    // first get relative coords
+    let c = this.relMouseCoords(e);
+    // then go back to real coords
+    let factor = this.displayOptions.zoom;
+    c.x = Math.round((c.x * factor) + (this.pan.x));
+    c.y = Math.round((c.y * factor) + (this.pan.y));
+    return c;
+  }
+
+  // mouse coords relative to zoom and panning
   relMouseCoords(e) {
     let c = this.mouseCoords(e);
-    let factor = defaultSegmentSize / this.displayOptions.segmentWidth;
-    c.x = (c.x * factor) - (this.pan.x * factor);
-    c.y = (c.y * factor) - (this.pan.y * factor);
+    let factor = this.displayOptions.zoom;
+    c.x = Math.round((c.x / factor) - (this.pan.x / factor));
+    c.y = Math.round((c.y / factor) - (this.pan.y / factor));
     return c;
   }
 

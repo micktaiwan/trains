@@ -24,7 +24,7 @@ export class Segment {
     this._id = id;
     this.map = map;
     this.points = doc.points;
-    this.type = doc.type;
+    // this.type = doc.type;
     //console.log('created Segment', this);
   }
 
@@ -165,7 +165,7 @@ export class Map {
     const obj = {
       game_id: segment.map._id,
       points: _.map(segment.points, function(s) {return s.toObj()}),
-      type: segment.type
+      // type: segment.type
     };
     Meteor.call('mapInsertSegment', obj, this._id);
     return true;
