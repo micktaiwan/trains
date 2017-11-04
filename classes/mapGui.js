@@ -30,8 +30,8 @@ export class SegmentGui extends Segment {
     _.each(this.points, function(p) {
       Helpers.drawPoint(self.ctx, self.map.relToRealCoords(p.pos), z * 5);
     });
-    this.ctx.lineWidth = z;
-    this.ctx.lineStyle = "#666";
+    this.ctx.lineWidth = z * 5;
+    this.ctx.strokeStyle = '#666';
     if(this.points.length === 2) // FIXME
       Helpers.drawLine(self.ctx, this.map.relToRealCoords(this.points[0].pos), this.map.relToRealCoords(this.points[1].pos));
   }
