@@ -13,9 +13,9 @@ export class Helpers {
     to.y = from.y;
   }
 
-  static drawPoint(ctx, x, y, size) {
+  static drawPoint(ctx, pos, size) {
     ctx.beginPath();
-    ctx.arc(x, y, size, 0, 2 * Math.PI, true);
+    ctx.arc(pos.x, pos.y, size, 0, 2 * Math.PI, true);
     ctx.fill();
   }
 

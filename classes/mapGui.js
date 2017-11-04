@@ -28,8 +28,12 @@ export class SegmentGui extends Segment {
     this.ctx.fillStyle = "#666";
     const self = this;
     _.each(this.points, function(p) {
-      Helpers.drawPoint(self.ctx, p.pos.x * z, p.pos.y * z, z * 5);
+      Helpers.drawPoint(self.ctx, self.map.relToRealCoords(p.pos), z * 5);
     });
+    this.ctx.lineWidth = z;
+    this.ctx.lineStyle = "#666";
+    if(this.points.length === 2) // FIXME
+      Helpers.drawLine(self.ctx, this.map.relToRealCoords(this.points[0].pos), this.map.relToRealCoords(this.points[1].pos));
   }
 }
 
@@ -171,10 +175,10 @@ export class MapGui extends Map {
     this.ctx.fillStyle = 'black';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    this.dotranslate();
+    // this.dotranslate();
     for(let i = 0; i < this.segments.length; i++)
       this.segments[i].draw();
-    this.untranslate();
+    // this.untranslate();
 
     for(let i = 0; i < this.trains.length; i++)
       this.trains[i].draw();
@@ -194,7 +198,7 @@ export class MapGui extends Map {
     this.ctx.fillText('pan: ' + (this.pan.x) + ', ' + (this.pan.y), 20, 40);
     this.ctx.fillText('zoom: ' + (this.displayOptions.zoom), 20, 60);
     // display mouse
-    Helpers.drawPoint(this.ctx, c.x, c.y, 5 * this.displayOptions.zoom);
+    Helpers.drawPoint(this.ctx, {x: c.x, y: c.y}, 5 * this.displayOptions.zoom);
   }
 
   drawSection(posArray) {
