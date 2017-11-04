@@ -4,9 +4,9 @@
 
 import {Map, Point, Segment} from './map';
 import {TrainGui} from './trainGui';
-import {Helpers} from "./helpers";
+import {Drawing, Geometry} from "./helpers";
 
-const defaultZoom = 1;
+const defaultZoom = 5;
 
 export class SegmentGui extends Segment {
 
@@ -25,15 +25,29 @@ export class SegmentGui extends Segment {
           this.ctx.fillRect(this.pos.x, this.pos.y, z, z);
         }
     */
-    this.ctx.fillStyle = "#666";
     const self = this;
+    // draw the points
+    this.ctx.fillStyle = "#666";
     _.each(this.points, function(p) {
-      Helpers.drawPoint(self.ctx, self.map.relToRealCoords(p.pos), z * 5);
+      Drawing.drawPoint(self.ctx, self.map.relToRealCoords(p.pos), z * 5);
     });
-    this.ctx.lineWidth = z * 5;
-    this.ctx.strokeStyle = '#666';
-    if(this.points.length === 2) // FIXME
-      Helpers.drawLine(self.ctx, this.map.relToRealCoords(this.points[0].pos), this.map.relToRealCoords(this.points[1].pos));
+    // draw the lines
+    const len = this.points.length;
+    if(len === 0) console.log("len is 0");
+    else if(len === 1) { // redraw this point in white
+      this.ctx.fillStyle = "#fff";
+      Drawing.drawPoint(self.ctx, self.map.relToRealCoords(this.points[0].pos), z * 5);
+    }
+    else if(len > 1) {
+      this.ctx.lineWidth = z * 5;
+      this.ctx.strokeStyle = '#666';
+      for(let i = 0; i < this.points.length - 1; i++) {
+        const a = this.points[i];
+        const b = this.points[i + 1];
+        // console.log('dist', self._id, Helpers.dist(a, b));
+        Drawing.drawLine(self.ctx, this.map.relToRealCoords(a.pos), this.map.relToRealCoords(b.pos));
+      }
+    }
   }
 }
 
@@ -125,10 +139,10 @@ export class MapGui extends Map {
 
   drawCurrentSegmentFromEvent(e) {
     if(!this.currentSegment) return;
-    const c = this.mouseCoords(e);
+    const c = this.snappedMouseCoords(e);
     this.ctx.lineWidth = this.displayOptions.zoom * 5;
     this.ctx.strokeStyle = '#fff';
-    Helpers.drawLine(this.ctx, this.relToRealCoords(this.currentSegment.points[0].pos), {x: c.x, y: c.y});
+    Drawing.drawLine(this.ctx, this.relToRealCoords(this.currentSegment.points[0].pos), {x: c.x, y: c.y});
   }
 
   endSegmentFromEvent(e) {
@@ -139,6 +153,7 @@ export class MapGui extends Map {
     segment.points.push(endPoint);
     this.updateSegmentToDB(this.currentSegment);
     this.currentSegment = null;
+    this.draw();
   }
 
   removePointFromEvent(event) {
@@ -171,6 +186,7 @@ export class MapGui extends Map {
   }
 
   draw() {
+    // const time = new Date().getTime();
     if(!this.ctx) return;
     this.ctx.fillStyle = 'black';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -185,6 +201,7 @@ export class MapGui extends Map {
 
     this.drawMapBorder();
     this.drawCenter();
+    // console.log(time, (new Date().getTime()) - time);
     // window.requestAnimationFrame(this.draw);
   }
 
@@ -198,7 +215,7 @@ export class MapGui extends Map {
     this.ctx.fillText('pan: ' + (this.pan.x) + ', ' + (this.pan.y), 20, 40);
     this.ctx.fillText('zoom: ' + (this.displayOptions.zoom), 20, 60);
     // display mouse
-    Helpers.drawPoint(this.ctx, {x: c.x, y: c.y}, 5 * this.displayOptions.zoom);
+    Drawing.drawPoint(this.ctx, {x: c.x, y: c.y}, 5 * this.displayOptions.zoom);
   }
 
   drawSection(posArray) {
@@ -243,11 +260,14 @@ export class MapGui extends Map {
 
   onMouseMove(e) {
     this.draw();
+    let drawmouse = true;
     this.mouseOldPos = this.mousePos;
     this.mousePos = this.mouseCoords(e);
+    this.mouseRelPos = this.relMouseCoords(e);
     this.mouseMovement = {x: this.mousePos.x - this.mouseOldPos.x, y: this.mousePos.y - this.mouseOldPos.y};
     if(this.mouseIsDown) {
       if(e.ctrlKey) { // pan map
+        drawmouse = false;
         this.pan.x += this.mouseMovement.x;
         this.pan.y += this.mouseMovement.y;
       }
@@ -264,7 +284,18 @@ export class MapGui extends Map {
           this.removePointFromEvent(e);
       }
     }
-    if(!e.ctrlKey) this.drawMouse(e);
+    else {
+      // test if near a segment
+      const obj = this.getNearestObject(this.mouseRelPos);
+      if(obj) {
+        if(obj.rel.inside) {
+          // document.body.style.cursor = 'none';
+          drawmouse = false;
+          Drawing.drawPoint(this.ctx, this.relToRealCoords(obj.rel.projection), this.displayOptions.zoom * 10);
+        }
+      }
+    }
+    if(drawmouse) this.drawMouse(e);
   }
 
   onMouseDown(e) {
@@ -327,7 +358,7 @@ export class MapGui extends Map {
   // real mouse coords snap to grid
   snappedMouseCoords(e) {
     // first get relative coords
-    const c = this.relMouseCoords(e);
+    const c = this.relMouseCoords(e); // rounded
     // then go back to real coords
     return this.relToRealCoords(c);
   }
@@ -367,5 +398,27 @@ export class MapGui extends Map {
   selectSkin(skin) {
     this.skin = skin;
   }
+
+  getNearestObject(pos) {
+    const dist = 5 * 2 + 2;
+    let obj = this.getSegment(pos, dist);
+    return obj;
+  }
+
+  // get the first segment near to pos by dist
+  // return segment or null
+  getSegment(pos, dist) {
+    for(let s = 0; s < this.segments.length; s++) {
+      const len = this.segments[s].points.length;
+      if(len < 2) continue;
+      for(let p = 0; p < len - 1; p++) {
+        const rel = Geometry.relPointToSegment(this.segments[s].points[p].pos, this.segments[s].points[p + 1].pos, pos);
+        if(rel.dist <= dist)
+          return {segment: this.segments[s], rel: rel};
+      }
+    }
+    return null;
+  }
+
 
 }

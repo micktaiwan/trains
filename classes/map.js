@@ -1,6 +1,7 @@
 /**
  * Created by mfaivremacon on 31/08/2015.
  */
+import {Drawing, Geometry} from "./helpers";
 
 
 export class Point {
@@ -208,10 +209,14 @@ export class Map {
     s.points = _.map(doc.points, function(p) {return new Point(p)});
   }
 
-  getSegment(pos) {
-    for(let i = 0; i < this.segments.length; i++) {
-      //console.log('loop', this.segments[i].type);
-      if(this.segments[i].pos.x === pos.x && this.segments[i].pos.y === pos.y) return this.segments[i];
+  // get the first point near to pos by dist
+  // return {point: p, segment: s} or null
+  getPoint(pos, dist) {
+    for(let s = 0; s < this.segments.length; s++) {
+      for(let p = 0; p < this.segments[s].points.length; p++) {
+        if(Geometry.dist(this.segments[s].points[p].pos, pos) <= dist)
+          return {point: this.segments[s].points[p], segment: this.segments[s]};
+      }
     }
     return null;
   }
