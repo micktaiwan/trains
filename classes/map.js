@@ -6,7 +6,7 @@
 export class Point {
 
   constructor(doc) {
-    this.pos = {x: doc.x, y: doc.y};
+    this.pos = {x: doc.pos.x, y: doc.pos.y};
   }
 
   toObj() {
@@ -21,9 +21,10 @@ export class Point {
 export class Segment {
 
   constructor(map, doc, id) {
+    if(!id) id = Random.id();
     this._id = id;
     this.map = map;
-    this.points = doc.points;
+    this.points = _.map(doc.points, function(p) {return new Point(p)});
     // this.type = doc.type;
     //console.log('created Segment', this);
   }
@@ -163,14 +164,23 @@ export class Map {
         }
     */
     const obj = {
+      _id: segment._id,
       game_id: segment.map._id,
-      points: _.map(segment.points, function(s) {return s.toObj()}),
+      points: _.map(segment.points, function(p) {return p.toObj()}),
       // type: segment.type
     };
-    Meteor.call('mapInsertSegment', obj, this._id);
-    return true;
-
+    Meteor.call('mapInsertSegment', obj);
   }
+
+  updateSegmentToDB(segment) {
+    const obj = {
+      points: _.map(segment.points, function(p) {
+        return p.toObj()
+      }),
+    };
+    Meteor.call('mapUpdateSegment', segment._id, obj);
+  }
+
 
   addTrainToDB(train) {
     console.log('addTrainToDB session', this._id);
@@ -186,14 +196,16 @@ export class Map {
     return true;
   }
 
-  setSegmentWithId(segment) {
-    // console.log(segment);
+  addSegment(segment) {
     this.segments.push(segment);
-    // if(segment.type.name === 'station')
-    //   this.stations.push(segment);
-
     // for each game change, also set game status
     if(this.game) this.game.setStatus();
+  }
+
+  // coming from db
+  updateSegment(id, doc) {
+    const s = this.getSegmentById(id);
+    s.points = _.map(doc.points, function(p) {return new Point(p)});
   }
 
   getSegment(pos) {

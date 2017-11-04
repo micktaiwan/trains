@@ -31,15 +31,15 @@ Template.game.onRendered(function() {
   if(handleSegments) handleSegments.stop();
   handleSegments = Segments.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
-      console.log('segments: added', id, doc);
-      map.setSegmentWithId(id, doc);
+      // console.log('segments: added', id, doc);
+      map.addSegment(id, doc);
     },
     changed: function(id, doc) {
-      console.log('segments: changed', id, doc);
-      map.updateSegmentWithId(id, doc);
+      // console.log('segments: changed', id, doc);
+      map.updateSegment(id, doc);
     },
     removed: function(id) {
-      console.log('segments: removed', id);
+      // console.log('segments: removed', id);
       map.removeSegment(id);
     }
 

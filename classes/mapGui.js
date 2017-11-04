@@ -54,22 +54,22 @@ export class MapGui extends Map {
   }
 
   init(canvas_id, game_id) {
-    console.log('init', game_id);
+    console.log('MapGui init', game_id);
     super.init(game_id);
     this.game.canModifyMap(); // just to trigger reactivity and depending helpers
     this.canvas = $(canvas_id).get(0);
     this.ctx = this.canvas.getContext("2d");
+    this.currentSegment = null;
     // listen to mouse
     this.canvas.addEventListener("mousedown", $.proxy(this.onMouseDown, this), false);
     this.canvas.addEventListener("mouseup", $.proxy(this.onMouseUp, this), false);
     this.canvas.addEventListener("mousemove", $.proxy(this.onMouseMove, this), false);
     this.canvas.addEventListener("mousewheel", $.proxy(this.onMouseWheel, this), false);
     this.canvas.addEventListener("contextmenu", $.proxy(MapGui.onContextMenu, this), false);
-    //this.canvas.addEventListener("dblclick", $.proxy(this.onMouseDblClick, this), false);
     //this.canvas.addEventListener("mouseout", $.proxy(this.onMouseOut, this), false);
+    //this.canvas.addEventListener("dblclick", $.proxy(this.onMouseDblClick, this), false);
     this.draw();
     console.log('map initialized');
-    // window.requestAnimationFrame(this.draw);
   }
 
   setGame(game) {
@@ -85,17 +85,9 @@ export class MapGui extends Map {
   }
 
   // coming from db
-  setSegmentWithId(id, doc) {
+  addSegment(id, doc) {
     const segment = new SegmentGui(this, doc, id);
-    super.setSegmentWithId(segment);
-  }
-
-  // coming from db
-  updateSegmentWithId(id, doc) {
-    const s = this.getSegmentById(id);
-    //console.log('setSegmentWithId', id, doc, 'found', c);
-    if(!s) throw new Error('no segment ?');
-    s.points = doc.points;
+    super.addSegment(segment);
   }
 
   // coming from db
@@ -118,19 +110,31 @@ export class MapGui extends Map {
     train.draw();
   }
 
-  constinueSegmentFromEvent(event) {
-    const c = this.relMouseCoords(e);
-    const endPoint = new Point({x: c.x, y: c.y});
-    endPoint.draw();
-  }
-
   // given a mouse down, start creating a segment
   startSegmentCreationFromEvent(e) {
     if(!this.game.canModifyMap()) return;
     const c = this.relMouseCoords(e);
-    const startPoint = new Point({x: c.x, y: c.y});
-    const segment = new SegmentGui(this, {points: [startPoint]});
-    this.saveSegmentToDB(segment);
+    const startPoint = new Point({pos: {x: c.x, y: c.y}});
+    this.currentSegment = new SegmentGui(this, {points: [startPoint]});
+    this.saveSegmentToDB(this.currentSegment);
+  }
+
+  drawCurrentSegmentFromEvent(e) {
+    if(!this.currentSegment) return;
+    const c = this.mouseCoords(e);
+    this.ctx.lineWidth = this.displayOptions.zoom * 5;
+    this.ctx.strokeStyle = '#fff';
+    Helpers.drawLine(this.ctx, this.relToRealCoords(this.currentSegment.points[0].pos), {x: c.x, y: c.y});
+  }
+
+  endSegmentFromEvent(e) {
+    if(!this.currentSegment) return;
+    const c = this.relMouseCoords(e);
+    const endPoint = new Point({pos: {x: c.x, y: c.y}});
+    const segment = this.currentSegment;
+    segment.points.push(endPoint);
+    this.updateSegmentToDB(this.currentSegment);
+    this.currentSegment = null;
   }
 
   removePointFromEvent(event) {
@@ -234,6 +238,7 @@ export class MapGui extends Map {
   }
 
   onMouseMove(e) {
+    this.draw();
     this.mouseOldPos = this.mousePos;
     this.mousePos = this.mouseCoords(e);
     this.mouseMovement = {x: this.mousePos.x - this.mouseOldPos.x, y: this.mousePos.y - this.mouseOldPos.y};
@@ -243,8 +248,8 @@ export class MapGui extends Map {
         this.pan.y += this.mouseMovement.y;
       }
       else { // edit map
-        if(this.button === 1)
-          this.continueSegmentFromEvent(e);
+        if(this.button === 1) // dragging
+          this.drawCurrentSegmentFromEvent(e);
         else if(this.button === 2) { // middle button = pan
           this.pan.x += this.mouseMovement.x;
           this.pan.y += this.mouseMovement.y;
@@ -255,7 +260,6 @@ export class MapGui extends Map {
           this.removePointFromEvent(e);
       }
     }
-    this.draw();
     if(!e.ctrlKey) this.drawMouse(e);
   }
 
@@ -278,7 +282,8 @@ export class MapGui extends Map {
     document.body.style.cursor = 'none';
   }
 
-  onMouseUp(event) {
+  onMouseUp(e) {
+    this.endSegmentFromEvent(e);
     this.mouseIsDown = false;
     document.body.style.cursor = 'default';
   }
@@ -318,18 +323,21 @@ export class MapGui extends Map {
   // real mouse coords snap to grid
   snappedMouseCoords(e) {
     // first get relative coords
-    let c = this.relMouseCoords(e);
+    const c = this.relMouseCoords(e);
     // then go back to real coords
-    let factor = this.displayOptions.zoom;
-    c.x = Math.round((c.x * factor) + (this.pan.x));
-    c.y = Math.round((c.y * factor) + (this.pan.y));
-    return c;
+    return this.relToRealCoords(c);
+  }
+
+  // transform relative to real coordinates
+  relToRealCoords(c) {
+    const factor = this.displayOptions.zoom;
+    return {x: Math.round((c.x * factor) + (this.pan.x)), y: Math.round((c.y * factor) + (this.pan.y))}
   }
 
   // mouse coords relative to zoom and panning
   relMouseCoords(e) {
-    let c = this.mouseCoords(e);
-    let factor = this.displayOptions.zoom;
+    const c = this.mouseCoords(e);
+    const factor = this.displayOptions.zoom;
     c.x = Math.round((c.x / factor) - (this.pan.x / factor));
     c.y = Math.round((c.y / factor) - (this.pan.y / factor));
     return c;
