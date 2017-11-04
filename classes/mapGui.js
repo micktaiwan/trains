@@ -214,9 +214,9 @@ export class MapGui extends Map {
     e.preventDefault();
     const oldPos = this.relMouseCoords(e);
 
-    const factor = Math.round((this.displayOptions.zoom / (e.wheelDelta / 60)) * 100) / 100;
-    console.log(factor);
+    const factor = this.displayOptions.zoom / (e.wheelDelta / 60);
     this.displayOptions.zoom += factor;
+    this.displayOptions.zoom = Math.round(this.displayOptions.zoom * 100) / 100;
     if(this.displayOptions.zoom < 0.01)
       this.displayOptions.zoom = 0.01;
     if(this.displayOptions.zoom > 50)
@@ -224,9 +224,10 @@ export class MapGui extends Map {
 
     // zoom depends on mouse position
     const newPos = this.relMouseCoords(e);
-    console.log(oldPos, newPos);
     this.pan.x += (newPos.x - oldPos.x) / (defaultZoom / this.displayOptions.zoom);
     this.pan.y += (newPos.y - oldPos.y) / (defaultZoom / this.displayOptions.zoom);
+    this.pan.x = Math.round(this.pan.x);
+    this.pan.y = Math.round(this.pan.y);
 
     this.draw();
     this.drawMouse(e);
@@ -247,6 +248,8 @@ export class MapGui extends Map {
         else if(this.button === 2) { // middle button = pan
           this.pan.x += this.mouseMovement.x;
           this.pan.y += this.mouseMovement.y;
+          this.pan.x = Math.round(this.pan.x);
+          this.pan.y = Math.round(this.pan.y);
         }
         else if(this.button === 3)
           this.removePointFromEvent(e);
