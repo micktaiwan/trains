@@ -4,7 +4,7 @@
 
 import {Map, Point, Segment} from './map';
 import {TrainGui} from './trainGui';
-import {Drawing, Geometry} from "./helpers";
+import {Drawing} from "./helpers";
 
 const defaultZoom = 5;
 
@@ -16,30 +16,22 @@ export class SegmentGui extends Segment {
   }
 
   draw(options) {
-    // console.log(this);
-    // options = options || {};
     const z = this.map.displayOptions.zoom;
-    /*
-        if(options.withBackground) {
-          this.ctx.fillStyle = "#000";
-          this.ctx.fillRect(this.pos.x, this.pos.y, z, z);
-        }
-    */
     const self = this;
     // draw the points
     this.ctx.fillStyle = "#666";
     _.each(this.points, function(p) {
-      Drawing.drawPoint(self.ctx, self.map.relToRealCoords(p.pos), z * 5);
+      Drawing.drawPoint(self.ctx, self.map.relToRealCoords(p.pos), z * self.map.displayOptions.pointSize);
     });
     // draw the lines
     const len = this.points.length;
-    if(len === 0) console.log("len is 0");
-    else if(len === 1) { // redraw this point in white
+    // if(len === 0) return; // happens just after creating a segment without points
+    if(len === 1) { // redraw this point in white
       this.ctx.fillStyle = "#fff";
-      Drawing.drawPoint(self.ctx, self.map.relToRealCoords(this.points[0].pos), z * 5);
+      Drawing.drawPoint(self.ctx, self.map.relToRealCoords(this.points[0].pos), z * self.map.displayOptions.pointSize);
     }
     else if(len > 1) {
-      this.ctx.lineWidth = z * 5;
+      this.ctx.lineWidth = z * self.map.displayOptions.segmentSize;
       this.ctx.strokeStyle = '#666';
       for(let i = 0; i < this.points.length - 1; i++) {
         const a = this.points[i];
@@ -57,13 +49,18 @@ export class MapGui extends Map {
     super(gameId);
     displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
     this.displayOptions = {
-      zoom: displayOptions.zoom || defaultZoom
+      zoom: displayOptions.zoom || defaultZoom,
+      mouseSize: displayOptions.mouseSize || 5,
+      pointSize: displayOptions.pointSize || 5,
+      segmentSize: displayOptions.segmentSize || 5
     };
 
     this.mouseIsDown = false;
-    this.mouseOldPos = {x: -1, y: -1};
-    this.mousePos = {x: -1, y: -1};
+    this.mouseOldPos = {x: 0, y: 0};
+    this.mousePos = {x: 0, y: 0};
+    this.mouseRelPos = {x: 0, y: 0};
     this.pan = {x: 0, y: 0};
+    this.dragPoint = null;
   }
 
   static onContextMenu(e) {
@@ -132,28 +129,40 @@ export class MapGui extends Map {
   startSegmentCreationFromEvent(e) {
     if(!this.game.canModifyMap()) return;
     const c = this.relMouseCoords(e);
-    const startPoint = new Point({pos: {x: c.x, y: c.y}});
-    this.currentSegment = new SegmentGui(this, {points: [startPoint]});
-    this.saveSegmentToDB(this.currentSegment);
+    this.currentSegment = new SegmentGui(this);
+    const self = this;
+    this.currentSegment.saveToDB(function(err, rv) {
+      self.currentSegment.addPoint(c);
+    });
+  }
+
+  addPointToSegment() {
+    this.dragPoint = this.nearestObj.segment.addPoint(this.nearestObj.rel.projection, this.nearestObj.rel.from);
   }
 
   drawCurrentSegmentFromEvent(e) {
     if(!this.currentSegment) return;
+    if(!this.currentSegment.points.length) return;
     const c = this.snappedMouseCoords(e);
-    this.ctx.lineWidth = this.displayOptions.zoom * 5;
+    this.ctx.lineWidth = this.displayOptions.zoom * this.displayOptions.segmentSize;
     this.ctx.strokeStyle = '#fff';
-    Drawing.drawLine(this.ctx, this.relToRealCoords(this.currentSegment.points[0].pos), {x: c.x, y: c.y});
+    Drawing.drawLine(this.ctx, this.relToRealCoords(this.currentSegment.points[0].pos), c);
+    Drawing.drawPoint(this.ctx, c, this.displayOptions.mouseSize * this.displayOptions.zoom);
   }
 
   endSegmentFromEvent(e) {
     if(!this.currentSegment) return;
     const c = this.relMouseCoords(e);
-    const endPoint = new Point({pos: {x: c.x, y: c.y}});
     const segment = this.currentSegment;
+    const endPoint = new Point({pos: c}, segment);
     segment.points.push(endPoint);
-    this.updateSegmentToDB(this.currentSegment);
+    this.currentSegment.updateDB();
     this.currentSegment = null;
     this.draw();
+  }
+
+  doDragPoint(e) {
+    this.dragPoint.pos = this.mouseRelPos;
   }
 
   removePointFromEvent(event) {
@@ -161,7 +170,7 @@ export class MapGui extends Map {
     // const pos = this.getMouseSegmentCoords(this.mouseCoords(event));
     // const segment = this.getSegment(pos);
     // if(segment) {
-    //   // console.log('removing', segment);
+    //   console.log('removing', segment);
     //   this.removeSegmentFromDb(segment._id);
     // }
   }
@@ -186,7 +195,7 @@ export class MapGui extends Map {
   }
 
   draw() {
-    // const time = new Date().getTime();
+    const time = new Date().getTime();
     if(!this.ctx) return;
     this.ctx.fillStyle = 'black';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -201,7 +210,14 @@ export class MapGui extends Map {
 
     this.drawMapBorder();
     this.drawCenter();
-    // console.log(time, (new Date().getTime()) - time);
+    this.drawTime = (new Date().getTime()) - time;
+    // display coords
+    this.ctx.fillStyle = 'white';
+    this.ctx.fillText('pos: ' + this.mouseRelPos.x + ', ' + this.mouseRelPos.y, 20, 20);
+    this.ctx.fillText('pan: ' + (this.pan.x) + ', ' + (this.pan.y), 20, 40);
+    this.ctx.fillText('zoom: ' + (this.displayOptions.zoom), 20, 60);
+    this.ctx.fillText('time: ' + (this.drawTime), 20, 80);
+
     // window.requestAnimationFrame(this.draw);
   }
 
@@ -209,21 +225,16 @@ export class MapGui extends Map {
     if(!this.game.canModifyMap()) return;
     const c = this.snappedMouseCoords(event);
     const r = this.relMouseCoords(event);
-    this.ctx.fillStyle = 'white';
-    // display coords
-    this.ctx.fillText('pos: ' + r.x + ', ' + r.y, 20, 20);
-    this.ctx.fillText('pan: ' + (this.pan.x) + ', ' + (this.pan.y), 20, 40);
-    this.ctx.fillText('zoom: ' + (this.displayOptions.zoom), 20, 60);
     // display mouse
-    Drawing.drawPoint(this.ctx, {x: c.x, y: c.y}, 5 * this.displayOptions.zoom);
+    Drawing.drawPoint(this.ctx, c, this.displayOptions.mouseSize * this.displayOptions.zoom);
   }
 
   drawSection(posArray) {
     if(!this.ctx) return;
     const self = this;
     posArray.forEach(function(pos) {
-      const t = self.getSegment(pos);
-      if(t) t.draw({withBackground: true});
+      // const t = self.getSegment(pos);
+      // if(t) t.draw({withBackground: true});
     });
   }
 
@@ -272,8 +283,13 @@ export class MapGui extends Map {
         this.pan.y += this.mouseMovement.y;
       }
       else { // edit map
-        if(this.button === 1) // dragging
-          this.drawCurrentSegmentFromEvent(e);
+        if(this.button === 1) {// dragging
+          if(this.dragPoint)
+            this.doDragPoint(e);
+          else
+            this.drawCurrentSegmentFromEvent(e);
+          drawmouse = false;
+        }
         else if(this.button === 2) { // middle button = pan
           this.pan.x += this.mouseMovement.x;
           this.pan.y += this.mouseMovement.y;
@@ -286,12 +302,13 @@ export class MapGui extends Map {
     }
     else {
       // test if near a segment
-      const obj = this.getNearestObject(this.mouseRelPos);
-      if(obj) {
-        if(obj.rel.inside) {
+      this.nearestObj = this.getNearestObject(this.mouseRelPos);
+      if(this.nearestObj) {
+        drawmouse = false;
+        this.ctx.fillStyle = '#666';
+        if(this.nearestObj.rel.inside) {
           // document.body.style.cursor = 'none';
-          drawmouse = false;
-          Drawing.drawPoint(this.ctx, this.relToRealCoords(obj.rel.projection), this.displayOptions.zoom * 10);
+          Drawing.drawPoint(this.ctx, this.relToRealCoords(this.nearestObj.rel.projection), this.displayOptions.zoom * this.displayOptions.pointSize);
         }
       }
     }
@@ -300,10 +317,20 @@ export class MapGui extends Map {
 
   onMouseDown(e) {
     e.preventDefault();
+    let draw = true;
     if(!e.ctrlKey) { // Ctrl is for panning
       switch(e.which) {
         case 1: // left button
-          this.startSegmentCreationFromEvent(e);
+          if(!this.nearestObj) // creating a new segment
+            this.startSegmentCreationFromEvent(e);
+          else { // on a segment
+            let p;
+            if(p = this.nearestObj.segment.getNearestPoint(this.nearestObj.rel.projection, this.displayOptions.pointSize))
+              this.dragPoint = p;
+            else // it's a segment
+              this.addPointToSegment();
+            draw = false;
+          }
           break;
         case 3: // right button
           this.removePointFromEvent(e);
@@ -311,8 +338,10 @@ export class MapGui extends Map {
       }
     }
     this.button = e.which;
-    this.draw();
-    this.drawMouse(e);
+    if(draw) {
+      this.draw();
+      this.drawMouse(e);
+    }
     this.mouseIsDown = true;
     document.body.style.cursor = 'none';
   }
@@ -320,6 +349,10 @@ export class MapGui extends Map {
   onMouseUp(e) {
     this.endSegmentFromEvent(e);
     this.mouseIsDown = false;
+    if(this.dragPoint) {
+      this.dragPoint.updateDB();
+      this.dragPoint = null;
+    }
     document.body.style.cursor = 'default';
   }
 
@@ -398,27 +431,5 @@ export class MapGui extends Map {
   selectSkin(skin) {
     this.skin = skin;
   }
-
-  getNearestObject(pos) {
-    const dist = 5 * 2 + 2;
-    let obj = this.getSegment(pos, dist);
-    return obj;
-  }
-
-  // get the first segment near to pos by dist
-  // return segment or null
-  getSegment(pos, dist) {
-    for(let s = 0; s < this.segments.length; s++) {
-      const len = this.segments[s].points.length;
-      if(len < 2) continue;
-      for(let p = 0; p < len - 1; p++) {
-        const rel = Geometry.relPointToSegment(this.segments[s].points[p].pos, this.segments[s].points[p + 1].pos, pos);
-        if(rel.dist <= dist)
-          return {segment: this.segments[s], rel: rel};
-      }
-    }
-    return null;
-  }
-
 
 }

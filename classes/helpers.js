@@ -63,6 +63,7 @@ export class Geometry {
   //  progress: the distance in % from p1
   //  projection: the projection of q on the segment
   //  dist: the dist from the point q to the segment [p1,p2]
+  //  from: p1
   // }
   // https://math.stackexchange.com/questions/322831/determing-the-distance-from-a-line-segment-to-a-point-in-3-space
   static relPointToSegment(p1, p2, q) {
@@ -76,7 +77,7 @@ export class Geometry {
     else if(progress > 1) dist = Geometry.dist(p2, q);
     else dist = Geometry.dist(q, projection); // inside
     // console.log(progress, inside, projection, dist);
-    return {inside: inside, progress: progress, projection: projection, dist: dist};
+    return {inside: inside, progress: progress, projection: projection, dist: dist, from: p1};
   }
 
 }

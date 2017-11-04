@@ -1,33 +1,102 @@
 /**
  * Created by mfaivremacon on 31/08/2015.
  */
-import {Drawing, Geometry} from "./helpers";
+import {Geometry} from "./helpers";
 
 
 export class Point {
 
-  constructor(doc) {
-    this.pos = {x: doc.pos.x, y: doc.pos.y};
+  constructor(doc, segment) {
+    if(!segment) throw new Error();
+    this.segment = segment;
+    this.pos = doc.pos;
   }
 
   toObj() {
     return {
-      pos: {x: this.pos.x, y: this.pos.y}
+      pos: this.pos
     };
+  }
+
+  updateDB(doc) {
+    if(doc && doc.pos) this.pos = doc.pos;
+    this.segment.updateDB();
   }
 
 }
 
-// a segment is a set of segments, 2 for a line, 3 or more for a curve
+// a segment is a set of points, 2 for a line, 3 or more for a curve
 export class Segment {
 
   constructor(map, doc, id) {
     if(!id) id = Random.id();
     this._id = id;
     this.map = map;
-    this.points = _.map(doc.points, function(p) {return new Point(p)});
+    this.points = [];
+    const self = this;
+    if(doc && doc.points) this.points = _.map(doc.points, function(p) {return new Point(p, self)});
     // this.type = doc.type;
     //console.log('created Segment', this);
+  }
+
+  saveToDB(callback) {
+    /*
+        if(!type) {
+          if(this.currentSegmentSelection === 'Rails') {
+            let rail = this.affectNeighbors(pos, 'add');
+            if(rail === 0) return this.setMessage("<strong>You must place a rail near a station or another rail<strong>");
+            this.setMessage("");
+            type = {name: 'rail', rails: rail};
+          }
+          else if(this.currentSegmentSelection === 'Station') {
+            type = {name: 'station', station: {team: 'red'}};
+            this.setMessage("");
+          }
+          else throw new Meteor.Error('unknown segment selection ' + this.currentSegmentSelection);
+        }
+    */
+    const obj = {
+      _id: this._id,
+      game_id: this.map._id,
+      points: _.map(this.points, function(p) {return p.toObj()}),
+      // type: segment.type
+    };
+    Meteor.call('mapInsertSegment', obj, function(err, rv) {
+      if(callback) callback(err, rv);
+    });
+  }
+
+  updateDB() {
+    const obj = {points: _.map(this.points, function(p) {return p.toObj()})};
+    Meteor.call('mapUpdateSegment', this._id, obj);
+  }
+
+  addPoint(pos, afterPos) {
+    let index = 0;
+    if(afterPos) index = this.getPointFromPos(afterPos).index + 1;
+    this.points.splice(index, 0, new Point({pos: pos}, this));
+    this.updateDB();
+    return this.points[index];
+  }
+
+  getPointFromPos(pos) {
+    for(let p = 0; p < this.points.length; p++) {
+      if(this.points[p].pos.x === pos.x && this.points[p].pos.y === pos.y) return {point: this.points[p], index: p};
+    }
+    return null;
+  }
+
+  getNearestPoint(pos, maxdist) {
+    const rv = [];
+    const len = this.points.length;
+    if(len < 2) return null;
+    let d;
+    for(let p = 0; p < len; p++) {
+      if(d = Geometry.dist(pos, this.points[p].pos) <= maxdist)
+        rv.push({point: this.points[p], dist: d});
+    }
+    if(rv.length === 0) return null;
+    return _.sortBy(rv, function(p) {return p.dist;})[0].point;
   }
 
 }
@@ -148,54 +217,21 @@ export class Map {
     this.message.set(msg);
   }
 
-  saveSegmentToDB(segment) {
-    /*
-        if(!type) {
-          if(this.currentSegmentSelection === 'Rails') {
-            let rail = this.affectNeighbors(pos, 'add');
-            if(rail === 0) return this.setMessage("<strong>You must place a rail near a station or another rail<strong>");
-            this.setMessage("");
-            type = {name: 'rail', rails: rail};
-          }
-          else if(this.currentSegmentSelection === 'Station') {
-            type = {name: 'station', station: {team: 'red'}};
-            this.setMessage("");
-          }
-          else throw new Meteor.Error('unknown segment selection ' + this.currentSegmentSelection);
-        }
-    */
-    const obj = {
-      _id: segment._id,
-      game_id: segment.map._id,
-      points: _.map(segment.points, function(p) {return p.toObj()}),
-      // type: segment.type
-    };
-    Meteor.call('mapInsertSegment', obj);
-  }
-
-  updateSegmentToDB(segment) {
-    const obj = {
-      points: _.map(segment.points, function(p) {
-        return p.toObj()
-      }),
-    };
-    Meteor.call('mapUpdateSegment', segment._id, obj);
-  }
-
-
   addTrainToDB(train) {
     console.log('addTrainToDB session', this._id);
     Meteor.call('trainAdd', this._id, train.pos, train.dir);
     return true;
   }
 
-  removeSegmentFromDb(id) {
-    let pos = this.getSegmentById(id).pos;
-    this.removeSegment(id);
-    this.affectNeighbors(pos, 'sub');
-    Meteor.call('mapRemove', id);
-    return true;
-  }
+  /*
+    removeSegmentFromDb(id) {
+      let pos = this.getSegmentById(id).pos;
+      this.removeSegment(id);
+      this.affectNeighbors(pos, 'sub');
+      Meteor.call('mapRemove', id);
+      return true;
+    }
+  */
 
   addSegment(segment) {
     this.segments.push(segment);
@@ -206,7 +242,7 @@ export class Map {
   // coming from db
   updateSegment(id, doc) {
     const s = this.getSegmentById(id);
-    s.points = _.map(doc.points, function(p) {return new Point(p)});
+    s.points = _.map(doc.points, function(p) {return new Point(p, s)});
   }
 
   // get the first point near to pos by dist
@@ -255,6 +291,28 @@ export class Map {
         self.removeSegment(id);
       }
     });
+  }
+
+  getNearestObject(pos) {
+    const dist = this.displayOptions.segmentSize * 2 + 2;
+    let obj = this.getSegments(pos, dist);
+    if(!obj.length) return null;
+    return obj[0];
+  }
+
+  // return array of all segments near to pos by dist, sorted by dist
+  getSegments(pos, dist) {
+    const rv = [];
+    for(let s = 0; s < this.segments.length; s++) {
+      const len = this.segments[s].points.length;
+      if(len < 2) continue;
+      for(let p = 0; p < len - 1; p++) {
+        const rel = Geometry.relPointToSegment(this.segments[s].points[p].pos, this.segments[s].points[p + 1].pos, pos);
+        if(rel.dist <= dist)
+          rv.push({segment: this.segments[s], rel: rel});
+      }
+    }
+    return _.sortBy(rv, function(e) {return e.rel.dist;});
   }
 
 }
