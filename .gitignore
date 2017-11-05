@@ -3,3 +3,10 @@
 .idea/
 .demeteorized/
 node_modules/
+/diff.sh
+/commit.sh
+/pull.sh
+/status.sh
+/push.sh
+/packages.conf
+/settings.json
