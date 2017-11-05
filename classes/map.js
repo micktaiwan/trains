@@ -294,7 +294,7 @@ export class Map {
   }
 
   getNearestObject(pos) {
-    const dist = this.displayOptions.segmentSize * 2 + 2;
+    const dist = this.displayOptions.segmentSize;
     let obj = this.getSegments(pos, dist);
     if(!obj.length) return null;
     return obj[0];

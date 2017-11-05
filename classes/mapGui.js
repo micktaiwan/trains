@@ -50,8 +50,8 @@ export class MapGui extends Map {
     displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
     this.displayOptions = {
       zoom: displayOptions.zoom || defaultZoom,
-      mouseSize: displayOptions.mouseSize || 5,
-      pointSize: displayOptions.pointSize || 5,
+      mouseSize: displayOptions.mouseSize || 3,
+      pointSize: displayOptions.pointSize || 3,
       segmentSize: displayOptions.segmentSize || 5
     };
 
