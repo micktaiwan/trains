@@ -46,7 +46,7 @@ export class Train {
   // move in the current direction
   dirMove() {
     const dest = this.getDest(this.pos);
-    if(_.isEqual(this.from, dest) || !this.map.getSegment(dest)) return false;
+    if(_.isEqual(this.from, dest) || !this.map.getPath(dest)) return false;
     this.from = _.clone(this.pos);
     this.pos = _.clone(dest);
     return true;

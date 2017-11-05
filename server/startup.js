@@ -42,21 +42,21 @@ Meteor.startup(function() {
       createTrain(train_id, doc);
     },
     removed: function(id) {
-      let doc = Segments.findOne(id);
+      let doc = Paths.findOne(id);
       //console.log('server: removed', id);
       removeTrain(id);
     }
   });
 
-  // segment types data seed
+  // path types data seed
   /*
-    if(SegmentTypes.find({}).count() === 0) {
-      SegmentTypes.insert({
+    if(PathTypes.find({}).count() === 0) {
+      PathTypes.insert({
         name: 'Rails',
         price: 1,
         icon: 'road'
       });
-      SegmentTypes.insert({
+      PathTypes.insert({
         name: 'Station',
         price: 150,
         icon: 'university'

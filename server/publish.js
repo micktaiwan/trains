@@ -2,8 +2,8 @@
  * Created by mfaivremacon on 02/09/2015.
  */
 
-Meteor.publish('segments', function(game_id) {
-  return Segments.find({game_id: game_id});
+Meteor.publish('paths', function(game_id) {
+  return Paths.find({game_id: game_id});
 });
 
 Meteor.publish('trains', function(game_id) {
@@ -20,7 +20,7 @@ Meteor.publish(null, function() {
   return [
     Games.find({}),
     Meteor.users.find({}),
-    // SegmentTypes.find({}),
+    // PathTypes.find({}),
     Chats.find({type: 'lobby'}, {limit: 10, sort: {time: -1}})
   ]
 });

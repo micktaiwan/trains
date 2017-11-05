@@ -2,13 +2,13 @@
  * Created by mfaivremacon on 31/08/2015.
  */
 
-import {Map, Point, Segment} from './map';
+import {Map, Point, Path} from './map';
 import {TrainGui} from './trainGui';
 import {Drawing} from "./helpers";
 
 const defaultZoom = 5;
 
-export class SegmentGui extends Segment {
+export class PathGui extends Path {
 
   constructor(map, doc, id) {
     super(map, doc, id);
@@ -25,14 +25,14 @@ export class SegmentGui extends Segment {
     });
     // draw the lines
     const len = this.points.length;
-    // if(len === 0) return; // happens just after creating a segment without points
+    // if(len === 0) return; // happens just after creating a path without points
     // if(len === 1) { // redraw this point in white
     //   this.ctx.fillStyle = "#fff";
     //   Drawing.drawPoint(self.ctx, self.map.relToRealCoords(this.points[0].pos), z * self.map.displayOptions.pointSize);
     // }
     // else
     if(len > 1) {
-      this.ctx.lineWidth = z * self.map.displayOptions.segmentSize;
+      this.ctx.lineWidth = z * self.map.displayOptions.pathSize;
       this.ctx.strokeStyle = '#666';
       for(let i = 0; i < this.points.length - 1; i++) {
         const a = this.points[i];
@@ -53,7 +53,7 @@ export class MapGui extends Map {
       zoom: displayOptions.zoom || defaultZoom,
       mouseSize: displayOptions.mouseSize || 3,
       pointSize: displayOptions.pointSize || 3,
-      segmentSize: displayOptions.segmentSize || 5
+      pathSize: displayOptions.pathSize || 5
     };
 
     this.mouseIsDown = false;
@@ -75,7 +75,7 @@ export class MapGui extends Map {
     this.game.canModifyMap(); // just to trigger reactivity and depending helpers
     this.canvas = $(canvas_id).get(0);
     this.ctx = this.canvas.getContext("2d");
-    this.currentSegment = null;
+    this.currentPath = null;
     // listen to mouse
     this.canvas.addEventListener("mousedown", $.proxy(this.onMouseDown, this), false);
     this.canvas.addEventListener("mouseup", $.proxy(this.onMouseUp, this), false);
@@ -101,9 +101,9 @@ export class MapGui extends Map {
   }
 
   // coming from db
-  addSegment(id, doc) {
-    const segment = new SegmentGui(this, doc, id);
-    super.addSegment(segment);
+  addPath(id, doc) {
+    const path = new PathGui(this, doc, id);
+    super.addPath(path);
   }
 
   // coming from db
@@ -126,39 +126,39 @@ export class MapGui extends Map {
     train.draw();
   }
 
-  // given a mouse down, start creating a segment
-  startSegmentCreationFromEvent(e) {
+  // given a mouse down, start creating a path
+  startPathCreationFromEvent(e) {
     if(!this.game.canModifyMap()) return;
     const c = this.relMouseCoords(e);
-    this.currentSegment = new SegmentGui(this);
+    this.currentPath = new PathGui(this);
     const self = this;
-    this.currentSegment.saveToDB(function(err, rv) {
-      self.currentSegment.addPoint(c);
+    this.currentPath.saveToDB(function(err, rv) {
+      self.currentPath.addPoint(c);
     });
   }
 
-  addPointToSegment() {
-    this.dragPoint = this.nearestObj.segment.addPoint(this.nearestObj.rel.projection, this.nearestObj.rel.from);
+  addPointToPath() {
+    this.dragPoint = this.nearestObj.path.addPoint(this.nearestObj.rel.projection, this.nearestObj.rel.from);
   }
 
-  drawCurrentSegmentFromEvent(e) {
-    if(!this.currentSegment) return;
-    if(!this.currentSegment.points.length) return;
+  drawCurrentPathFromEvent(e) {
+    if(!this.currentPath) return;
+    if(!this.currentPath.points.length) return;
     const c = this.snappedMouseCoords(e);
-    this.ctx.lineWidth = this.displayOptions.zoom * this.displayOptions.segmentSize;
+    this.ctx.lineWidth = this.displayOptions.zoom * this.displayOptions.pathSize;
     this.ctx.strokeStyle = '#666';
-    Drawing.drawLine(this.ctx, this.relToRealCoords(this.currentSegment.points[0].pos), c);
+    Drawing.drawLine(this.ctx, this.relToRealCoords(this.currentPath.points[0].pos), c);
     Drawing.drawPoint(this.ctx, c, this.displayOptions.mouseSize * this.displayOptions.zoom);
   }
 
-  endSegmentFromEvent(e) {
-    if(!this.currentSegment) return;
+  endPathFromEvent(e) {
+    if(!this.currentPath) return;
     const c = this.relMouseCoords(e);
-    const segment = this.currentSegment;
-    const endPoint = new Point({pos: c}, segment);
-    segment.points.push(endPoint);
-    this.currentSegment.updateDB();
-    this.currentSegment = null;
+    const path = this.currentPath;
+    const endPoint = new Point({pos: c}, path);
+    path.points.push(endPoint);
+    this.currentPath.updateDB();
+    this.currentPath = null;
     this.draw();
   }
 
@@ -168,22 +168,22 @@ export class MapGui extends Map {
 
   removePointFromEvent(e) {
     if(!this.game.canModifyMap()) return;
-    // test if near a segment
+    // test if near a path
     this.nearestObj = this.getNearestObject(this.mouseRelPos);
     if(this.nearestObj) {
       // check if near a point
-      const p = this.nearestObj.segment.getNearestPoint(this.mouseRelPos, this.displayOptions.pointSize);
+      const p = this.nearestObj.path.getNearestPoint(this.mouseRelPos, this.displayOptions.pointSize);
       if(p) {
-        const segment = this.nearestObj.segment;
-        segment.removePoint(p.pos);
-        if(segment.points.length === 1)
-          this.removeSegmentFromDb(segment._id);
+        const path = this.nearestObj.path;
+        path.removePoint(p.pos);
+        if(path.points.length === 1)
+          this.removePathFromDb(path._id);
         else
-          segment.updateDB();
+          path.updateDB();
       }
-      // if not near a point, we are on a segment
+      // if not near a point, we are on a path
       else if(this.nearestObj.rel.inside) {
-        this.removeSegmentFromDb(this.nearestObj.segment._id);
+        this.removePathFromDb(this.nearestObj.path._id);
       }
     }
     else
@@ -216,8 +216,8 @@ export class MapGui extends Map {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     // this.dotranslate();
-    for(let i = 0; i < this.segments.length; i++)
-      this.segments[i].draw();
+    for(let i = 0; i < this.paths.length; i++)
+      this.paths[i].draw();
     // this.untranslate();
 
     for(let i = 0; i < this.trains.length; i++)
@@ -248,15 +248,15 @@ export class MapGui extends Map {
     if(!this.ctx) return;
     const self = this;
     posArray.forEach(function(pos) {
-      // const t = self.getSegment(pos);
+      // const t = self.getPath(pos);
       // if(t) t.draw({withBackground: true});
     });
   }
 
-  // we have been notified that another client removed this segment
-  removeSegment(id) {
-    // console.log('removing segment', id, '...');
-    super.removeSegment(id);
+  // we have been notified that another client removed this path
+  removePath(id) {
+    // console.log('removing path', id, '...');
+    super.removePath(id);
     this.draw();
   }
 
@@ -302,7 +302,7 @@ export class MapGui extends Map {
           if(this.dragPoint)
             this.doDragPoint(e);
           else
-            this.drawCurrentSegmentFromEvent(e);
+            this.drawCurrentPathFromEvent(e);
           drawmouse = false;
         }
         else if(this.button === 2) { // middle button = pan
@@ -316,18 +316,18 @@ export class MapGui extends Map {
       }
     }
     else {
-      // test if near a segment
+      // test if near a path
       this.nearestObj = this.getNearestObject(this.mouseRelPos);
       if(this.nearestObj) {
         drawmouse = false;
         // check if near a point
-        const p = this.nearestObj.segment.getNearestPoint(this.mouseRelPos, this.displayOptions.pointSize);
+        const p = this.nearestObj.path.getNearestPoint(this.mouseRelPos, this.displayOptions.pointSize);
         if(p) {
           document.body.style.cursor = 'move';
           this.ctx.fillStyle = '#966';
           Drawing.drawPoint(this.ctx, this.relToRealCoords(p.pos), this.displayOptions.zoom * this.displayOptions.pointSize);
         }
-        // if not near a point, we are on a segment
+        // if not near a point, we are on a path
         else if(this.nearestObj.rel.inside) {
           document.body.style.cursor = 'pointer';
           this.ctx.fillStyle = '#6f6';
@@ -346,14 +346,14 @@ export class MapGui extends Map {
     if(!e.ctrlKey) { // Ctrl is for panning
       switch(e.which) {
         case 1: // left button
-          if(!this.nearestObj) // creating a new segment
-            this.startSegmentCreationFromEvent(e);
-          else { // on a segment
+          if(!this.nearestObj) // creating a new path
+            this.startPathCreationFromEvent(e);
+          else { // on a path
             let p;
-            if(p = this.nearestObj.segment.getNearestPoint(this.nearestObj.rel.projection, this.displayOptions.pointSize))
+            if(p = this.nearestObj.path.getNearestPoint(this.nearestObj.rel.projection, this.displayOptions.pointSize))
               this.dragPoint = p;
-            else // it's a segment
-              this.addPointToSegment();
+            else // it's a path
+              this.addPointToPath();
             draw = false;
           }
           break;
@@ -372,7 +372,7 @@ export class MapGui extends Map {
   }
 
   onMouseUp(e) {
-    this.endSegmentFromEvent(e);
+    this.endPathFromEvent(e);
     this.mouseIsDown = false;
     if(this.dragPoint) {
       this.dragPoint.updateDB();
@@ -400,7 +400,7 @@ export class MapGui extends Map {
     this.ctx.stroke();
   }
 
-  getMouseSegmentCoords(coords, ignorePan) {
+  getMousePathCoords(coords, ignorePan) {
     if(ignorePan) {
       return {
         x: Math.floor((coords.x - (this.pan.x % this.displayOptions.zoom)) / this.displayOptions.zoom),

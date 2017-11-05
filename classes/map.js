@@ -6,9 +6,9 @@ import {Geometry} from "./helpers";
 
 export class Point {
 
-  constructor(doc, segment) {
-    if(!segment) throw new Error();
-    this.segment = segment;
+  constructor(doc, path) {
+    if(!path) throw new Error();
+    this.path = path;
     this.pos = doc.pos;
   }
 
@@ -20,13 +20,13 @@ export class Point {
 
   updateDB(doc) {
     if(doc && doc.pos) this.pos = doc.pos;
-    this.segment.updateDB();
+    this.path.updateDB();
   }
 
 }
 
-// a segment is a set of points, 2 for a line, 3 or more for a curve
-export class Segment {
+// a path is a set of points, 2 for a line, 3 or more for a curve
+export class Path {
 
   constructor(map, doc, id) {
     if(!id) id = Random.id();
@@ -36,39 +36,39 @@ export class Segment {
     const self = this;
     if(doc && doc.points) this.points = _.map(doc.points, function(p) {return new Point(p, self)});
     // this.type = doc.type;
-    //console.log('created Segment', this);
+    //console.log('created Path', this);
   }
 
   saveToDB(callback) {
     /*
         if(!type) {
-          if(this.currentSegmentSelection === 'Rails') {
+          if(this.currentPathSelection === 'Rails') {
             let rail = this.affectNeighbors(pos, 'add');
             if(rail === 0) return this.setMessage("<strong>You must place a rail near a station or another rail<strong>");
             this.setMessage("");
             type = {name: 'rail', rails: rail};
           }
-          else if(this.currentSegmentSelection === 'Station') {
+          else if(this.currentPathSelection === 'Station') {
             type = {name: 'station', station: {team: 'red'}};
             this.setMessage("");
           }
-          else throw new Meteor.Error('unknown segment selection ' + this.currentSegmentSelection);
+          else throw new Meteor.Error('unknown path selection ' + this.currentPathSelection);
         }
     */
     const obj = {
       _id: this._id,
       game_id: this.map._id,
       points: _.map(this.points, function(p) {return p.toObj()}),
-      // type: segment.type
+      // type: path.type
     };
-    Meteor.call('mapInsertSegment', obj, function(err, rv) {
+    Meteor.call('mapInsertPath', obj, function(err, rv) {
       if(callback) callback(err, rv);
     });
   }
 
   updateDB() {
     const obj = {points: _.map(this.points, function(p) {return p.toObj()})};
-    Meteor.call('mapUpdateSegment', this._id, obj);
+    Meteor.call('mapUpdatePath', this._id, obj);
   }
 
   addPoint(pos, afterPos) {
@@ -106,19 +106,19 @@ export class Segment {
 
 }
 
-// a map is a set of segments belonging to a game_id
+// a map is a set of paths belonging to a game_id
 export class Map {
 
-  // a map can observe the segments itself
-  // but if the case will create simple Segment, not SegmentGui
+  // a map can observe the paths itself
+  // but if the case will create simple Path, not PathGui
   // useful for server maps used in serverTrains
   constructor(game_id, observeChanges) {
     console.log('Map#constructor: game_id', game_id, observeChanges);
     this._id = game_id;
-    this.segments = [];
+    this.paths = [];
     this.trains = [];
     this.stations = [];
-    this.currentSegmentSelection = 'Rails';
+    this.currentPathSelection = 'Rails';
     this.message = new ReactiveVar('');
     if(observeChanges) this.observeChanges();
   }
@@ -128,12 +128,12 @@ export class Map {
     this._id = game_id;
   }
 
-  setSegmentSelection(segmentName) {
-    this.currentSegmentSelection = segmentName;
+  setPathSelection(pathName) {
+    this.currentPathSelection = pathName;
   }
 
   resetMap() {
-    this.segments.length = 0;
+    this.paths.length = 0;
     this.trains.length = 0;
     this.stations.length = 0;
     Meteor.call('mapReset', this._id);
@@ -143,15 +143,15 @@ export class Map {
     console.error('method should be overridded');
   }
 
-  segmentCount() {
-    return this.segments.length;
+  pathCount() {
+    return this.paths.length;
   }
 
-  removeSegment(id) {
-    //segments
-    for(let i = 0; i < this.segments.length; i++) {
-      if(this.segments[i]._id === id) {
-        this.segments.splice(i, 1);
+  removePath(id) {
+    //paths
+    for(let i = 0; i < this.paths.length; i++) {
+      if(this.paths[i]._id === id) {
+        this.paths.splice(i, 1);
         break;
       }
     }
@@ -188,14 +188,14 @@ export class Map {
     //     break;
     // }
     //
-    // let segment = this.getSegment(newPos);
-    // if(segment) {
+    // let path = this.getPath(newPos);
+    // if(path) {
     //   rail += dir;
     //   if(operation === 'add')
-    //     segment.type.rails |= oppDir;
+    //     path.type.rails |= oppDir;
     //   if(operation === 'sub')
-    //     segment.type.rails ^= oppDir;
-    //   Meteor.call('mapUpdate', segment._id, segment.pos, segment.type, this._id); // Can't call wih simply segment as I have a error
+    //     path.type.rails ^= oppDir;
+    //   Meteor.call('mapUpdate', path._id, path.pos, path.type, this._id); // Can't call wih simply path as I have a error
     // }
     return rail;
   }
@@ -219,39 +219,39 @@ export class Map {
     return true;
   }
 
-  removeSegmentFromDb(id) {
-    this.removeSegment(id);
+  removePathFromDb(id) {
+    this.removePath(id);
     Meteor.call('mapRemove', id);
     return true;
   }
 
-  addSegment(segment) {
-    this.segments.push(segment);
+  addPath(path) {
+    this.paths.push(path);
     // for each game change, also set game status
     if(this.game) this.game.setStatus();
   }
 
   // coming from db
-  updateSegment(id, doc) {
-    const s = this.getSegmentById(id);
+  updatePath(id, doc) {
+    const s = this.getPathById(id);
     s.points = _.map(doc.points, function(p) {return new Point(p, s)});
   }
 
   // get the first point near to pos by dist
-  // return {point: p, segment: s} or null
+  // return {point: p, path: s} or null
   getPoint(pos, dist) {
-    for(let s = 0; s < this.segments.length; s++) {
-      for(let p = 0; p < this.segments[s].points.length; p++) {
-        if(Geometry.dist(this.segments[s].points[p].pos, pos) <= dist)
-          return {point: this.segments[s].points[p], segment: this.segments[s]};
+    for(let s = 0; s < this.paths.length; s++) {
+      for(let p = 0; p < this.paths[s].points.length; p++) {
+        if(Geometry.dist(this.paths[s].points[p].pos, pos) <= dist)
+          return {point: this.paths[s].points[p], path: this.paths[s]};
       }
     }
     return null;
   }
 
-  getSegmentById(id) {
-    for(let i = 0; i < this.segments.length; i++) {
-      if(this.segments[i]._id === id) return this.segments[i];
+  getPathById(id) {
+    for(let i = 0; i < this.paths.length; i++) {
+      if(this.paths[i]._id === id) return this.paths[i];
     }
     return null;
   }
@@ -270,45 +270,45 @@ export class Map {
     return null;
   }
 
-  // subscribe to map (or "game") segments
+  // subscribe to map (or "game") paths
   observeChanges() {
     const self = this;
-    Segments.find({game_id: self._id}).observeChanges({
+    Paths.find({game_id: self._id}).observeChanges({
       added: function(id, doc) {
         // console.log('change: added', id, doc);
-        self.segments.push(new Segment(self, doc, id));
+        self.paths.push(new Path(self, doc, id));
       },
       removed: function(id) {
         //console.log('change: removed', id);
-        self.removeSegment(id);
+        self.removePath(id);
       }
     });
   }
 
   getNearestObject(pos) {
-    const dist = this.displayOptions.segmentSize;
-    let obj = this.getSegments(pos, dist);
+    const dist = this.displayOptions.pathSize;
+    let obj = this.getPaths(pos, dist);
     if(!obj.length) return null;
     return obj[0];
   }
 
-  // return array of all segments near to pos by dist, sorted by dist
-  getSegments(pos, dist) {
+  // return array of all paths near to pos by dist, sorted by dist
+  getPaths(pos, dist) {
     const rv = [];
-    for(let s = 0; s < this.segments.length; s++) {
-      const len = this.segments[s].points.length;
+    for(let s = 0; s < this.paths.length; s++) {
+      const len = this.paths[s].points.length;
       if(len === 0) continue;
       else if(len === 1) {
-        const p = this.segments[s].points[0].pos;
-        const rel = Geometry.relPointToSegment(p, p, pos);
+        const p = this.paths[s].points[0].pos;
+        const rel = Geometry.relPointToPath(p, p, pos);
         if(rel.dist <= dist)
-          rv.push({segment: this.segments[s], rel: rel});
+          rv.push({path: this.paths[s], rel: rel});
       }
       else {
         for(let p = 0; p < len - 1; p++) {
-          const rel = Geometry.relPointToSegment(this.segments[s].points[p].pos, this.segments[s].points[p + 1].pos, pos);
+          const rel = Geometry.relPointToPath(this.paths[s].points[p].pos, this.paths[s].points[p + 1].pos, pos);
           if(rel.dist <= dist)
-            rv.push({segment: this.segments[s], rel: rel});
+            rv.push({path: this.paths[s], rel: rel});
         }
       }
     }

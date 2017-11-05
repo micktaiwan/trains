@@ -56,17 +56,17 @@ export class Geometry {
     return Math.sqrt((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y));
   }
 
-  // return information about the relation between a point and a segment
+  // return information about the relation between a point and a path
   // {
-  //  dist: distance between the point and the segment,
-  //  inside: true if the projection of the point is inside the segment
+  //  dist: distance between the point and the path,
+  //  inside: true if the projection of the point is inside the path
   //  progress: the distance in % from p1
-  //  projection: the projection of q on the segment
-  //  dist: the dist from the point q to the segment [p1,p2]
+  //  projection: the projection of q on the path
+  //  dist: the dist from the point q to the path [p1,p2]
   //  from: p1
   // }
-  // https://math.stackexchange.com/questions/322831/determing-the-distance-from-a-line-segment-to-a-point-in-3-space
-  static relPointToSegment(p1, p2, q) {
+  // https://math.stackexchange.com/questions/322831/determing-the-distance-from-a-line-path-to-a-point-in-3-space
+  static relPointToPath(p1, p2, q) {
 
     if(_.isEqual(p1,p2)) return {inside: _.isEqual(p1,q), progress: 0, projection: p1, dist: Geometry.dist(p1,q), from: p1};
 
