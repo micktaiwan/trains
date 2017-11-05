@@ -13,6 +13,18 @@ export class Drawing {
     ctx.stroke();
   }
 
+  static drawArrow(ctx, p1, p2) {
+    let v = new Vector(p1, p2);
+    const projection = v.origin().plus((v.scal(0.3))).norm();
+
+
+    ctx.beginPath();
+    ctx.moveTo(v.p1.x, v.p1.y);
+    ctx.lineTo(projection.x, projection.y);
+    ctx.stroke();
+
+  }
+
 }
 
 export class Vector {
@@ -69,7 +81,7 @@ export class Geometry {
   // https://math.stackexchange.com/questions/322831/determing-the-distance-from-a-line-segment-to-a-point-in-3-space
   static relPointToPath(p1, p2, q) {
 
-    if(_.isEqual(p1,p2)) return {inside: _.isEqual(p1,q), progress: 0, projection: p1, dist: Geometry.dist(p1,q), from: p1};
+    if(_.isEqual(p1, p2)) return {inside: _.isEqual(p1, q), progress: 0, projection: p1, dist: Geometry.dist(p1, q), from: p1};
 
     const u = new Vector(p1, p2);
     const v = new Vector(p1, q);
@@ -86,9 +98,18 @@ export class Geometry {
 
 }
 
+// Note that object must be an object or array,
+// NOT a primitive value like string, number, etc.
+objIdMap = new WeakMap;
+objectCount = 0;
+
 export class Helpers {
 
   static moveInterval = 1000;
   static caseRealMeters = 10;
 
+  static objectId(object) {
+    if(!objIdMap.has(object)) objIdMap.set(object, ++objectCount);
+    return objIdMap.get(object);
+  }
 }

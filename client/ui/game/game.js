@@ -136,7 +136,7 @@ Template.game.events({
 
   'click .js-toggle-volume'() {
     const s = game.backgroundSound;
-    console.log(s.state());
+    // console.log(s.state());
     $('.js-toggle-volume').html('<i class="volume down icon"></i> .....');
     if(s.state() === "unloaded") {
       s.load().once('load', function() {

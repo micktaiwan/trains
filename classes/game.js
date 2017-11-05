@@ -19,10 +19,10 @@ export class Game {
     //   self.onTime();
     // }, 1000);
     this.backgroundSound = new Howl({
-      src: ['http://ice1.somafm.com/sf1033-128-mp3'],
+      src: ['http://ice1.somafm.com/dronezone-128-mp3'], // ,'http://ice1.somafm.com/sf1033-128-mp3'
       html5: true,
       autoplay: true,
-      format: ['mp3', 'aac'],
+      format: ['mp3'],
       volume: 0
     });
     this.backgroundSound.fade(0, 0.2, 10000);

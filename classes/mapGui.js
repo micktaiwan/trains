@@ -2,47 +2,13 @@
  * Created by mfaivremacon on 31/08/2015.
  */
 
-import {Map, Path, Point} from './map';
+import {Map} from './map';
+import {Point} from "./path";
+import {PathGui} from "./pathGui";
 import {TrainGui} from './trainGui';
 import {Drawing} from "./helpers";
 
 const defaultZoom = 5;
-
-export class PathGui extends Path {
-
-  constructor(map, doc, id) {
-    super(map, doc, id);
-    this.ctx = map.ctx;
-  }
-
-  draw(options) {
-    const z = this.map.displayOptions.zoom;
-    const self = this;
-    // draw the points
-    this.ctx.fillStyle = "#666";
-    _.each(this.points, function(p) {
-      Drawing.drawPoint(self.ctx, self.map.relToRealCoords(p.pos), z * self.map.displayOptions.pointSize);
-    });
-    // draw the lines
-    const len = this.points.length;
-    // if(len === 0) return; // happens just after creating a path without points
-    // if(len === 1) { // redraw this point in white
-    //   this.ctx.fillStyle = "#fff";
-    //   Drawing.drawPoint(self.ctx, self.map.relToRealCoords(this.points[0].pos), z * self.map.displayOptions.pointSize);
-    // }
-    // else
-    if(len > 1) {
-      this.ctx.lineWidth = z * self.map.displayOptions.pathSize;
-      this.ctx.strokeStyle = '#666';
-      for(let i = 0; i < this.points.length - 1; i++) {
-        const a = this.points[i];
-        const b = this.points[i + 1];
-        // console.log('dist', self._id, Helpers.dist(a, b));
-        Drawing.drawLine(self.ctx, this.map.relToRealCoords(a.pos), this.map.relToRealCoords(b.pos));
-      }
-    }
-  }
-}
 
 export class MapGui extends Map {
 
@@ -135,13 +101,13 @@ export class MapGui extends Map {
     this.currentPath = new PathGui(this);
     const self = this;
     this.currentPath.saveToDB(function(err, rv) {
-      self.currentPath.addPoint(c);
+      self.currentPath.addMiddlePoint(c);
     });
   }
 
-  addPointToPath() {
+  addMiddlePointToSegment() {
     this.game.play('station');
-    this.dragPoint = this.nearestObj.path.addPoint(this.nearestObj.rel.projection, this.nearestObj.rel.from);
+    this.dragPoint = this.nearestObj.path.addMiddlePoint(this.nearestObj.rel.projection, this.nearestObj.rel.from);
   }
 
   drawCurrentPathFromEvent(e) {
@@ -161,6 +127,7 @@ export class MapGui extends Map {
     const path = this.currentPath;
     const endPoint = new Point({pos: c}, path);
     path.points.push(endPoint);
+    path.points[0].addBiLink(endPoint);
     this.currentPath.updateDB();
     this.currentPath = null;
     this.draw();
@@ -361,7 +328,7 @@ export class MapGui extends Map {
               this.game.play('drag');
             }
             else // it's a path
-              this.addPointToPath();
+              this.addMiddlePointToSegment();
             draw = false;
           }
           break;
