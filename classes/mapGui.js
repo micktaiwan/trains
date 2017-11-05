@@ -253,15 +253,15 @@ export class MapGui extends Map {
     const factor = this.displayOptions.zoom / (e.wheelDelta / 60);
     this.displayOptions.zoom += factor;
     this.displayOptions.zoom = Math.round(this.displayOptions.zoom * 100) / 100;
-    if(this.displayOptions.zoom < 0.01)
-      this.displayOptions.zoom = 0.01;
+    if(this.displayOptions.zoom < 0.2)
+      this.displayOptions.zoom = 0.2;
     if(this.displayOptions.zoom > 50)
       this.displayOptions.zoom = 50;
 
     // zoom depends on mouse position
     const newPos = this.relMouseCoords(e);
-    this.pan.x += (newPos.x - oldPos.x) / (defaultZoom / this.displayOptions.zoom);
-    this.pan.y += (newPos.y - oldPos.y) / (defaultZoom / this.displayOptions.zoom);
+    this.pan.x += (newPos.x - oldPos.x) * this.displayOptions.zoom;
+    this.pan.y += (newPos.y - oldPos.y) * this.displayOptions.zoom;
     this.pan.x = Math.round(this.pan.x);
     this.pan.y = Math.round(this.pan.y);
 
@@ -305,10 +305,10 @@ export class MapGui extends Map {
       this.nearestObj = this.getNearestObject(this.mouseRelPos);
       if(this.nearestObj) {
         drawmouse = false;
-        this.ctx.fillStyle = '#666';
         if(this.nearestObj.rel.inside) {
           // document.body.style.cursor = 'none';
-          Drawing.drawPoint(this.ctx, this.relToRealCoords(this.nearestObj.rel.projection), this.displayOptions.zoom * this.displayOptions.pointSize);
+          this.ctx.fillStyle = '#666';
+          Drawing.drawPoint(this.ctx, this.relToRealCoords(this.nearestObj.rel.projection), this.displayOptions.zoom * this.displayOptions.pointSize + 2);
         }
       }
     }
