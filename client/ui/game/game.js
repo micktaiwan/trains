@@ -65,6 +65,7 @@ Template.game.onRendered(function() {
 });
 
 Template.game.onDestroyed(function() {
+  game.stop();
   if(handlePaths) handlePaths.stop();
   if(handleTrains) handleTrains.stop();
 });
@@ -131,8 +132,26 @@ Template.game.events({
 
   'click .js-remove-speed'() {
     Helpers.moveInterval = 1000;
-  }
+  },
 
+  'click .js-toggle-volume'() {
+    const s = game.backgroundSound;
+    console.log(s.state());
+    $('.js-toggle-volume').html('<i class="volume down icon"></i> .....');
+    if(s.state() === "unloaded") {
+      s.load().once('load', function() {
+        s.play();
+        s.fade(0, 0.2, 1000);
+        $('.js-toggle-volume').html('<i class="volume off icon"></i> Off');
+      });
+    }
+    else {
+      s.fade(0.2, 0, 1000).once('fade', function() {
+        s.unload();
+        $('.js-toggle-volume').html('<i class="volume up icon"></i> On');
+      });
+    }
+  }
 
 });
 

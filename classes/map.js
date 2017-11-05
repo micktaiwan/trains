@@ -109,8 +109,6 @@ export class Path {
 // a map is a set of paths belonging to a game_id
 export class Map {
 
-  // a map can observe the paths itself
-  // but if the case will create simple Path, not PathGui
   // useful for server maps used in serverTrains
   constructor(game_id, observeChanges) {
     console.log('Map#constructor: game_id', game_id, observeChanges);
@@ -145,16 +143,6 @@ export class Map {
 
   pathCount() {
     return this.paths.length;
-  }
-
-  removePath(id) {
-    //paths
-    for(let i = 0; i < this.paths.length; i++) {
-      if(this.paths[i]._id === id) {
-        this.paths.splice(i, 1);
-        break;
-      }
-    }
   }
 
   removeTrain(id) {
@@ -235,6 +223,19 @@ export class Map {
   updatePath(id, doc) {
     const s = this.getPathById(id);
     s.points = _.map(doc.points, function(p) {return new Point(p, s)});
+    this.draw();
+  }
+
+  // a map can observe the paths itself
+  removePath(id) {
+    // but if the case will create simple Path, not PathGui
+    //paths
+    for(let i = 0; i < this.paths.length; i++) {
+      if(this.paths[i]._id === id) {
+        this.paths.splice(i, 1);
+        break;
+      }
+    }
   }
 
   // get the first point near to pos by dist

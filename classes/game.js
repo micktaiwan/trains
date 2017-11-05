@@ -18,6 +18,36 @@ export class Game {
     // this.clockHandle = Meteor.setInterval(function() {
     //   self.onTime();
     // }, 1000);
+    this.backgroundSound = new Howl({
+      src: ['http://ice1.somafm.com/sf1033-128-mp3'],
+      html5: true,
+      autoplay: true,
+      format: ['mp3', 'aac'],
+      volume: 0
+    });
+    this.backgroundSound.fade(0, 0.2, 10000);
+    this.sounds = {
+      station: new Howl({src: ['/snd/station.wav'], volume: 0.2}),
+      remove: new Howl({src: ['/snd/remove.wav'], volume: 0.5}),
+      drag: new Howl({src: ['/snd/drag.wav'], volume: 0.1}),
+      success: new Howl({src: ['/snd/success.wav'], volume: 0.2})
+    };
+  }
+
+  play(name, stereo) {
+    if(typeof(stereo) === 'undefined') stereo = -1 + this.map.mousePos.x / this.map.canvas.width * 2;
+    // console.log(this.map.mousePos.x, stereo);
+    this.sounds[name].stereo(stereo).play();
+  }
+
+  stop() {
+    const self = this;
+    this.backgroundSound.fade(0.2, 0, 3000).once('fade', function() {
+      self.backgroundSound.unload();
+    });
+    _.each(this.sounds, function(s) {
+      s.unload();
+    });
   }
 
   onTime() {
@@ -39,6 +69,7 @@ export class Game {
       rv = game && game.players && game.players.some(function(m) {
         return m._id === uid
       });
+      if(typeof(rv) === "undefined") rv = false;
     }
 
     if(this._canModifyMap !== rv) {
@@ -50,14 +81,13 @@ export class Game {
   }
 
   setStatus() {
-    let status = '';
+    let status = 'Ready<br/>';
     if(!Meteor.user()) status = 'You must be loggued to play<br/>';
     else {
-      if(!this.canModifyMap()) status = 'You can not modify this map';
-      if(this.map.stations.length === 0) status = 'You should place your first station<br/>';
+      if(!this.canModifyMap()) status = 'You can not modify this map. Are you a team member ?';
+      else if(this.map.stations.length === 0) status = 'You should place your first station<br/>';
       else if(this.map.paths.length < 3) status = 'You should build more rails<br/>';
     }
-    if(status === '') status = 'Ready<br/>';
     this.gameStatus.set(status);
   }
 

@@ -2,7 +2,7 @@
  * Created by mfaivremacon on 31/08/2015.
  */
 
-import {Map, Point, Path} from './map';
+import {Map, Path, Point} from './map';
 import {TrainGui} from './trainGui';
 import {Drawing} from "./helpers";
 
@@ -51,8 +51,8 @@ export class MapGui extends Map {
     displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
     this.displayOptions = {
       zoom: displayOptions.zoom || defaultZoom,
-      mouseSize: displayOptions.mouseSize || 3,
-      pointSize: displayOptions.pointSize || 3,
+      mouseSize: displayOptions.mouseSize || 4,
+      pointSize: displayOptions.pointSize || 4,
       pathSize: displayOptions.pathSize || 5
     };
 
@@ -104,6 +104,7 @@ export class MapGui extends Map {
   addPath(id, doc) {
     const path = new PathGui(this, doc, id);
     super.addPath(path);
+    this.draw();
   }
 
   // coming from db
@@ -128,6 +129,7 @@ export class MapGui extends Map {
 
   // given a mouse down, start creating a path
   startPathCreationFromEvent(e) {
+    this.game.play('station');
     if(!this.game.canModifyMap()) return;
     const c = this.relMouseCoords(e);
     this.currentPath = new PathGui(this);
@@ -138,6 +140,7 @@ export class MapGui extends Map {
   }
 
   addPointToPath() {
+    this.game.play('station');
     this.dragPoint = this.nearestObj.path.addPoint(this.nearestObj.rel.projection, this.nearestObj.rel.from);
   }
 
@@ -153,6 +156,7 @@ export class MapGui extends Map {
 
   endPathFromEvent(e) {
     if(!this.currentPath) return;
+    this.game.play('station');
     const c = this.relMouseCoords(e);
     const path = this.currentPath;
     const endPoint = new Point({pos: c}, path);
@@ -173,6 +177,7 @@ export class MapGui extends Map {
     if(this.nearestObj) {
       // check if near a point
       const p = this.nearestObj.path.getNearestPoint(this.mouseRelPos, this.displayOptions.pointSize);
+      this.game.play('remove');
       if(p) {
         const path = this.nearestObj.path;
         path.removePoint(p.pos);
@@ -191,6 +196,7 @@ export class MapGui extends Map {
   }
 
   resetMap() {
+    this.game.play('success', 0);
     super.resetMap();
     this.resetPosition();
   }
@@ -265,7 +271,7 @@ export class MapGui extends Map {
     e.preventDefault();
     const oldPos = this.relMouseCoords(e);
 
-    const factor = this.displayOptions.zoom / (e.wheelDelta / 60);
+    const factor = this.displayOptions.zoom / (e.wheelDelta / 45);
     this.displayOptions.zoom += factor;
     this.displayOptions.zoom = Math.round(this.displayOptions.zoom * 100) / 100;
     if(this.displayOptions.zoom < 0.2)
@@ -350,8 +356,10 @@ export class MapGui extends Map {
             this.startPathCreationFromEvent(e);
           else { // on a path
             let p;
-            if(p = this.nearestObj.path.getNearestPoint(this.nearestObj.rel.projection, this.displayOptions.pointSize))
+            if(p = this.nearestObj.path.getNearestPoint(this.nearestObj.rel.projection, this.displayOptions.pointSize)) {
               this.dragPoint = p;
+              this.game.play('drag');
+            }
             else // it's a path
               this.addPointToPath();
             draw = false;
@@ -372,6 +380,7 @@ export class MapGui extends Map {
   }
 
   onMouseUp(e) {
+    this.game.sounds['drag'].fade(0.1, 0, 100);
     this.endPathFromEvent(e);
     this.mouseIsDown = false;
     if(this.dragPoint) {
