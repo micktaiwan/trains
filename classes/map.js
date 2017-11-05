@@ -81,7 +81,7 @@ export class Segment {
 
   getPointFromPos(pos) {
     for(let p = 0; p < this.points.length; p++) {
-      if(this.points[p].pos.x === pos.x && this.points[p].pos.y === pos.y) return {point: this.points[p], index: p};
+      if(_.isEqual(this.points[p].pos, pos)) return {point: this.points[p], index: p};
     }
     return null;
   }
@@ -89,7 +89,6 @@ export class Segment {
   getNearestPoint(pos, maxdist) {
     const rv = [];
     const len = this.points.length;
-    if(len < 2) return null;
     let d;
     for(let p = 0; p < len; p++) {
       if(d = Geometry.dist(pos, this.points[p].pos) <= maxdist)
@@ -98,6 +97,12 @@ export class Segment {
     if(rv.length === 0) return null;
     return _.sortBy(rv, function(p) {return p.dist;})[0].point;
   }
+
+  removePoint(pos) {
+    const obj = this.getPointFromPos(pos);
+    if(obj) this.points.splice(obj.index, 1);
+  }
+
 
 }
 
@@ -150,15 +155,6 @@ export class Map {
         break;
       }
     }
-
-    // stations
-    for(let i = 0; i < this.stations.length; i++) {
-      if(this.stations[i]._id === id) {
-        this.stations.splice(i, 1);
-        break;
-      }
-    }
-
   }
 
   removeTrain(id) {
@@ -223,15 +219,11 @@ export class Map {
     return true;
   }
 
-  /*
-    removeSegmentFromDb(id) {
-      let pos = this.getSegmentById(id).pos;
-      this.removeSegment(id);
-      this.affectNeighbors(pos, 'sub');
-      Meteor.call('mapRemove', id);
-      return true;
-    }
-  */
+  removeSegmentFromDb(id) {
+    this.removeSegment(id);
+    Meteor.call('mapRemove', id);
+    return true;
+  }
 
   addSegment(segment) {
     this.segments.push(segment);

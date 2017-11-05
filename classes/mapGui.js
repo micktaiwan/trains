@@ -26,11 +26,12 @@ export class SegmentGui extends Segment {
     // draw the lines
     const len = this.points.length;
     // if(len === 0) return; // happens just after creating a segment without points
-    if(len === 1) { // redraw this point in white
-      this.ctx.fillStyle = "#fff";
-      Drawing.drawPoint(self.ctx, self.map.relToRealCoords(this.points[0].pos), z * self.map.displayOptions.pointSize);
-    }
-    else if(len > 1) {
+    // if(len === 1) { // redraw this point in white
+    //   this.ctx.fillStyle = "#fff";
+    //   Drawing.drawPoint(self.ctx, self.map.relToRealCoords(this.points[0].pos), z * self.map.displayOptions.pointSize);
+    // }
+    // else
+    if(len > 1) {
       this.ctx.lineWidth = z * self.map.displayOptions.segmentSize;
       this.ctx.strokeStyle = '#666';
       for(let i = 0; i < this.points.length - 1; i++) {
@@ -145,7 +146,7 @@ export class MapGui extends Map {
     if(!this.currentSegment.points.length) return;
     const c = this.snappedMouseCoords(e);
     this.ctx.lineWidth = this.displayOptions.zoom * this.displayOptions.segmentSize;
-    this.ctx.strokeStyle = '#fff';
+    this.ctx.strokeStyle = '#666';
     Drawing.drawLine(this.ctx, this.relToRealCoords(this.currentSegment.points[0].pos), c);
     Drawing.drawPoint(this.ctx, c, this.displayOptions.mouseSize * this.displayOptions.zoom);
   }
@@ -165,14 +166,28 @@ export class MapGui extends Map {
     this.dragPoint.pos = this.mouseRelPos;
   }
 
-  removePointFromEvent(event) {
+  removePointFromEvent(e) {
     if(!this.game.canModifyMap()) return;
-    // const pos = this.getMouseSegmentCoords(this.mouseCoords(event));
-    // const segment = this.getSegment(pos);
-    // if(segment) {
-    //   console.log('removing', segment);
-    //   this.removeSegmentFromDb(segment._id);
-    // }
+    // test if near a segment
+    this.nearestObj = this.getNearestObject(this.mouseRelPos);
+    if(this.nearestObj) {
+      // check if near a point
+      const p = this.nearestObj.segment.getNearestPoint(this.mouseRelPos, this.displayOptions.pointSize);
+      if(p) {
+        const segment = this.nearestObj.segment;
+        segment.removePoint(p.pos);
+        if(segment.points.length === 1)
+          this.removeSegmentFromDb(segment._id);
+        else
+          segment.updateDB();
+      }
+      // if not near a point, we are on a segment
+      else if(this.nearestObj.rel.inside) {
+        this.removeSegmentFromDb(this.nearestObj.segment._id);
+      }
+    }
+    else
+      document.body.style.cursor = 'auto';
   }
 
   resetMap() {
@@ -305,12 +320,22 @@ export class MapGui extends Map {
       this.nearestObj = this.getNearestObject(this.mouseRelPos);
       if(this.nearestObj) {
         drawmouse = false;
-        if(this.nearestObj.rel.inside) {
-          // document.body.style.cursor = 'none';
-          this.ctx.fillStyle = '#666';
-          Drawing.drawPoint(this.ctx, this.relToRealCoords(this.nearestObj.rel.projection), this.displayOptions.zoom * this.displayOptions.pointSize + 2);
+        // check if near a point
+        const p = this.nearestObj.segment.getNearestPoint(this.mouseRelPos, this.displayOptions.pointSize);
+        if(p) {
+          document.body.style.cursor = 'move';
+          this.ctx.fillStyle = '#966';
+          Drawing.drawPoint(this.ctx, this.relToRealCoords(p.pos), this.displayOptions.zoom * this.displayOptions.pointSize);
+        }
+        // if not near a point, we are on a segment
+        else if(this.nearestObj.rel.inside) {
+          document.body.style.cursor = 'pointer';
+          this.ctx.fillStyle = '#6f6';
+          Drawing.drawPoint(this.ctx, this.relToRealCoords(this.nearestObj.rel.projection), this.displayOptions.zoom * this.displayOptions.pointSize);
         }
       }
+      else
+        document.body.style.cursor = 'auto';
     }
     if(drawmouse) this.drawMouse(e);
   }

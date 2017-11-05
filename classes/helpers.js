@@ -79,7 +79,7 @@ export class Geometry {
     if(progress < 0) dist = Geometry.dist(p1, q);
     else if(progress > 1) dist = Geometry.dist(p2, q);
     else dist = Geometry.dist(q, projection); // inside
-    console.log(progress, inside, projection, dist);
+    // console.log(progress, inside, projection, dist);
     return {inside: inside, progress: progress, projection: projection, dist: dist, from: p1};
   }
 
