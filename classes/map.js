@@ -305,11 +305,19 @@ export class Map {
     const rv = [];
     for(let s = 0; s < this.segments.length; s++) {
       const len = this.segments[s].points.length;
-      if(len < 2) continue;
-      for(let p = 0; p < len - 1; p++) {
-        const rel = Geometry.relPointToSegment(this.segments[s].points[p].pos, this.segments[s].points[p + 1].pos, pos);
+      if(len === 0) continue;
+      else if(len === 1) {
+        const p = this.segments[s].points[0].pos;
+        const rel = Geometry.relPointToSegment(p, p, pos);
         if(rel.dist <= dist)
           rv.push({segment: this.segments[s], rel: rel});
+      }
+      else {
+        for(let p = 0; p < len - 1; p++) {
+          const rel = Geometry.relPointToSegment(this.segments[s].points[p].pos, this.segments[s].points[p + 1].pos, pos);
+          if(rel.dist <= dist)
+            rv.push({segment: this.segments[s], rel: rel});
+        }
       }
     }
     return _.sortBy(rv, function(e) {return e.rel.dist;});

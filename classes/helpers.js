@@ -67,6 +67,9 @@ export class Geometry {
   // }
   // https://math.stackexchange.com/questions/322831/determing-the-distance-from-a-line-segment-to-a-point-in-3-space
   static relPointToSegment(p1, p2, q) {
+
+    if(_.isEqual(p1,p2)) return {inside: _.isEqual(p1,q), progress: 0, projection: p1, dist: Geometry.dist(p1,q), from: p1};
+
     const u = new Vector(p1, p2);
     const v = new Vector(p1, q);
     const progress = u.dotProduct(v) / (u.len() * u.len());
@@ -76,7 +79,7 @@ export class Geometry {
     if(progress < 0) dist = Geometry.dist(p1, q);
     else if(progress > 1) dist = Geometry.dist(p2, q);
     else dist = Geometry.dist(q, projection); // inside
-    // console.log(progress, inside, projection, dist);
+    console.log(progress, inside, projection, dist);
     return {inside: inside, progress: progress, projection: projection, dist: dist, from: p1};
   }
 
@@ -86,15 +89,5 @@ export class Helpers {
 
   static moveInterval = 1000;
   static caseRealMeters = 10;
-
-  // helpers
-  static caseEqual(a, b) {
-    return a.x === b.x && a.y === b.y;
-  }
-
-  static caseCopy(to, from) {
-    to.x = from.x;
-    to.y = from.y;
-  }
 
 }

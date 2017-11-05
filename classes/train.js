@@ -46,9 +46,9 @@ export class Train {
   // move in the current direction
   dirMove() {
     const dest = this.getDest(this.pos);
-    if(Helpers.caseEqual(this.from, dest) || !this.map.getSegment(dest)) return false;
-    Helpers.caseCopy(this.from, this.pos);
-    Helpers.caseCopy(this.pos, dest);
+    if(_.isEqual(this.from, dest) || !this.map.getSegment(dest)) return false;
+    this.from = _.clone(this.pos);
+    this.pos = _.clone(dest);
     return true;
   }
 
@@ -74,7 +74,7 @@ export class Train {
 
   updateFromDB(doc) {
     if(doc.pos) {
-      Helpers.caseCopy(this.from, this.pos);
+      this.from = _.clone(this.pos);
       this.pos = doc.pos;
       this.hasMoved = true;
     }
