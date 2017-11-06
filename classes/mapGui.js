@@ -3,10 +3,10 @@
  */
 
 import {Map} from './map';
-import {Point} from "./path";
-import {PathGui} from "./pathGui";
+import {Point} from "./station";
+import {StationGui} from "./stationGui";
 import {TrainGui} from './trainGui';
-import {Drawing} from "./helpers";
+import {Drawing, Geometry} from "./helpers";
 
 const defaultZoom = 5;
 
@@ -18,8 +18,8 @@ export class MapGui extends Map {
     this.displayOptions = {
       zoom: displayOptions.zoom || defaultZoom,
       mouseSize: displayOptions.mouseSize || 4,
-      pointSize: displayOptions.pointSize || 4,
-      pathSize: displayOptions.pathSize || 5
+      stationSize: displayOptions.stationSize || 4,
+      segmentSize: displayOptions.segmentSize || 5
     };
 
     this.mouseIsDown = false;
@@ -41,7 +41,7 @@ export class MapGui extends Map {
     this.game.canModifyMap(); // just to trigger reactivity and depending helpers
     this.canvas = $(canvas_id).get(0);
     this.ctx = this.canvas.getContext("2d");
-    this.currentPath = null;
+    this.currentStation = null;
     // listen to mouse
     this.canvas.addEventListener("mousedown", $.proxy(this.onMouseDown, this), false);
     this.canvas.addEventListener("mouseup", $.proxy(this.onMouseUp, this), false);
@@ -67,9 +67,17 @@ export class MapGui extends Map {
   }
 
   // coming from db
-  addPath(id, doc) {
-    const path = new PathGui(this, doc, id);
-    super.addPath(path);
+  addStation(id, doc) {
+    if(this.getStationById(id)) return; // the client could have added it before saving it to the db
+    const s = new StationGui(this, doc, id);
+    super.addStation(s);
+    this.draw();
+    // console.log('added', s);
+  }
+
+  // coming from db
+  updateStation(id, doc) {
+    super.updateStation(id, doc);
     this.draw();
   }
 
@@ -93,43 +101,73 @@ export class MapGui extends Map {
     train.draw();
   }
 
-  // given a mouse down, start creating a path
-  startPathCreationFromEvent(e) {
-    this.game.play('station');
+  getNearestStation(pos, maxdist) {
+    const rv = [];
+    const len = this.stations.length;
+    let d;
+    for(let p = 0; p < len; p++) {
+      if(d = Geometry.dist(pos, this.stations[p].pos) <= maxdist)
+        rv.push({station: this.stations[p], dist: d});
+    }
+    if(rv.length === 0) return null;
+    return _.sortBy(rv, function(p) {return p.dist;})[0].station;
+  }
+
+  // insert a station q as a child of another p
+  // p => children will become p => q => children
+  // p => parents will become q => parents
+  insertProjection(rel) {
+    const parent = this.getStationFromPos(rel.p1).station;
+    const child = this.getStationFromPos(rel.p2).station;
+    const q = new StationGui(this, {pos: rel.projection, children: [], parents: []});
+    this.stations.push(q);
+    parent.removeChild(child); // will remove child's parent ('parent')
+    child.removeChild(parent); // will remove parent's parent ('child')
+    parent.addBiChild(q);
+    child.addBiChild(q);
+    // console.log('parent:', parent);
+    // console.log('q', q);
+    q.saveToDB();
+    parent.updateDB();
+    child.updateDB();
+    return q;
+  }
+
+  // given a mouse down, start creating a link between 2 new stations
+  startLinkFromEvent(e) {
+    this.game.sound('station');
     if(!this.game.canModifyMap()) return;
     const c = this.relMouseCoords(e);
-    this.currentPath = new PathGui(this);
-    const self = this;
-    this.currentPath.saveToDB(function(err, rv) {
-      self.currentPath.addMiddlePoint(c);
-    });
+    this.currentStation = new StationGui(this, {pos: c});
+    // this.currentStation.saveToDB();
   }
 
-  addMiddlePointToSegment() {
-    this.game.play('station');
-    this.dragPoint = this.nearestObj.path.addMiddlePoint(this.nearestObj.rel.projection, this.nearestObj.rel.from);
+  insertStationToLink() {
+    this.game.sound('station');
+    this.dragPoint = this.insertProjection(this.nearestObj.rel);
   }
 
-  drawCurrentPathFromEvent(e) {
-    if(!this.currentPath) return;
-    if(!this.currentPath.points.length) return;
+  drawCurrentLinkFromEvent(e) {
+    if(!this.currentStation) return;
+    // if(!this.stations.length) return;
     const c = this.snappedMouseCoords(e);
-    this.ctx.lineWidth = this.displayOptions.zoom * this.displayOptions.pathSize;
+    this.ctx.lineWidth = this.displayOptions.zoom * this.displayOptions.segmentSize;
+    const cpos = this.relToRealCoords(this.currentStation.pos);
     this.ctx.strokeStyle = '#666';
-    Drawing.drawLine(this.ctx, this.relToRealCoords(this.currentPath.points[0].pos), c);
+    Drawing.drawLine(this.ctx, cpos, c);
+    Drawing.drawPoint(this.ctx, cpos, this.displayOptions.mouseSize * this.displayOptions.zoom);
     Drawing.drawPoint(this.ctx, c, this.displayOptions.mouseSize * this.displayOptions.zoom);
   }
 
-  endPathFromEvent(e) {
-    if(!this.currentPath) return;
-    this.game.play('station');
+  endLinkFromEvent(e) {
+    if(!this.currentStation) return;
+    this.game.sound('station');
     const c = this.relMouseCoords(e);
-    const path = this.currentPath;
-    const endPoint = new Point({pos: c}, path);
-    path.points.push(endPoint);
-    path.points[0].addBiLink(endPoint);
-    this.currentPath.updateDB();
-    this.currentPath = null;
+    const endStation = new StationGui(this, {pos: c});
+    this.currentStation.addBiChild(endStation);
+    this.currentStation.saveToDB();
+    endStation.saveToDB();
+    this.currentStation = null;
     this.draw();
   }
 
@@ -137,33 +175,8 @@ export class MapGui extends Map {
     this.dragPoint.pos = this.mouseRelPos;
   }
 
-  removePointFromEvent(e) {
-    if(!this.game.canModifyMap()) return;
-    // test if near a path
-    this.nearestObj = this.getNearestObject(this.mouseRelPos);
-    if(this.nearestObj) {
-      // check if near a point
-      const p = this.nearestObj.path.getNearestPoint(this.mouseRelPos, this.displayOptions.pointSize);
-      this.game.play('remove');
-      if(p) {
-        const path = this.nearestObj.path;
-        path.removePoint(p.pos);
-        if(path.points.length === 1)
-          this.removePathFromDb(path._id);
-        else
-          path.updateDB();
-      }
-      // if not near a point, we are on a path
-      else if(this.nearestObj.rel.inside) {
-        this.removePathFromDb(this.nearestObj.path._id);
-      }
-    }
-    else
-      document.body.style.cursor = 'auto';
-  }
-
   resetMap() {
-    this.game.play('success', 0);
+    this.game.sound('success', 0);
     super.resetMap();
     this.resetPosition();
   }
@@ -182,6 +195,43 @@ export class MapGui extends Map {
     this.ctx.translate(-this.pan.x, -this.pan.y);
   }
 
+  drawStations() {
+    const z = this.displayOptions.zoom;
+    const self = this;
+    // first draw segments
+    _.each(this.stations, function(station) {
+      // console.log('drawing station', station);
+      // draw children
+      self.ctx.lineWidth = z * self.displayOptions.segmentSize;
+      self.ctx.strokeStyle = '#666';
+      _.each(station.children, function(p) {
+        if(typeof(p) === 'string') return;
+        Drawing.drawLine(self.ctx, self.relToRealCoords(station.pos), self.relToRealCoords(p.pos));
+      });
+    });
+
+    // draw the stations
+    _.each(this.stations, function(p) {p.draw();});
+
+    // then links
+    _.each(this.stations, function(station) {
+      // draw children
+      self.ctx.lineWidth = 2;
+      self.ctx.strokeStyle = '#fff';
+      _.each(station.children, function(p) {
+        if(typeof(p) === 'string') return;
+        Drawing.drawArrow(self.ctx, self.relToRealCoords(station.pos), self.relToRealCoords(p.pos), 0.3);
+      });
+      // draw parents links
+      self.ctx.lineWidth = 4;
+      self.ctx.strokeStyle = '#f00';
+      _.each(station.parents, function(p) {
+        if(typeof(p) === 'string') return;
+        Drawing.drawArrow(self.ctx, self.relToRealCoords(p.pos), self.relToRealCoords(station.pos), 0.2);
+      });
+    });
+  }
+
   draw() {
     const time = new Date().getTime();
     if(!this.ctx) return;
@@ -189,8 +239,7 @@ export class MapGui extends Map {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
     // this.dotranslate();
-    for(let i = 0; i < this.paths.length; i++)
-      this.paths[i].draw();
+    this.drawStations();
     // this.untranslate();
 
     for(let i = 0; i < this.trains.length; i++)
@@ -200,7 +249,8 @@ export class MapGui extends Map {
     this.drawCenter();
     this.drawTime = (new Date().getTime()) - time;
     // display coords
-    this.ctx.fillStyle = 'white';
+    this.ctx.font = '14px sans';
+    this.ctx.fillStyle = '#999';
     this.ctx.fillText('pos: ' + this.mouseRelPos.x + ', ' + this.mouseRelPos.y, 20, 20);
     this.ctx.fillText('pan: ' + (this.pan.x) + ', ' + (this.pan.y), 20, 40);
     this.ctx.fillText('zoom: ' + (this.displayOptions.zoom), 20, 60);
@@ -227,9 +277,9 @@ export class MapGui extends Map {
   }
 
   // we have been notified that another client removed this path
-  removePath(id) {
+  removeStationById(id) {
     // console.log('removing path', id, '...');
-    super.removePath(id);
+    super.removeStationById(id);
     this.draw();
   }
 
@@ -275,7 +325,7 @@ export class MapGui extends Map {
           if(this.dragPoint)
             this.doDragPoint(e);
           else
-            this.drawCurrentPathFromEvent(e);
+            this.drawCurrentLinkFromEvent(e);
           drawmouse = false;
         }
         else if(this.button === 2) { // middle button = pan
@@ -289,26 +339,29 @@ export class MapGui extends Map {
       }
     }
     else {
-      // test if near a path
-      this.nearestObj = this.getNearestObject(this.mouseRelPos);
+      this.nearestObj = this.getNearestStation(this.mouseRelPos, this.displayOptions.stationSize);
       if(this.nearestObj) {
         drawmouse = false;
-        // check if near a point
-        const p = this.nearestObj.path.getNearestPoint(this.mouseRelPos, this.displayOptions.pointSize);
-        if(p) {
-          document.body.style.cursor = 'move';
-          this.ctx.fillStyle = '#966';
-          Drawing.drawPoint(this.ctx, this.relToRealCoords(p.pos), this.displayOptions.zoom * this.displayOptions.pointSize);
-        }
-        // if not near a point, we are on a path
-        else if(this.nearestObj.rel.inside) {
-          document.body.style.cursor = 'pointer';
-          this.ctx.fillStyle = '#6f6';
-          Drawing.drawPoint(this.ctx, this.relToRealCoords(this.nearestObj.rel.projection), this.displayOptions.zoom * this.displayOptions.pointSize);
-        }
+        document.body.style.cursor = 'move';
+        // this.ctx.fillStyle = '#900';
+        // Drawing.drawPoint(this.ctx, this.relToRealCoords(this.nearestObj.pos), this.displayOptions.zoom * this.displayOptions.stationSize);
       }
-      else
-        document.body.style.cursor = 'auto';
+      else {
+        // test if near a link
+        this.nearestObj = this.getNearestObject(this.mouseRelPos);
+        if(this.nearestObj) {
+          // check if near a station
+          // if not near a point, we are on a path
+          if(this.nearestObj.rel.inside) {
+            drawmouse = false;
+            document.body.style.cursor = 'pointer';
+            this.ctx.fillStyle = '#6f6';
+            Drawing.drawPoint(this.ctx, this.relToRealCoords(this.nearestObj.rel.projection), this.displayOptions.zoom * this.displayOptions.stationSize);
+          }
+        }
+        else
+          document.body.style.cursor = 'auto';
+      }
     }
     if(drawmouse) this.drawMouse(e);
   }
@@ -320,15 +373,14 @@ export class MapGui extends Map {
       switch(e.which) {
         case 1: // left button
           if(!this.nearestObj) // creating a new path
-            this.startPathCreationFromEvent(e);
-          else { // on a path
-            let p;
-            if(p = this.nearestObj.path.getNearestPoint(this.nearestObj.rel.projection, this.displayOptions.pointSize)) {
-              this.dragPoint = p;
-              this.game.play('drag');
+            this.startLinkFromEvent(e);
+          else { // on a path or station
+            if(!this.nearestObj.rel) { // a station
+              this.dragPoint = this.nearestObj;
+              this.game.sound('drag');
             }
             else // it's a path
-              this.addMiddlePointToSegment();
+              this.insertStationToLink();
             draw = false;
           }
           break;
@@ -348,13 +400,42 @@ export class MapGui extends Map {
 
   onMouseUp(e) {
     this.game.sounds['drag'].fade(0.1, 0, 100);
-    this.endPathFromEvent(e);
+    this.endLinkFromEvent(e);
     this.mouseIsDown = false;
     if(this.dragPoint) {
+      // if(this.dragPoint.notSaved) this.removeStationById(this.dragPoint._id);
       this.dragPoint.updateDB();
       this.dragPoint = null;
     }
     document.body.style.cursor = 'default';
+  }
+
+  removePointFromEvent(e) {
+    if(!this.game.canModifyMap()) return;
+    this.nearestObj = this.getNearestStation(this.mouseRelPos, this.displayOptions.stationSize);
+    if(this.nearestObj) {
+      this.game.sound('remove');
+      const station = this.nearestObj;
+      this.removeStation(station);
+      this.removeIsolatedStations(); // FIXME P1: should be automatic
+    }
+    /*
+        else {
+          // test if near a link
+          this.nearestObj = this.getNearestObject(this.mouseRelPos);
+          if(this.nearestObj) {
+            if(this.nearestObj.rel.inside) {
+              this.game.sound('remove');
+              console.log(2);
+              // this.removeStationFromDb(this.nearestObj.path._id);
+            }
+            else
+              console.log(this.nearestObj);
+          }
+          else
+            document.body.style.cursor = 'auto';
+        }
+    */
   }
 
   drawMapBorder() {

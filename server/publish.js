@@ -3,7 +3,7 @@
  */
 
 Meteor.publish('paths', function(game_id) {
-  return Paths.find({game_id: game_id});
+  return Stations.find({game_id: game_id});
 });
 
 Meteor.publish('trains', function(game_id) {

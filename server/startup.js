@@ -35,6 +35,8 @@ const removeTrain = function(train_id, doc) {
 // for each train in the map, move it
 Meteor.startup(function() {
 
+  // console.log('started at', new Date());
+
   // server observe for new trains
   Trains.find().observeChanges({
     added: function(train_id, doc) {
@@ -42,7 +44,7 @@ Meteor.startup(function() {
       createTrain(train_id, doc);
     },
     removed: function(id) {
-      let doc = Paths.findOne(id);
+      let doc = Stations.findOne(id);
       //console.log('server: removed', id);
       removeTrain(id);
     }

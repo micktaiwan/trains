@@ -12,9 +12,9 @@ export class Game {
     this._canModifyMapDep = new Tracker.Dependency();
     this.gameStatus = new ReactiveVar('');
     this.setStatus();
-    // launch clock
-    const self = this;
-    this.clock = new Date();
+    // launch clock // TODO
+    // const self = this;
+    // this.clock = new Date().getTime();
     // this.clockHandle = Meteor.setInterval(function() {
     //   self.onTime();
     // }, 1000);
@@ -27,7 +27,7 @@ export class Game {
     };
   }
 
-  play(name, stereo) {
+  sound(name, stereo) {
     if(typeof(stereo) === 'undefined') stereo = -1 + this.map.mousePos.x / this.map.canvas.width * 2;
     // console.log(this.map.mousePos.x, stereo);
     this.sounds[name].stereo(stereo).rate(1.0 + Math.random() / 3).play();
@@ -76,7 +76,7 @@ export class Game {
     else {
       if(!this.canModifyMap()) status = 'You can not modify this map. Are you a team member ?';
       else if(this.map.stations.length === 0) status = 'You should place your first station<br/>';
-      else if(this.map.paths.length < 3) status = 'You should build more rails<br/>';
+      else if(this.map.stations.length < 3) status = 'You should build more rails<br/>';
     }
     this.gameStatus.set(status);
   }

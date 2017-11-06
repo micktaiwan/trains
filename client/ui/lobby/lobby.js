@@ -53,7 +53,7 @@ Template.gameItem.helpers({
 
   // FIXME P2: if we use these helpers we must publish all paths and train... find another way: store these info in the game
   railsCount: function() {
-    return Paths.find({game_id: this._id}).count();
+    return Stations.find({game_id: this._id}).count();
   },
 
   trainPos: function() {

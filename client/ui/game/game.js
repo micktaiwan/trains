@@ -29,25 +29,23 @@ Template.game.onRendered(function() {
   $('.dropdown').dropdown('restore default text');
 
   radio = new Radio();
-  Meteor.setTimeout(function() {
-    if(!radio.playing()) radio.play(60000);
-  }, 10000);
+  // if(!radio.playing()) radio.play(2000);
 
   map.init('canvas', this.data._id);
   // subscribe to map (or "game") paths
   if(handlePaths) handlePaths.stop();
-  handlePaths = Paths.find({game_id: this.data._id}).observeChanges({
+  handlePaths = Stations.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
-      // console.log('paths: added', id, doc);
-      map.addPath(id, doc);
+      // console.log('Stations: added', id, doc);
+      map.addStation(id, doc);
     },
     changed: function(id, doc) {
-      // console.log('paths: changed', id, doc);
-      map.updatePath(id, doc);
+      // console.log('Stations: changed', id, doc);
+      map.updateStation(id, doc);
     },
     removed: function(id) {
-      // console.log('paths: removed', id);
-      map.removePath(id);
+      // console.log('Stations: removed', id);
+      map.removeStationById(id);
     }
 
   });
@@ -63,7 +61,7 @@ Template.game.onRendered(function() {
       map.updateTrain(id, doc);
     },
     removed: function(id) {
-      let doc = Paths.findOne(id);
+      let doc = Stations.findOne(id);
       // console.log('trains: removed', id);
       map.removeTrain(id);
     }
@@ -81,7 +79,7 @@ Template.game.onDestroyed(function() {
 Template.game.helpers({
 
   railsCount: function() {
-    return Paths.find().count();
+    return Stations.find().count();
   },
 
   canvasWidth: function() {
@@ -134,6 +132,10 @@ Template.game.events({
 
   'click .js-radio-toggle-volume'() {
     const s = radio.backgroundSound;
+    if(!s) {
+      radio.play();
+      return;
+    }
     // console.log(s.state());
     const el = $('.js-radio-toggle-volume');
     el.html('<i class="pause icon"></i>');

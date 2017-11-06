@@ -13,16 +13,13 @@ export class Drawing {
     ctx.stroke();
   }
 
-  static drawArrow(ctx, p1, p2) {
+  static drawArrow(ctx, p1, p2, lengthPercent) {
     let v = new Vector(p1, p2);
-    const projection = v.origin().plus((v.scal(0.3))).norm();
-
-
+    const projection = v.origin().plus((v.scal(lengthPercent))).norm();
     ctx.beginPath();
     ctx.moveTo(v.p1.x, v.p1.y);
     ctx.lineTo(projection.x, projection.y);
     ctx.stroke();
-
   }
 
 }
@@ -76,10 +73,9 @@ export class Geometry {
   //  progress: the distance (inside [0, 1]) from p1
   //  projection: the projection of q on the path
   //  dist: the dist from the point q to the path [p1,p2]
-  //  from: p1
   // }
   // https://math.stackexchange.com/questions/322831/determing-the-distance-from-a-line-segment-to-a-point-in-3-space
-  static relPointToPath(p1, p2, q) {
+  static relPointToSegment(p1, p2, q) {
 
     if(_.isEqual(p1, p2)) return {inside: _.isEqual(p1, q), progress: 0, projection: p1, dist: Geometry.dist(p1, q), from: p1};
 
@@ -93,7 +89,7 @@ export class Geometry {
     else if(progress > 1) dist = Geometry.dist(p2, q);
     else dist = Geometry.dist(q, projection); // inside
     // console.log(progress, inside, projection, dist);
-    return {inside: inside, progress: progress, projection: projection, dist: dist, from: p1};
+    return {inside: inside, progress: progress, projection: projection, dist: dist, p1: p1, p2: p2, q: q};
   }
 
 }
