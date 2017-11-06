@@ -6,7 +6,7 @@ import {Radio} from "../../../classes/radio";
 let radio = null;
 let game = null;
 let map = null;
-let handlePaths = null;
+let handleStations = null;
 let handleTrains = null;
 
 Template.game.onCreated(function() {
@@ -32,9 +32,9 @@ Template.game.onRendered(function() {
   // if(!radio.playing()) radio.play(2000);
 
   map.init('canvas', this.data._id);
-  // subscribe to map (or "game") paths
-  if(handlePaths) handlePaths.stop();
-  handlePaths = Stations.find({game_id: this.data._id}).observeChanges({
+  // subscribe to map (or "game") stations
+  if(handleStations) handleStations.stop();
+  handleStations = Stations.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
       // console.log('Stations: added', id, doc);
       map.addStation(id, doc);
@@ -72,7 +72,7 @@ Template.game.onRendered(function() {
 Template.game.onDestroyed(function() {
   radio.stop();
   game.stop();
-  if(handlePaths) handlePaths.stop();
+  if(handleStations) handleStations.stop();
   if(handleTrains) handleTrains.stop();
 });
 
@@ -114,7 +114,7 @@ Template.game.helpers({
 
 Template.game.events({
 
-  'click .reset': function() {
+  'click .js-reset': function() {
     map.resetMap();
   },
 

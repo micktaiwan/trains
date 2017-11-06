@@ -6,7 +6,7 @@ import {Map} from './map';
 import {Point} from "./station";
 import {StationGui} from "./stationGui";
 import {TrainGui} from './trainGui';
-import {Drawing, Geometry} from "./helpers";
+import {Drawing} from "./helpers";
 
 const defaultZoom = 5;
 
@@ -27,7 +27,7 @@ export class MapGui extends Map {
     this.mousePos = {x: 0, y: 0};
     this.mouseRelPos = {x: 0, y: 0};
     this.pan = {x: 0, y: 0};
-    this.dragPoint = null;
+    this.dragStation = null;
   }
 
   static onContextMenu(e) {
@@ -101,24 +101,12 @@ export class MapGui extends Map {
     train.draw();
   }
 
-  getNearestStation(pos, maxdist) {
-    const rv = [];
-    const len = this.stations.length;
-    let d;
-    for(let p = 0; p < len; p++) {
-      if(d = Geometry.dist(pos, this.stations[p].pos) <= maxdist)
-        rv.push({station: this.stations[p], dist: d});
-    }
-    if(rv.length === 0) return null;
-    return _.sortBy(rv, function(p) {return p.dist;})[0].station;
-  }
-
   // insert a station q as a child of another p
   // p => children will become p => q => children
   // p => parents will become q => parents
   insertProjection(rel) {
-    const parent = this.getStationFromPos(rel.p1).station;
-    const child = this.getStationFromPos(rel.p2).station;
+    const parent = this.getStationByPos(rel.p1).station;
+    const child = this.getStationByPos(rel.p2).station;
     const q = new StationGui(this, {pos: rel.projection, children: [], parents: []});
     this.stations.push(q);
     parent.removeChild(child); // will remove child's parent ('parent')
@@ -144,7 +132,7 @@ export class MapGui extends Map {
 
   insertStationToLink() {
     this.game.sound('station');
-    this.dragPoint = this.insertProjection(this.nearestObj.rel);
+    this.dragStation = this.insertProjection(this.nearestObj.rel);
   }
 
   drawCurrentLinkFromEvent(e) {
@@ -171,12 +159,8 @@ export class MapGui extends Map {
     this.draw();
   }
 
-  doDragPoint(e) {
-    this.dragPoint.pos = this.mouseRelPos;
-  }
-
   resetMap() {
-    this.game.sound('success', 0);
+    this.game.sound('success', {stereo: 0});
     super.resetMap();
     this.resetPosition();
   }
@@ -276,9 +260,9 @@ export class MapGui extends Map {
     });
   }
 
-  // we have been notified that another client removed this path
+  // we have been notified that another client removed this station
   removeStationById(id) {
-    // console.log('removing path', id, '...');
+    // console.log('removing station', id, '...');
     super.removeStationById(id);
     this.draw();
   }
@@ -314,6 +298,7 @@ export class MapGui extends Map {
     this.mousePos = this.mouseCoords(e);
     this.mouseRelPos = this.relMouseCoords(e);
     this.mouseMovement = {x: this.mousePos.x - this.mouseOldPos.x, y: this.mousePos.y - this.mouseOldPos.y};
+    this.nearestObj = this.getNearestStation(this.mouseRelPos, this.displayOptions.stationSize);
     if(this.mouseIsDown) {
       if(e.ctrlKey) { // pan map
         drawmouse = false;
@@ -322,7 +307,7 @@ export class MapGui extends Map {
       }
       else { // edit map
         if(this.button === 1) {// dragging
-          if(this.dragPoint)
+          if(this.dragStation)
             this.doDragPoint(e);
           else
             this.drawCurrentLinkFromEvent(e);
@@ -339,7 +324,6 @@ export class MapGui extends Map {
       }
     }
     else {
-      this.nearestObj = this.getNearestStation(this.mouseRelPos, this.displayOptions.stationSize);
       if(this.nearestObj) {
         drawmouse = false;
         document.body.style.cursor = 'move';
@@ -351,7 +335,7 @@ export class MapGui extends Map {
         this.nearestObj = this.getNearestObject(this.mouseRelPos);
         if(this.nearestObj) {
           // check if near a station
-          // if not near a point, we are on a path
+          // if not near a point, we are on a link
           if(this.nearestObj.rel.inside) {
             drawmouse = false;
             document.body.style.cursor = 'pointer';
@@ -372,11 +356,11 @@ export class MapGui extends Map {
     if(!e.ctrlKey) { // Ctrl is for panning
       switch(e.which) {
         case 1: // left button
-          if(!this.nearestObj) // creating a new path
+          if(!this.nearestObj) // creating a new link
             this.startLinkFromEvent(e);
           else { // on a path or station
             if(!this.nearestObj.rel) { // a station
-              this.dragPoint = this.nearestObj;
+              this.dragStation = this.nearestObj;
               this.game.sound('drag');
             }
             else // it's a path
@@ -402,12 +386,36 @@ export class MapGui extends Map {
     this.game.sounds['drag'].fade(0.1, 0, 100);
     this.endLinkFromEvent(e);
     this.mouseIsDown = false;
-    if(this.dragPoint) {
-      // if(this.dragPoint.notSaved) this.removeStationById(this.dragPoint._id);
-      this.dragPoint.updateDB();
-      this.dragPoint = null;
+    if(this.dragStation) {
+      // if(this.dragStation.notSaved) this.removeStationById(this.dragStation._id);
+      // test if draggued onto another Station (to merge them)
+      let stations = this.overlappingStations();
+      if(stations.length > 1) {
+        const self = this;
+        stations = _.reject(stations, function(s) {return s.station._id === self.dragStation._id});
+        this.game.sound('merge');
+        this.dragStation.mergeStation(stations[0].station);
+      }
+
+      this.dragStation.updateDB();
+      this.dragStation = null;
     }
     document.body.style.cursor = 'default';
+  }
+
+  // return all stations under the mouse
+  overlappingStations() {
+    return this.getNearestStations(this.mouseRelPos, this.displayOptions.stationSize * 1.5, 1);
+  }
+
+  doDragPoint(e) {
+    // test if we are on another station
+    const stations = this.overlappingStations();
+    if(stations.length > 1) { // if yes, snap pos
+      this.game.sound('clip', {onlyIfNotPlaying: true, stopAllOthers: true});
+      this.dragStation.pos = stations[1].station.pos;
+    }
+    else this.dragStation.pos = this.mouseRelPos;
   }
 
   removePointFromEvent(e) {
@@ -457,20 +465,7 @@ export class MapGui extends Map {
     this.ctx.stroke();
   }
 
-  getMousePathCoords(coords, ignorePan) {
-    if(ignorePan) {
-      return {
-        x: Math.floor((coords.x - (this.pan.x % this.displayOptions.zoom)) / this.displayOptions.zoom),
-        y: Math.floor((coords.y - (this.pan.y % this.displayOptions.zoom)) / this.displayOptions.zoom)
-      };
-    }
-    return {
-      x: Math.floor((coords.x - this.pan.x) / this.displayOptions.zoom),
-      y: Math.floor((coords.y - this.pan.y) / this.displayOptions.zoom)
-    };
-  }
-
-  // real mouse coords snap to grid
+  // real mouse coords snapped to rel grid
   snappedMouseCoords(e) {
     // first get relative coords
     const c = this.relMouseCoords(e); // rounded
@@ -484,7 +479,7 @@ export class MapGui extends Map {
     return {x: Math.round((c.x * factor) + (this.pan.x)), y: Math.round((c.y * factor) + (this.pan.y))}
   }
 
-  // mouse coords relative to zoom and panning
+  // game mouse coords (relative to zoom and panning)
   relMouseCoords(e) {
     const c = this.mouseCoords(e);
     const factor = this.displayOptions.zoom;

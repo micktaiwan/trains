@@ -3,7 +3,6 @@ export class Station {
   constructor(map, doc, id) {
     this._id = id || Random.id();
     this.map = map;
-    // this.path = path;
     this.pos = doc.pos;
     this.children = doc.children || [];
     this.parents = doc.parents || []; // will copy back all children
@@ -20,11 +19,18 @@ export class Station {
     };
   }
 
+  hasChild(station) {
+    // console.log(this._id, '=>', _.find(this.children, function(c) { return c._id === station._id}));
+    return _.find(this.children, function(c) { return c._id === station._id});
+  }
+
   // add unidirectional child to a point
-  addChild(point) {
-    // console.log('addChild', this._id, point._id);
-    this.children.push(point);
-    point.parents.push(this);
+  addChild(station) {
+    // console.log('addChild', this._id, '=>', station._id);
+    if(!this.hasChild(station)) {
+      this.children.push(station);
+      station.parents.push(this);
+    }
   }
 
   removeChild(station) {
@@ -52,7 +58,7 @@ export class Station {
 
   // add a child and back to self
   addBiChild(childStation) {
-    // console.log('addBiChild', this._id, point._id);
+    // console.log('addBiChild', this._id, '=>', childStation._id);
     this.addChild(childStation);
     childStation.addChild(this);
   }
@@ -103,22 +109,18 @@ export class Station {
     Meteor.call('mapUpdateStation', this._id, this.toObj());
   }
 
-}
-
-// a path is a set of childed points
-export class Path {
-
-  constructor(map, doc, id) {
-    if(!id) id = Random.id();
-    this._id = id;
-    this.map = map;
-    this.stations = [];
-    const self = this;
-    if(doc && doc.stations) this.stations = _.map(doc.stations, function(p) {return new Station(this.map, p)});
-    // console.log('Path points:', this.stations);
-    // this.type = doc.type;
-    //console.log('created Path', this);
+  // merge 2 stations
+  mergeStation(dest) {
+    // console.log('***** MERGE ', this._id, '=>', dest._id);
+    // add all links to dest
+    _.each(this.children, function(c) {
+      if(dest._id === c._id) return;
+      // console.log('***** loop ', dest._id, '=>', c._id);
+      dest.addBiChild(c);
+    });
+    // remove self
+    this.map.removeStation(this, true);
+    this.map.removeIsolatedStations(); // the only case where we merge a isolated segment
   }
-
 
 }

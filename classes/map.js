@@ -31,6 +31,10 @@ export class Map {
     console.error('method should be overridded');
   }
 
+  setMessage(msg) {
+    this.message.set(msg);
+  }
+
   stationCount() {
     return this.stations.length;
   }
@@ -42,10 +46,6 @@ export class Map {
         break;
       }
     }
-  }
-
-  setMessage(msg) {
-    this.message.set(msg);
   }
 
   addTrainToDB(train) {
@@ -104,8 +104,8 @@ export class Map {
     }
   }
 
-  removeStation(station) {
-    station.addTransChildren();
+  removeStation(station, withoutTrans) {
+    if(!withoutTrans) station.addTransChildren();
     station.removeChildren();
     this.removeStationFromDb(station._id);
     this.stations = _.without(this.stations, station);
@@ -119,12 +119,28 @@ export class Map {
 
   }
 
-  // get the first station near to pos by dist
-  // return station or null
-  getStationByPos(pos, dist) {
-    for(let s = 0; s < this.stations.length; s++)
-      if(Geometry.dist(this.stations[s].pos, pos) <= dist)
-        return this.stations[s];
+  getNearestStation(pos, maxdist) {
+    const stations = this.getNearestStations(pos, maxdist);
+    if(stations.length > 0) return stations[0].station;
+    return null;
+  }
+
+  getNearestStations(pos, maxdist) {
+    const rv = [];
+    const len = this.stations.length;
+    let d;
+    for(let p = 0; p < len; p++) {
+      if((d = Geometry.dist(pos, this.stations[p].pos)) <= maxdist)
+        rv.push({station: this.stations[p], dist: d});
+    }
+    return _.sortBy(rv, function(p) {return p.dist;});
+  }
+
+  getStationByPos(pos) {
+    for(let s = 0; s < this.stations.length; s++) {
+      // console.log(pos, this.stations[s].pos);
+      if(_.isEqual(this.stations[s].pos, pos)) return {station: this.stations[s], index: s};
+    }
     return null;
   }
 
@@ -149,6 +165,27 @@ export class Map {
     return null;
   }
 
+  // FIXME P0: what about bidirectional links ?
+  getNearestObject(pos) {
+    const dist = this.displayOptions.segmentSize;
+    let obj = this.getLinks(pos, dist);
+    if(!obj.length) return null;
+    return obj[0];
+  }
+
+  // return array of all link segments near to pos by dist, sorted by dist
+  getLinks(pos, dist) {
+    const rv = [];
+    for(let s = 0; s < this.stations.length; s++) {
+      for(let p = 0; p < this.stations[s].children.length; p++) {
+        const rel = Geometry.relPointToSegment(this.stations[s].pos, this.stations[s].children[p].pos, pos);
+        if(rel.dist <= dist)
+          rv.push({stations: [this.stations[s], this.stations[s].children[p]], rel: rel});
+      }
+    }
+    return _.sortBy(rv, function(e) {return e.rel.dist;});
+  }
+
   // subscribe to map (or "game") stations
   observeChanges() {
     const self = this;
@@ -163,35 +200,5 @@ export class Map {
       }
     });
   }
-
-  // FIXME P0: what about bidirectional links ?
-  getNearestObject(pos) {
-    const dist = this.displayOptions.segmentSize;
-    let obj = this.getLinksSegments(pos, dist);
-    if(!obj.length) return null;
-    return obj[0];
-  }
-
-  // return array of all link segments near to pos by dist, sorted by dist
-  getLinksSegments(pos, dist) {
-    const rv = [];
-    for(let s = 0; s < this.stations.length; s++) {
-      for(let p = 0; p < this.stations[s].children.length; p++) {
-        const rel = Geometry.relPointToSegment(this.stations[s].pos, this.stations[s].children[p].pos, pos);
-        if(rel.dist <= dist)
-          rv.push({stations: [this.stations[s], this.stations[s].children[p]], rel: rel});
-      }
-    }
-    return _.sortBy(rv, function(e) {return e.rel.dist;});
-  }
-
-  getStationFromPos(pos) {
-    for(let s = 0; s < this.stations.length; s++) {
-      // console.log(pos, this.stations[s].pos);
-      if(_.isEqual(this.stations[s].pos, pos)) return {station: this.stations[s], index: s};
-    }
-    return null;
-  }
-
 
 }

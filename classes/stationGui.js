@@ -15,9 +15,9 @@ export class StationGui extends Station {
     Drawing.drawPoint(this.ctx, rpos, z * this.map.displayOptions.stationSize);
 
     // draw _id
-    // this.ctx.fillStyle = '#f00';
-    // this.ctx.font = '20px sans';
-    // this.ctx.fillText(this._id, rpos.x - 100, rpos.y + 40);
+    this.ctx.fillStyle = '#f00';
+    this.ctx.font = '14px sans';
+    this.ctx.fillText(this._id, rpos.x - 100, rpos.y + 40);
 
   }
 

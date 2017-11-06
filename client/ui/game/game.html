@@ -18,7 +18,7 @@
   <canvas width="{{canvasWidth}}" height="{{canvasHeigth}}"></canvas>
   <br/>
   {{#if displayGameButtons}}
-    <button class="right floated ui red button reset pup" data-content="Remove all rails">Reset Map</button>
+    <button class="right floated ui red button js-reset pup" data-content="Remove all rails">Reset Map</button>
   {{/if}}
   <div class="mini ui buttons floated right">
     <button class="ui positive button pup"
@@ -48,9 +48,4 @@
     <div class="detail">{{railsCount}}</div>
   </div>
 
-</template>
-
-<template name="pathType">
-  <div class="item selectPath"><i class="{{icon}} icon"></i><span class="description"><span
-    class="tiny ui red tag label">{{price}}$</span></span> {{name}}</div>
 </template>

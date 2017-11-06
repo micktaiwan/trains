@@ -23,14 +23,19 @@ export class Game {
       station: new Howl({src: ['/snd/station.wav'], volume: 0.2}),
       remove: new Howl({src: ['/snd/remove.wav'], volume: 0.5}),
       drag: new Howl({src: ['/snd/drag.wav'], volume: 0.1}),
-      success: new Howl({src: ['/snd/success.wav'], volume: 0.2})
+      success: new Howl({src: ['/snd/success.wav'], volume: 0.2}),
+      merge: new Howl({src: ['/snd/merge.wav'], volume: 0.2}),
+      clip: new Howl({src: ['/snd/clip.wav'], volume: 0.2}),
     };
   }
 
-  sound(name, stereo) {
-    if(typeof(stereo) === 'undefined') stereo = -1 + this.map.mousePos.x / this.map.canvas.width * 2;
-    // console.log(this.map.mousePos.x, stereo);
-    this.sounds[name].stereo(stereo).rate(1.0 + Math.random() / 3).play();
+  sound(name, options = {}) {
+    // const option = options || {};
+    if(options.onlyIfNotPlaying && this.sounds[name].playing()) return;
+    if(typeof(options.stereo) === 'undefined') options.stereo = -1 + this.map.mousePos.x / this.map.canvas.width * 2;
+    if(options.stopAllOthers) _.each(this.sounds, function(s) {s.stop();});
+    // console.log(this.map.mousePos.x, options.stereo);
+    this.sounds[name].stereo(options.stereo).rate(1.0 + Math.random() / 4).play();
   }
 
   stop() {
