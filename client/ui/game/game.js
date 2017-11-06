@@ -29,7 +29,9 @@ Template.game.onRendered(function() {
   $('.dropdown').dropdown('restore default text');
 
   radio = new Radio();
-  radio.play();
+  Meteor.setTimeout(function() {
+    if(!radio.playing()) radio.play(60000);
+  }, 10000);
 
   map.init('canvas', this.data._id);
   // subscribe to map (or "game") paths
