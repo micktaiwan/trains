@@ -18,14 +18,7 @@ export class Game {
     // this.clockHandle = Meteor.setInterval(function() {
     //   self.onTime();
     // }, 1000);
-    this.backgroundSound = new Howl({
-      src: ['http://ice1.somafm.com/dronezone-128-mp3'], // ,'http://ice1.somafm.com/sf1033-128-mp3'
-      html5: true,
-      autoplay: true,
-      format: ['mp3'],
-      volume: 0
-    });
-    this.backgroundSound.fade(0, 0.2, 10000);
+
     this.sounds = {
       station: new Howl({src: ['/snd/station.wav'], volume: 0.2}),
       remove: new Howl({src: ['/snd/remove.wav'], volume: 0.5}),
@@ -37,14 +30,11 @@ export class Game {
   play(name, stereo) {
     if(typeof(stereo) === 'undefined') stereo = -1 + this.map.mousePos.x / this.map.canvas.width * 2;
     // console.log(this.map.mousePos.x, stereo);
-    this.sounds[name].stereo(stereo).play();
+    this.sounds[name].stereo(stereo).rate(1.0 + Math.random() / 3).play();
   }
 
   stop() {
     const self = this;
-    this.backgroundSound.fade(0.2, 0, 3000).once('fade', function() {
-      self.backgroundSound.unload();
-    });
     _.each(this.sounds, function(s) {
       s.unload();
     });

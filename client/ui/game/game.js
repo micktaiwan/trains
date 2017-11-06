@@ -1,7 +1,9 @@
 import {MapGui} from '../../../classes/mapGui';
 import {Game} from '../../../classes/game';
 import {Helpers} from '../../../classes/helpers';
+import {Radio} from "../../../classes/radio";
 
+let radio = null;
 let game = null;
 let map = null;
 let handlePaths = null;
@@ -25,6 +27,9 @@ Template.game.onRendered(function() {
   });
 
   $('.dropdown').dropdown('restore default text');
+
+  radio = new Radio();
+  radio.play();
 
   map.init('canvas', this.data._id);
   // subscribe to map (or "game") paths
@@ -65,6 +70,7 @@ Template.game.onRendered(function() {
 });
 
 Template.game.onDestroyed(function() {
+  radio.stop();
   game.stop();
   if(handlePaths) handlePaths.stop();
   if(handleTrains) handleTrains.stop();
@@ -134,23 +140,32 @@ Template.game.events({
     Helpers.moveInterval = 1000;
   },
 
-  'click .js-toggle-volume'() {
-    const s = game.backgroundSound;
+  'click .js-radio-toggle-volume'() {
+    const s = radio.backgroundSound;
     // console.log(s.state());
-    $('.js-toggle-volume').html('<i class="volume down icon"></i> .....');
+    const el = $('.js-radio-toggle-volume');
+    el.html('<i class="pause icon"></i>');
     if(s.state() === "unloaded") {
       s.load().once('load', function() {
         s.play();
         s.fade(0, 0.2, 1000);
-        $('.js-toggle-volume').html('<i class="volume off icon"></i> Off');
+        el.html('<i class="stop icon"></i>');
       });
     }
     else {
       s.fade(0.2, 0, 1000).once('fade', function() {
         s.unload();
-        $('.js-toggle-volume').html('<i class="volume up icon"></i> On');
+        el.html('<i class="play icon"></i>');
       });
     }
+  },
+
+  'click .js-radio-next-station'() {
+    radio.next();
+  },
+
+  'click .js-radio-previous-station'() {
+    radio.previous();
   }
 
 });

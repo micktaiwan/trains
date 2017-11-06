@@ -7,7 +7,7 @@
     {{{mapMessage}}}
   </div>
 
-  <button class="ui button center" >Center Map</button>
+  <button class="ui button center">Center Map</button>
   <button class="ui primary button open-join-modal">Teams</button>
   {{>teams}}
 
@@ -43,8 +43,16 @@
             data-content="Pan the map with the mouse while holding the Ctrl key, or the middle button">Pan
     </button>
   </div>
-  <div class="ui label js-toggle-volume clickable">
-    <i class="volume off icon"></i> Off
+  <div class="mini ui buttons floated right">
+    <button class="ui button js-radio-previous-station">
+      <i class="step backward icon"></i>
+    </button>
+    <button class="ui button js-radio-toggle-volume pup" data-content="Stop radio">
+      <i class="stop icon"></i>
+    </button>
+    <button class="ui button js-radio-next-station">
+      <i class="step forward icon"></i>
+    </button>
   </div>
   <div class="ui black label">
     <i class="road icon"></i> Paths
@@ -74,5 +82,5 @@
 
 <template name="pathType">
   <div class="item selectPath"><i class="{{icon}} icon"></i><span class="description"><span
-      class="tiny ui red tag label">{{price}}$</span></span> {{name}}</div>
+    class="tiny ui red tag label">{{price}}$</span></span> {{name}}</div>
 </template>
