@@ -29,15 +29,16 @@ export class Train {
     this.pos.x = this.pos.y = 1;
   }
 
+  // Will be redone with pathfinding
   move() {
     // const backup = {x: this.dir.x, y: this.dir.y};
-    for(let i = 0; i < 10; i++) { // FIXME P1: just because changeDir could return a bad dir
+    for(let i = 0; i < 10; i++) {
       if(this.dirMove()) {
         this.hasMoved = true;
         return true;
       }
       // caseCopy(this.dir, backup);
-      this.changeDir(); // FIXME P3: could choose a dir that is not valid
+      this.changeDir();
     }
     this.hasMoved = false;
     return false;

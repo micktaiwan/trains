@@ -83,11 +83,11 @@ Template.game.helpers({
   },
 
   canvasWidth: function() {
-    return window.innerWidth - 60;
+    return window.innerWidth - 40;
   },
 
   canvasHeigth: function() {
-    return window.innerHeight - 300;
+    return window.innerHeight - 110;
   },
 
   displayGameButtons: function() {
@@ -118,9 +118,9 @@ Template.game.events({
     map.resetMap();
   },
 
-  'click .start': function() {
-    map.createTrain();
-  },
+  // 'click .start': function() {
+  //   map.createTrain();
+  // },
 
   'click .center': function() {
     map.resetPosition();
@@ -128,16 +128,6 @@ Template.game.events({
 
   'click .open-join-modal': function() {
     $('.teams-modal').show();
-  },
-
-  'click .js-add-speed'() {
-    // FIXME P0: the train speed is server side !
-    console.log('test');
-    Helpers.moveInterval = 400;
-  },
-
-  'click .js-remove-speed'() {
-    Helpers.moveInterval = 1000;
   },
 
   'click .js-radio-toggle-volume'() {
@@ -166,42 +156,6 @@ Template.game.events({
 
   'click .js-radio-previous-station'() {
     radio.previous();
-  }
-
-});
-
-Template.toolsDropdown.onRendered(function() {
-
-  //console.log('dropdown ok');
-  $('.dropdown').dropdown('restore default text');
-
-});
-
-Template.toolsDropdown.helpers({
-
-  pathTypes: function() {
-    return []; // FIXME P2: PathTypes.find();
-  }
-
-});
-
-Template.toolsDropdown.events({
-
-  'click .selectPath': function() {
-    console.log(this);
-    map.setPathSelection(this.name);
-  },
-
-  'click .selectSkinCubes': function() {
-    map.selectSkin('cube');
-  },
-
-  'click .selectSkinDefault': function() {
-    map.selectSkin('default');
-  },
-
-  'click .selectSkinMine': function() {
-    map.selectSkin('mine');
   }
 
 });

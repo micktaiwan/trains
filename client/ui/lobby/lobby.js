@@ -2,10 +2,13 @@
  * Created by mfaivremacon on 08/09/2015.
  */
 
-Template.lobby.onRendered(function() {
-});
+Template.lobby.onRendered(function() {});
 
 Template.lobby.helpers({
+
+  connected: function() {
+    return Meteor.status().connected;
+  },
 
   games: function() {
     return Games.find();

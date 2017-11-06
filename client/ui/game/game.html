@@ -1,7 +1,4 @@
 <template name="game">
-
-  <h1>{{name}}</h1>
-
   <div class="pull-right">
     {{{gameStatus}}}
     {{{mapMessage}}}
@@ -12,15 +9,7 @@
   {{>teams}}
 
   {{#if displayGameButtons}}
-    <button class="ui primary button start">Start
-      train
-    </button>
-
-    {{>toolsDropdown}}
-
     Current speed: {{trainSpeed}} km/h
-    <button class="btn btn-default js-add-speed">+</button>
-    <button class="btn btn-default js-remove-speed">-</button>
     1 locomotive, 0 freight cars, 0 passenger cars
   {{/if}}
 
@@ -57,25 +46,6 @@
   <div class="ui black label">
     <i class="road icon"></i> Paths
     <div class="detail">{{railsCount}}</div>
-  </div>
-
-</template>
-
-<template name="toolsDropdown">
-
-  <div class="ui icon top left pathing dropdown button path-menu">
-    <i class="road icon"></i>
-
-    <div class="menu">
-      <div class="header">Path</div>
-      {{#each pathTypes }}
-        {{> pathType}}
-      {{/each }}
-      <div class="header">Skin</div>
-      <div class="item selectSkinDefault"><i class="road icon"></i> Default</div>
-      <div class="item selectSkinMine"><i class="road icon"></i> Mine</div>
-      <div class="item selectSkinCubes"><i class="square icon"></i> Cubes</div>
-    </div>
   </div>
 
 </template>

@@ -5,15 +5,6 @@
 
 <template name="layout">
 
-  <div class="ui pathing menu">
-    <a class="item" href="/">Home</a>
-    {{#unless connected}}
-      <div class="ui active item" href="#">Connection issue...</div>
-    {{/unless}}
-    <div class="right menu"><a class="ui item">{{> loginButtons}}</a></div>
-  </div>
-
   {{>yield}}
 
-  <div class="footer">Un jeu qu'il est bien avec un nom qu'il est pas compliqu&eacute;</div>
 </template>
