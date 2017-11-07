@@ -3,6 +3,7 @@
  */
 import {Geometry} from "./helpers";
 import {Station} from "./station";
+import {Train} from "./train";
 
 // a map is a set of stations belonging to a game_id
 export class GameMap {
@@ -48,11 +49,6 @@ export class GameMap {
     }
   }
 
-  addTrainToDB(train) {
-    console.log('addTrainToDB session', this._id);
-    Meteor.call('trainAdd', this._id, train.pos, train.dir);
-  }
-
   removeStationFromDb(id) {
     this.removeStationById(id);
     Meteor.call('mapRemoveStation', id);
@@ -79,6 +75,7 @@ export class GameMap {
 
   // update all links
   // when a station JSON is found, replace it with the actual station
+
   updateStationsLinks() {
     const self = this;
     _.each(this.stations, function(s) {
@@ -92,9 +89,9 @@ export class GameMap {
       }));
     });
   }
-
   // a map can observe the stations itself
   // but if it is the case, will create simple stations, not StationGui
+
   removeStationById(id) {
     for(let i = 0; i < this.stations.length; i++) {
       if(this.stations[i]._id === id) {
@@ -103,7 +100,6 @@ export class GameMap {
       }
     }
   }
-
   removeStation(station, withoutTrans) {
     if(!withoutTrans) station.addTransChildren();
     station.removeChildren();
@@ -149,6 +145,16 @@ export class GameMap {
       if(this.stations[i]._id === id) return this.stations[i];
     }
     return null;
+  }
+
+  // coming from db
+  addTrain(id, doc) {
+    const pos = doc.pos;
+    const c = this.getTrainById(id);
+    if(c) throw new Error('same train id ?');
+    const train = new Train(this, doc, id);
+    this.trains.push(train);
+    train.saveToDB();
   }
 
   getTrain(pos) {

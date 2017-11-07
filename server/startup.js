@@ -2,7 +2,7 @@
  * Created by mfaivremacon on 03/09/2015.
  */
 
-import {GameServer} from "../classes/server";
+import {GameServer} from "../classes/gameServer";
 
 Meteor.startup(function() {
 

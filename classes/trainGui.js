@@ -13,23 +13,45 @@ export class TrainGui extends Train {
     this.displayOptions = {
       margin: displayOptions.margin || 0.15 // %
     };
-    // this.img = new Image();
-    // this.moveSpeed = 0; // % steps
-    // this.moveAcc = 10;
     this.currentDrawStep = this.moveTotalSteps = 20; // default values that are calculated later
     this.animateWait = 100; // constant: draw every animateWait ms
     this.animating = false;
   }
 
-  /*
-   setImage() {
-   this.img.src = '/rails/' + this.map.skin + '/train.png';
-   //console.log(this.img.src);
-   }
-   */
+  draw() {
+    this.moveTotalSteps = this.moveInterval / this.animateWait;
+    // console.log(''TrainGui#draw'', this.moveInterval, this.moveTotalSteps, this.animateWait);
+    if(!this.animating) {
+      if(this.hasMoved) {
+        this.hasMoved = false;
+        this.currentDrawStep = 0;
+        this.animate();
+      }
+    }
+    this.doDraw();
+  }
+
+  // animate the move
+  // will cut the animation into moveTotalSteps steps
+  animate() {
+    this.animating = true;
+    this.currentDrawStep += 1;
+    this.doDraw();
+    const self = this;
+    if(this.currentDrawStep < this.moveTotalSteps) {
+      Meteor.setTimeout(function() {
+        self.animate();
+      }, this.animateWait);
+    }
+    else {
+      this.currentDrawStep = this.moveTotalSteps;
+      this.doDraw();
+      this.animating = false;
+    }
+  }
 
   doDraw() {
-    // console.log('draw', this.currentDrawStep);
+    console.log('TrainGui#doDraw', this._id);
     // the pos is the destination
     this.map.dotranslate();
     this.map.drawSection([this.pos, this.from]);
@@ -54,38 +76,6 @@ export class TrainGui extends Train {
 
     this.ctx.fillRect(x, y, w - margin * 2, w - margin * 2);
     this.map.untranslate();
-  }
-
-  animate() {
-    this.animating = true;
-    this.currentDrawStep += 1;
-    this.doDraw();
-    const self = this;
-    if(this.currentDrawStep < this.moveTotalSteps) {
-      Meteor.setTimeout(function() {
-        self.animate();
-      }, this.animateWait);
-    }
-    else {
-      this.currentDrawStep = this.moveTotalSteps;
-      this.doDraw();
-      this.animating = false;
-    }
-  }
-
-  // animate the move
-  // will cut the animation into moveTotalSteps steps
-  draw() {
-    this.moveTotalSteps = this.moveInterval / this.animateWait;
-    // console.log(this.moveInterval, this.moveTotalSteps, this.animateWait);
-    if(!this.animating) {
-      if(this.hasMoved) {
-        this.hasMoved = false;
-        this.currentDrawStep = 0;
-        this.animate();
-      }
-    }
-    this.doDraw();
   }
 
 }

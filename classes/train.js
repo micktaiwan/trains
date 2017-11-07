@@ -1,7 +1,6 @@
 /**
  * Created by mfaivremacon on 01/09/2015.
  */
-import {Helpers} from './helpers';
 
 export class Train {
 
@@ -31,49 +30,33 @@ export class Train {
 
   // Will be redone with pathfinding
   move() {
-    // const backup = {x: this.dir.x, y: this.dir.y};
-    for(let i = 0; i < 10; i++) {
-      if(this.dirMove()) {
-        this.hasMoved = true;
-        return true;
-      }
-      // caseCopy(this.dir, backup);
-      this.changeDir();
-    }
-    this.hasMoved = false;
-    return false;
+    console.log('Train#move');
+    this.pos.x++;
+    this.hasMoved = true;
+    this.updateDB();
   }
 
-  // move in the current direction
-  dirMove() {
-    const dest = this.getDest(this.pos);
-    if(_.isEqual(this.from, dest) || !this.map.getPath(dest)) return false;
-    this.from = _.clone(this.pos);
-    this.pos = _.clone(dest);
-    return true;
+
+  toObj() {
+    return {
+      game_id: this.map._id,
+      pos: this.pos,
+      dir: this.dir
+    };
   }
 
-  // return pos + dir case
-  getDest(pos) {
-    return {x: pos.x + this.dir.x, y: pos.y + this.dir.y};
+  saveToDB() {
+    console.log('saveTrainToDB', this._id);
+    Meteor.call('trainAdd', this._id, this.toObj());
   }
 
-  changeDir() {
-    const arr = [-1, 1];
-    const r = Math.floor(Math.random() * 2);
-    const rand = arr[r];
-    if(this.dir.x !== 0) {
-      this.dir.x = 0;
-      this.dir.y = rand;
-    }
-    else if(this.dir.y !== 0) {
-      this.dir.x = rand;
-      this.dir.y = 0;
-    }
-    //console.log('after dir', this.dir);
+  updateDB() {
+    console.log('Train#updateDB', this._id);
+    Meteor.call('trainUpdate', this._id, this.toObj());
   }
 
   updateFromDB(doc) {
+    console.log('Train#updateFromDB');
     if(doc.pos) {
       this.from = _.clone(this.pos);
       this.pos = doc.pos;

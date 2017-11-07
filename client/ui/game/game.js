@@ -54,16 +54,15 @@ Template.game.onRendered(function() {
   if(handleTrains) handleTrains.stop();
   handleTrains = Trains.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
-      // console.log('trains: added', id);
+      console.log('trains: added', id);
       map.addTrain(id, doc);
     },
     changed: function(id, doc) {
-      // console.log('trains: changed', id, doc);
+      console.log('trains: changed', id, doc);
       map.updateTrain(id, doc);
     },
     removed: function(id) {
-      let doc = Stations.findOne(id);
-      // console.log('trains: removed', id);
+      console.log('trains: removed', id);
       map.removeTrain(id);
     }
   });

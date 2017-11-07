@@ -58,49 +58,6 @@ export class GameMapGui extends GameMap {
     this.game = game;
   }
 
-  // create a new train
-  createTrain() {
-    if(this.trains.length === 0) { // for now only one train
-      this.addTrainToDB({pos: {x: 1, y: 1}, dir: {x: 1, y: 0}}); // FIXME P1: let the server set the position
-    }
-    this.draw();
-  }
-
-  // coming from db
-  addStation(id, doc) {
-    if(this.getStationById(id)) return; // the client could have added it before saving it to the db
-    const s = new StationGui(this, doc, id);
-    super.addStation(s);
-    this.draw();
-    // console.log('added', s);
-  }
-
-  // coming from db
-  updateStation(id, doc) {
-    super.updateStation(id, doc);
-    this.draw();
-  }
-
-  // coming from db
-  addTrain(id, doc) {
-    const pos = doc.pos;
-    const c = this.getTrain(pos);
-    //console.log('addTrain', id, doc, 'found', c);
-    if(c) // if the client already have it
-      c.id = id; // make sure the object have a DB id so we can remove it later
-    else {
-      this.trains.push(new TrainGui(this, doc, id));
-    }
-  }
-
-  updateTrain(id, doc) {
-    //console.log('updateTrain', doc);
-    let train = this.getTrainById(id);
-    if(!train) return console.error('updateTrain: no train');
-    train.updateFromDB(doc);
-    train.draw();
-  }
-
   // insert a station q as a child of another p
   // p => children will become p => q => children
   // p => parents will become q => parents
@@ -226,8 +183,9 @@ export class GameMapGui extends GameMap {
     this.drawStations();
     // this.untranslate();
 
-    for(let i = 0; i < this.trains.length; i++)
+    for(let i = 0; i < this.trains.length; i++) {
       this.trains[i].draw();
+    }
 
     this.drawMapBorder();
     this.drawCenter();
@@ -505,8 +463,40 @@ export class GameMapGui extends GameMap {
     return {x: cx, y: cy}
   }
 
-  selectSkin(skin) {
-    this.skin = skin;
+  // coming from db
+  addStation(id, doc) {
+    if(this.getStationById(id)) return; // the client could have added it before saving it to the db
+    const s = new StationGui(this, doc, id);
+    super.addStation(s);
+    this.draw();
+    // console.log('added', s);
+  }
+
+  // coming from db
+  updateStation(id, doc) {
+    super.updateStation(id, doc);
+    this.draw();
+  }
+
+  // coming from db
+  addTrain(id, doc) {
+    const pos = doc.pos;
+    const c = this.getTrain(pos);
+    //console.log('addTrain', id, doc, 'found', c);
+    if(c) // if the client already have it
+      c.id = id; // make sure the object have a DB id so we can remove it later
+    else {
+      console.log('pushing');
+      this.trains.push(new TrainGui(this, doc, id));
+    }
+  }
+
+  updateTrain(id, doc) {
+    //console.log('updateTrain', doc);
+    let train = this.getTrainById(id);
+    if(!train) return console.error('updateTrain: no train');
+    train.updateFromDB(doc);
+    train.draw();
   }
 
 }
