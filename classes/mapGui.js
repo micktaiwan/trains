@@ -209,15 +209,6 @@ export class GameMapGui extends GameMap {
     Drawing.drawPoint(this.ctx, c, this.displayOptions.mouseSize * this.displayOptions.zoom);
   }
 
-  drawSection(posArray) {
-    if(!this.ctx) return;
-    const self = this;
-    posArray.forEach(function(pos) {
-      // const t = self.getPath(pos);
-      // if(t) t.draw({withBackground: true});
-    });
-  }
-
   // we have been notified that another client removed this station
   removeStationById(id) {
     // console.log('removing station', id, '...');
@@ -492,11 +483,9 @@ export class GameMapGui extends GameMap {
   }
 
   updateTrain(id, doc) {
-    //console.log('updateTrain', doc);
-    let train = this.getTrainById(id);
-    if(!train) return console.error('updateTrain: no train');
-    train.updateFromDB(doc);
-    train.draw();
+    super.updateTrain(id, doc);
+    const train = this.getTrainById(id);
+    this.draw();
   }
 
 }

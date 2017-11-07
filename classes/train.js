@@ -41,7 +41,7 @@ export class Train {
     return {
       game_id: this.map._id,
       pos: this.pos,
-      dir: this.dir
+      // dir: this.dir
     };
   }
 

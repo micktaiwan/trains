@@ -154,7 +154,14 @@ export class GameMap {
     if(c) throw new Error('same train id ?');
     const train = new Train(this, doc, id);
     this.trains.push(train);
-    train.saveToDB();
+    return train;
+  }
+
+  updateTrain(id, doc) {
+    console.log('Map#updateTrain', id, doc);
+    let train = this.getTrainById(id);
+    if(!train) return console.error('updateTrain: no train');
+    train.updateFromDB(doc);
   }
 
   getTrain(pos) {
@@ -192,7 +199,7 @@ export class GameMap {
     return _.sortBy(rv, function(e) {return e.rel.dist;});
   }
 
-  // subscribe to map stations
+  // subscribe to map stations and trains
   observeChanges() {
     const self = this;
     Stations.find({game_id: self._id}).observeChanges({
@@ -207,6 +214,20 @@ export class GameMap {
       removed: function(id) {
         // console.log('Station removed', id);
         self.removeStationById(id);
+      }
+    });
+    Trains.find({game_id: self._id}).observeChanges({
+      added: function(id, doc) {
+        console.log('trains: added', id);
+        self.addTrain(id, doc);
+      },
+      changed: function(id, doc) {
+        console.log('trains: changed', id, doc);
+        self.updateTrain(id, doc);
+      },
+      removed: function(id) {
+        console.log('trains: removed', id);
+        self.removeTrain(id);
       }
     });
   }

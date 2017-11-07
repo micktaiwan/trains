@@ -12,7 +12,7 @@ export class Game {
   // add a train to the map
   addTrain() {
     // FIXME P1: should pick a station near a city
-    this.map.addTrain("test", {pos: {x: 1, y: 1}});
+    Meteor.call('trainAdd', {_id: Random.id(), game_id: this.map._id, pos: {x: 1, y: 1}});
   }
 
 }

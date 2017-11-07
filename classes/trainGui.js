@@ -3,6 +3,7 @@
  */
 
 import {Train} from './train';
+import {Drawing} from "./helpers";
 
 export class TrainGui extends Train {
 
@@ -53,29 +54,10 @@ export class TrainGui extends Train {
   doDraw() {
     console.log('TrainGui#doDraw', this._id);
     // the pos is the destination
-    this.map.dotranslate();
-    this.map.drawSection([this.pos, this.from]);
-    // this.map.draw();
-    this.ctx.fillStyle = "#aaf";
-    let w = this.map.displayOptions.zoom;
-    const margin = w * this.displayOptions.margin;
-
-    let x, y;
-
-    x = this.pos.x * w + margin;
-    if(this.dir.x === 1)
-      x = this.pos.x * w - (this.moveTotalSteps - this.currentDrawStep) * w / this.moveTotalSteps + margin;
-    else if(this.dir.x === -1)
-      x = (this.pos.x + 1) * w - (this.currentDrawStep) * w / this.moveTotalSteps + margin;
-
-    y = this.pos.y * w + margin;
-    if(this.dir.y === 1)
-      y = this.pos.y * w - (this.moveTotalSteps - this.currentDrawStep) * w / this.moveTotalSteps + margin;
-    else if(this.dir.y === -1)
-      y = (this.pos.y + 1) * w - (this.currentDrawStep) * w / this.moveTotalSteps + margin;
-
-    this.ctx.fillRect(x, y, w - margin * 2, w - margin * 2);
-    this.map.untranslate();
+    const z = this.map.displayOptions.zoom;
+    this.ctx.fillStyle = "#f00";
+    const rpos = this.map.relToRealCoords(this.pos);
+    Drawing.drawPoint(this.ctx, rpos, z * this.map.displayOptions.stationSize);
   }
 
 }
