@@ -3,7 +3,7 @@
  */
 
 import {Train} from './train';
-import {Drawing} from "./helpers";
+import {Drawing, Vector} from "./helpers";
 
 export class TrainGui extends Train {
 
@@ -20,8 +20,9 @@ export class TrainGui extends Train {
   }
 
   draw() {
+    return this.doDraw();
     this.moveTotalSteps = this.moveInterval / this.animateWait;
-    // console.log(''TrainGui#draw'', this.moveInterval, this.moveTotalSteps, this.animateWait);
+    console.log('TrainGui#draw', this.moveInterval, this.moveTotalSteps, this.animateWait);
     if(!this.animating) {
       if(this.hasMoved) {
         this.hasMoved = false;
@@ -35,6 +36,7 @@ export class TrainGui extends Train {
   // animate the move
   // will cut the animation into moveTotalSteps steps
   animate() {
+    // console.log('TrainGui#animate');
     this.animating = true;
     this.currentDrawStep += 1;
     this.doDraw();
@@ -52,11 +54,17 @@ export class TrainGui extends Train {
   }
 
   doDraw() {
-    console.log('TrainGui#doDraw', this._id);
-    // the pos is the destination
+    // console.log('TrainGui#doDraw', this._id);
+    // console.log(this.from, this.pos);
     const z = this.map.displayOptions.zoom;
+    // the pos is the destination
+    // we calculate the relative position with a vector
+    const progress = this.currentDrawStep / this.moveTotalSteps;
+    let v = new Vector(this.from, this.pos);
+    const projection = v.origin().plus((v.scal(progress))).norm();
+    // this.map.drawSection(projection);
+    const rpos = this.map.relToRealCoords(projection);
     this.ctx.fillStyle = "#f00";
-    const rpos = this.map.relToRealCoords(this.pos);
     Drawing.drawPoint(this.ctx, rpos, z * this.map.displayOptions.stationSize);
   }
 

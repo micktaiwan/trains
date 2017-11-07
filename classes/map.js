@@ -58,8 +58,6 @@ export class GameMap {
   addStation(s) {
     this.stations.push(s);
     this.updateStationsLinks();
-    // for each game change, also set game status
-    if(this.game) this.game.setStatus();
   }
 
   // coming from db
@@ -89,6 +87,7 @@ export class GameMap {
       }));
     });
   }
+
   // a map can observe the stations itself
   // but if it is the case, will create simple stations, not StationGui
 
@@ -100,6 +99,7 @@ export class GameMap {
       }
     }
   }
+
   removeStation(station, withoutTrans) {
     if(!withoutTrans) station.addTransChildren();
     station.removeChildren();
@@ -158,7 +158,7 @@ export class GameMap {
   }
 
   updateTrain(id, doc) {
-    console.log('Map#updateTrain', id, doc);
+    // console.log('Map#updateTrain', id, doc);
     let train = this.getTrainById(id);
     if(!train) return console.error('updateTrain: no train');
     train.updateFromDB(doc);
@@ -180,7 +180,7 @@ export class GameMap {
 
   // FIXME P0: what about bidirectional links ?
   getNearestObject(pos) {
-    const dist = this.displayOptions.segmentSize;
+    const dist = this.displayOptions.linkSize;
     let obj = this.getLinks(pos, dist);
     if(!obj.length) return null;
     return obj[0];
@@ -188,9 +188,14 @@ export class GameMap {
 
   // return array of all link segments near to pos by dist, sorted by dist
   getLinks(pos, dist) {
+    console.log('GameMap#getLinks', pos, dist);
     const rv = [];
     for(let s = 0; s < this.stations.length; s++) {
       for(let p = 0; p < this.stations[s].children.length; p++) {
+        if(typeof(this.stations[s].children[p]) === 'string') {
+          console.log(this.stations[s].children[p]);
+          continue;
+        }
         const rel = Geometry.relPointToSegment(this.stations[s].pos, this.stations[s].children[p].pos, pos);
         if(rel.dist <= dist)
           rv.push({stations: [this.stations[s], this.stations[s].children[p]], rel: rel});
@@ -204,8 +209,8 @@ export class GameMap {
     const self = this;
     Stations.find({game_id: self._id}).observeChanges({
       added: function(id, doc) {
-        // console.log('Station added', id);
-        self.stations.push(new Station(self, doc, id));
+        // console.log('Station added', id, doc.pos);
+        self.addStation(new Station(self, doc, id));
       },
       changed: function(id, doc) {
         // console.log('Station changed', id);
@@ -218,11 +223,11 @@ export class GameMap {
     });
     Trains.find({game_id: self._id}).observeChanges({
       added: function(id, doc) {
-        console.log('trains: added', id);
+        // console.log('trains: added', id);
         self.addTrain(id, doc);
       },
       changed: function(id, doc) {
-        console.log('trains: changed', id, doc);
+        // console.log('trains: changed', id, doc);
         self.updateTrain(id, doc);
       },
       removed: function(id) {

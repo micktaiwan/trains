@@ -7,12 +7,12 @@ export class GameGui extends Game {
     map.setGame(this);
     this.setStatus();
     this.sounds = {
-      station: new Howl({src: ['/snd/station.wav'], volume: 0.2}),
+      station: new Howl({src: ['/snd/station.wav'], volume: 0.5}),
       remove: new Howl({src: ['/snd/remove.wav'], volume: 0.5}),
-      drag: new Howl({src: ['/snd/drag.wav'], volume: 0.1}),
-      success: new Howl({src: ['/snd/success.wav'], volume: 0.2}),
-      merge: new Howl({src: ['/snd/merge.wav'], volume: 0.2}),
-      clip: new Howl({src: ['/snd/clip.wav'], volume: 0.2}),
+      drag: new Howl({src: ['/snd/drag.wav'], volume: 0.3}),
+      success: new Howl({src: ['/snd/success.wav'], volume: 0.5}),
+      merge: new Howl({src: ['/snd/merge.wav'], volume: 1}),
+      clip: new Howl({src: ['/snd/clip.wav'], volume: 1}),
     }
   }
 

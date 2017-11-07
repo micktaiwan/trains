@@ -19,7 +19,7 @@ export class GameMapGui extends GameMap {
       zoom: displayOptions.zoom || defaultZoom,
       mouseSize: displayOptions.mouseSize || 4,
       stationSize: displayOptions.stationSize || 4,
-      segmentSize: displayOptions.segmentSize || 5
+      linkSize: displayOptions.linkSize || 5
     };
 
     this.mouseIsDown = false;
@@ -96,7 +96,7 @@ export class GameMapGui extends GameMap {
     if(!this.currentStation) return;
     // if(!this.stations.length) return;
     const c = this.snappedMouseCoords(e);
-    this.ctx.lineWidth = this.displayOptions.zoom * this.displayOptions.segmentSize;
+    this.ctx.lineWidth = this.displayOptions.zoom * this.displayOptions.linkSize;
     const cpos = this.relToRealCoords(this.currentStation.pos);
     this.ctx.strokeStyle = '#666';
     Drawing.drawLine(this.ctx, cpos, c);
@@ -143,7 +143,7 @@ export class GameMapGui extends GameMap {
     _.each(this.stations, function(station) {
       // console.log('drawing station', station);
       // draw children
-      self.ctx.lineWidth = z * self.displayOptions.segmentSize;
+      self.ctx.lineWidth = z * self.displayOptions.linkSize;
       self.ctx.strokeStyle = '#666';
       _.each(station.children, function(p) {
         if(typeof(p) === 'string') return;
@@ -173,6 +173,23 @@ export class GameMapGui extends GameMap {
     });
   }
 
+  // Given a pos try to redraw the portion of this map (links for example)
+  drawSection(pos) {
+    // draw a back box
+    const size = this.displayOptions.linkSize * this.displayOptions.zoom;
+    const a = rpos = this.relToRealCoords(pos);
+    a.x = a.x - size / 2;
+    a.y = a.y - size / 2;
+    this.ctx.fillStyle = '#333';
+    this.ctx.fillRect(a.x, a.y, size, size);
+
+    // find if we are near a segment
+    const links = this.getLinks(pos, size);
+    this.ctx.font = '14px sans';
+    this.ctx.fillStyle = '#9f9';
+    this.ctx.fillText('pos: ' + Math.round(pos.x) + ', ' + Math.round(pos.y) + ', links: ' + links.length, rpos.x - 100, rpos.y + this.displayOptions.linkSize * this.displayOptions.zoom + 10);
+  }
+
   draw() {
     const time = new Date().getTime();
     if(!this.ctx) return;
@@ -197,14 +214,12 @@ export class GameMapGui extends GameMap {
     this.ctx.fillText('pan: ' + (this.pan.x) + ', ' + (this.pan.y), 20, 40);
     this.ctx.fillText('zoom: ' + (this.displayOptions.zoom), 20, 60);
     this.ctx.fillText('time: ' + (this.drawTime), 20, 80);
-
-    // window.requestAnimationFrame(this.draw);
   }
 
-  drawMouse(event) {
+  drawMouse() {
     if(!this.game.canModifyMap()) return;
-    const c = this.snappedMouseCoords(event);
-    const r = this.relMouseCoords(event);
+    const c = this.mouseSnappedCoords;
+    if(!c) return;
     // display mouse
     Drawing.drawPoint(this.ctx, c, this.displayOptions.mouseSize * this.displayOptions.zoom);
   }
@@ -237,7 +252,7 @@ export class GameMapGui extends GameMap {
     this.pan.y = Math.round(this.pan.y);
 
     this.draw();
-    this.drawMouse(e);
+    this.drawMouse();
   }
 
   onMouseMove(e) {
@@ -245,6 +260,7 @@ export class GameMapGui extends GameMap {
     let drawmouse = true;
     this.mouseOldPos = this.mousePos;
     this.mousePos = this.mouseCoords(e);
+    this.mouseSnappedCoords = this.snappedMouseCoords(e);
     this.mouseRelPos = this.relMouseCoords(e);
     this.mouseMovement = {x: this.mousePos.x - this.mouseOldPos.x, y: this.mousePos.y - this.mouseOldPos.y};
     this.nearestObj = this.getNearestStation(this.mouseRelPos, this.displayOptions.stationSize);
@@ -296,7 +312,7 @@ export class GameMapGui extends GameMap {
           document.body.style.cursor = 'auto';
       }
     }
-    if(drawmouse) this.drawMouse(e);
+    if(drawmouse) this.drawMouse();
   }
 
   onMouseDown(e) {
@@ -325,7 +341,7 @@ export class GameMapGui extends GameMap {
     this.button = e.which;
     if(draw) {
       this.draw();
-      this.drawMouse(e);
+      this.drawMouse();
     }
     this.mouseIsDown = true;
     document.body.style.cursor = 'none';
@@ -459,6 +475,8 @@ export class GameMapGui extends GameMap {
     if(this.getStationById(id)) return; // the client could have added it before saving it to the db
     const s = new StationGui(this, doc, id);
     super.addStation(s);
+    // for each game change, also set game status
+    if(this.game) this.game.setStatus();
     this.draw();
     // console.log('added', s);
   }
@@ -484,7 +502,6 @@ export class GameMapGui extends GameMap {
 
   updateTrain(id, doc) {
     super.updateTrain(id, doc);
-    const train = this.getTrainById(id);
     this.draw();
   }
 

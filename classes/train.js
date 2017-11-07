@@ -12,16 +12,8 @@ export class Train {
     this.pos = doc.pos || {x: 1, y: 1};
     this.dir = doc.dir || {x: 1, y: 0};
     this.from = {x: -1, y: -1};
-    this.moveInterval = doc.interval; // will tell the gui when te next move will be done
+    this.moveInterval = doc.moveInterval; // will tell the gui when the next move will be done
     this.hasMoved = false;
-  }
-
-  getDBObj() {
-    return {
-      game_id: this.game_id,
-      pos: this.pos,
-      dir: this.dir
-    }
   }
 
   reset() {
@@ -30,17 +22,29 @@ export class Train {
 
   // Will be redone with pathfinding
   move() {
-    console.log('Train#move');
-    this.pos.x++;
+    console.log('Train#move', this.pos);
+    const links = this.map.getLinks(this.pos, 5);
+    console.log('Links:', links.length);
+    if(links.length === 0) {
+      this.pos.x = _.random(20, 200);
+      this.pos.y = _.random(20, 100);
+    }
+    else {
+      let link = links[_.random(links.length - 1)];
+      let dest = link.stations[1].pos;
+      if(_.isEqual(this.pos, dest)) dest = link.stations[0].pos;
+      this.pos = _.clone(dest);
+    }
+    console.log(this.pos);
     this.hasMoved = true;
     this.updateDB();
   }
-
 
   toObj() {
     return {
       game_id: this.map._id,
       pos: this.pos,
+      moveInterval: this.moveInterval
       // dir: this.dir
     };
   }
@@ -51,16 +55,17 @@ export class Train {
   }
 
   updateDB() {
-    console.log('Train#updateDB', this._id);
+    // console.log('Train#updateDB', this._id);
     Meteor.call('trainUpdate', this._id, this.toObj());
   }
 
   updateFromDB(doc) {
-    console.log('Train#updateFromDB');
+    // console.log('Train#updateFromDB');
     if(doc.pos) {
       this.from = _.clone(this.pos);
-      this.pos = doc.pos;
+      if(doc.pos) this.pos = doc.pos;
       this.hasMoved = true;
+      if(doc.moveInterval) this.moveInterval = doc.moveInterval
     }
     if(doc.dir) this.dir = doc.dir;
     if(doc.interval) this.moveInterval = doc.interval;

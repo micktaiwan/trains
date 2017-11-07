@@ -12,10 +12,10 @@ export class GameServer extends Game {
 
     // launch clock
     const self = this;
-    this.clock = new Date().getTime();
+    this.gameStartTimestamp = new Date().getTime();
     this.clockHandle = Meteor.setInterval(function() {
       self.onTime();
-    }, 3000);
+    }, 1000);
 
   }
 
@@ -24,10 +24,13 @@ export class GameServer extends Game {
   }
 
   onTime() {
+    const delay_since_start = (new Date().getTime()) - this.gameStartTimestamp;
+    console.log('delay in secs:', delay_since_start / 1000);
     // console.log('game on time');
 
+    // FIXME P0: define a planning: when to update trains, when to add people, when to collect taxes...
     // check trains
-    console.log("Trains:", this.map.trains.length);
+    // console.log("Trains:", this.map.trains.length);
     if(this.map.trains.length === 0)
       this.addTrain();
 

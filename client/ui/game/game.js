@@ -54,7 +54,7 @@ Template.game.onRendered(function() {
   if(handleTrains) handleTrains.stop();
   handleTrains = Trains.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
-      console.log('trains: added', id);
+      console.log('trains: added', id, doc);
       map.addTrain(id, doc);
     },
     changed: function(id, doc) {

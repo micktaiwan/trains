@@ -35,13 +35,13 @@ export class Radio {
       format: s.format,
       volume: 0
     });
-    this.backgroundSound.fade(0, 0.2, fadeDuration);
+    this.backgroundSound.fade(0, 0.5, fadeDuration);
   }
 
   next() {
     const self = this;
     if(!this.backgroundSound) self.play();
-    else this.backgroundSound.fade(0.2, 0, 500).once('fade', function() {
+    else this.backgroundSound.fade(0.5, 0, 500).once('fade', function() {
       self.currentStation++;
       if(self.currentStation >= self.stations.length) self.currentStation = 0;
       self.play();
@@ -51,7 +51,7 @@ export class Radio {
   previous() {
     const self = this;
     if(!this.backgroundSound) self.play();
-    else this.backgroundSound.fade(0.2, 0, 500).once('fade', function() {
+    else this.backgroundSound.fade(0.5, 0, 500).once('fade', function() {
       self.currentStation--;
       if(self.currentStation < 0) self.currentStation = self.stations.length - 1;
       self.play();

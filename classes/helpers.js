@@ -76,6 +76,7 @@ export class Geometry {
   // }
   // https://math.stackexchange.com/questions/322831/determing-the-distance-from-a-line-segment-to-a-point-in-3-space
   static relPointToSegment(p1, p2, q) {
+    // console.log('relPointToSegment', p1, p2, q);
 
     if(_.isEqual(p1, p2)) return {inside: _.isEqual(p1, q), progress: 0, projection: p1, dist: Geometry.dist(p1, q), from: p1};
 
