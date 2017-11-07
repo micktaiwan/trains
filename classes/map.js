@@ -2,13 +2,13 @@
  * Created by mfaivremacon on 31/08/2015.
  */
 import {Geometry} from "./helpers";
+import {Station} from "./station";
 
 // a map is a set of stations belonging to a game_id
-export class Map {
+export class GameMap {
 
-  // useful for server maps used in serverTrains
   constructor(game_id, observeChanges) {
-    console.log('Map#constructor: game_id', game_id, observeChanges);
+    console.log('GameMap#constructor: game_id', game_id, observeChanges);
     this._id = game_id;
     this.trains = [];
     this.stations = [];
@@ -17,7 +17,7 @@ export class Map {
   }
 
   init(game_id) {
-    console.log('Map#init: game_id', game_id);
+    console.log('GameMap#init: game_id', game_id);
     this._id = game_id;
   }
 
@@ -186,19 +186,53 @@ export class Map {
     return _.sortBy(rv, function(e) {return e.rel.dist;});
   }
 
-  // subscribe to map (or "game") stations
+  // subscribe to map stations
   observeChanges() {
     const self = this;
     Stations.find({game_id: self._id}).observeChanges({
       added: function(id, doc) {
-        // console.log('change: added', id, doc);
-        self.stations.push(new Stations(self, doc, id));
+        // console.log('Station added', id);
+        self.stations.push(new Station(self, doc, id));
+      },
+      changed: function(id, doc) {
+        // console.log('Station changed', id);
+        self.updateStation(id, doc);
       },
       removed: function(id) {
-        //console.log('change: removed', id);
+        // console.log('Station removed', id);
         self.removeStationById(id);
       }
     });
   }
 
 }
+
+
+/*
+const getTrain = function(train_id) {
+  for(let i = 0; i < trains.length; i++) if(trains[i]._id === train_id) return trains[i];
+  return null;
+};
+
+const createTrain = function(train_id, doc) {
+  // console.log('create train', train_id, doc);
+  let train = getTrain(train_id);
+  if(train) return train;
+  // not found
+  train = new ServerTrain(train_id, doc);
+  trains.push(train);
+  return train;
+};
+
+const removeTrain = function(train_id, doc) {
+  let train = getTrain(train_id);
+  if(!train) return train;
+  // found
+  for(let i = 0; i < trains.length; i++) if(trains[i]._id === train_id) {
+    trains[i].stop();
+    trains.splice(i, 1);
+    break;
+  }
+};
+
+*/

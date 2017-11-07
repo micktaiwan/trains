@@ -2,7 +2,7 @@
  * Created by mfaivremacon on 31/08/2015.
  */
 
-import {Map} from './map';
+import {GameMap} from './map';
 import {Point} from "./station";
 import {StationGui} from "./stationGui";
 import {TrainGui} from './trainGui';
@@ -10,7 +10,7 @@ import {Drawing} from "./helpers";
 
 const defaultZoom = 5;
 
-export class MapGui extends Map {
+export class GameMapGui extends GameMap {
 
   constructor(gameId, displayOptions) {
     super(gameId);
@@ -36,7 +36,7 @@ export class MapGui extends Map {
   }
 
   init(canvas_id, game_id) {
-    console.log('MapGui init', game_id);
+    console.log('GameMapGui init', game_id);
     super.init(game_id);
     this.game.canModifyMap(); // just to trigger reactivity and depending helpers
     this.canvas = $(canvas_id).get(0);
@@ -47,14 +47,14 @@ export class MapGui extends Map {
     this.canvas.addEventListener("mouseup", $.proxy(this.onMouseUp, this), false);
     this.canvas.addEventListener("mousemove", $.proxy(this.onMouseMove, this), false);
     this.canvas.addEventListener("mousewheel", $.proxy(this.onMouseWheel, this), false);
-    this.canvas.addEventListener("contextmenu", $.proxy(MapGui.onContextMenu, this), false);
+    this.canvas.addEventListener("contextmenu", $.proxy(GameMapGui.onContextMenu, this), false);
     //this.canvas.addEventListener("mouseout", $.proxy(this.onMouseOut, this), false);
     //this.canvas.addEventListener("dblclick", $.proxy(this.onMouseDblClick, this), false);
     this.draw();
     console.log('map initialized');
   }
 
-  setGame(game) {
+  setGame(game) { // only needed for client, in a mapGui
     this.game = game;
   }
 
@@ -204,15 +204,15 @@ export class MapGui extends Map {
       self.ctx.strokeStyle = '#fff';
       _.each(station.children, function(p) {
         if(typeof(p) === 'string') return;
-        Drawing.drawArrow(self.ctx, self.relToRealCoords(station.pos), self.relToRealCoords(p.pos), 0.3);
+        Drawing.drawArrow(self.ctx, self.relToRealCoords(station.pos), self.relToRealCoords(p.pos), 0.2);
       });
       // draw parents links
-      self.ctx.lineWidth = 4;
-      self.ctx.strokeStyle = '#f00';
-      _.each(station.parents, function(p) {
-        if(typeof(p) === 'string') return;
-        Drawing.drawArrow(self.ctx, self.relToRealCoords(p.pos), self.relToRealCoords(station.pos), 0.2);
-      });
+      // self.ctx.lineWidth = 4;
+      // self.ctx.strokeStyle = '#f00';
+      // _.each(station.parents, function(p) {
+      //   if(typeof(p) === 'string') return;
+      //   Drawing.drawArrow(self.ctx, self.relToRealCoords(p.pos), self.relToRealCoords(station.pos), 0.1);
+      // });
     });
   }
 

@@ -1,5 +1,5 @@
-import {MapGui} from '../../../classes/mapGui';
-import {Game} from '../../../classes/game';
+import {GameMapGui} from '../../../classes/mapGui';
+import {GameGui} from '../../../classes/gameGui';
 import {Helpers} from '../../../classes/helpers';
 import {Radio} from "../../../classes/radio";
 
@@ -12,8 +12,8 @@ let handleTrains = null;
 Template.game.onCreated(function() {
 
   // console.log('Template.game.onCreated data', this.data);
-  map = new MapGui(this.data._id);
-  game = new Game(map);
+  map = new GameMapGui(this.data._id);
+  game = new GameGui(map);
 
 });
 
@@ -32,6 +32,7 @@ Template.game.onRendered(function() {
   // if(!radio.playing()) radio.play(2000);
 
   map.init('canvas', this.data._id);
+
   // subscribe to map (or "game") stations
   if(handleStations) handleStations.stop();
   handleStations = Stations.find({game_id: this.data._id}).observeChanges({
