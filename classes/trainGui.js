@@ -11,8 +11,9 @@ export class TrainGui extends Train {
     super(map, doc, id);
     this.ctx = map.ctx;
     displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
-    this.displayOptions = {
-      margin: displayOptions.margin || 0.15 // %
+    this.dispo = {
+      margin: displayOptions.margin || 0.15, // %
+      trainSize: displayOptions.trainSize || 3
     };
     this.currentDrawStep = this.moveTotalSteps = 20; // default values that are calculated later
     this.animateWait = 100; // constant: draw every animateWait ms
@@ -56,7 +57,7 @@ export class TrainGui extends Train {
   doDraw() {
     // console.log('TrainGui#doDraw', this._id);
     // console.log(this.from, this.pos);
-    const z = this.map.displayOptions.zoom;
+    const z = this.map.dispo.zoom;
     // the pos is the destination
     // we calculate the relative position with a vector
     const progress = this.currentDrawStep / this.moveTotalSteps;
@@ -65,7 +66,7 @@ export class TrainGui extends Train {
     // this.map.drawSection(projection);
     const rpos = this.map.relToRealCoords(projection);
     this.ctx.fillStyle = "#f00";
-    Drawing.drawPoint(this.ctx, rpos, z * this.map.displayOptions.stationSize);
+    Drawing.drawPoint(this.ctx, rpos, z * this.dispo.trainSize);
   }
 
 }

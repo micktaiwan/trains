@@ -180,7 +180,7 @@ export class GameMap {
 
   // FIXME P0: what about bidirectional links ?
   getNearestObject(pos) {
-    const dist = this.displayOptions.linkSize;
+    const dist = this.dispo.linkSize;
     let obj = this.getLinks(pos, dist);
     if(!obj.length) return null;
     return obj[0];

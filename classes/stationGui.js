@@ -9,10 +9,10 @@ export class StationGui extends Station {
   }
 
   draw() {
-    const z = this.map.displayOptions.zoom;
+    const z = this.map.dispo.zoom;
     this.ctx.fillStyle = "#666";
     const rpos = this.map.relToRealCoords(this.pos);
-    Drawing.drawPoint(this.ctx, rpos, z * this.map.displayOptions.stationSize);
+    Drawing.drawPoint(this.ctx, rpos, z * this.map.dispo.stationSize);
 
     // draw _id
     // this.ctx.fillStyle = '#f00';

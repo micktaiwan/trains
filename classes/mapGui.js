@@ -15,7 +15,7 @@ export class GameMapGui extends GameMap {
   constructor(gameId, displayOptions) {
     super(gameId);
     displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
-    this.displayOptions = {
+    this.dispo = {
       zoom: displayOptions.zoom || defaultZoom,
       mouseSize: displayOptions.mouseSize || 4,
       stationSize: displayOptions.stationSize || 4,
@@ -96,12 +96,12 @@ export class GameMapGui extends GameMap {
     if(!this.currentStation) return;
     // if(!this.stations.length) return;
     const c = this.snappedMouseCoords(e);
-    this.ctx.lineWidth = this.displayOptions.zoom * this.displayOptions.linkSize;
+    this.ctx.lineWidth = this.dispo.zoom * this.dispo.linkSize;
     const cpos = this.relToRealCoords(this.currentStation.pos);
     this.ctx.strokeStyle = '#666';
     Drawing.drawLine(this.ctx, cpos, c);
-    Drawing.drawPoint(this.ctx, cpos, this.displayOptions.mouseSize * this.displayOptions.zoom);
-    Drawing.drawPoint(this.ctx, c, this.displayOptions.mouseSize * this.displayOptions.zoom);
+    Drawing.drawPoint(this.ctx, cpos, this.dispo.mouseSize * this.dispo.zoom);
+    Drawing.drawPoint(this.ctx, c, this.dispo.mouseSize * this.dispo.zoom);
   }
 
   endLinkFromEvent(e) {
@@ -123,7 +123,7 @@ export class GameMapGui extends GameMap {
   }
 
   resetPosition() {
-    this.displayOptions.zoom = defaultZoom;
+    this.dispo.zoom = defaultZoom;
     this.pan = {x: 0, y: 0};
     this.draw();
   }
@@ -137,13 +137,13 @@ export class GameMapGui extends GameMap {
   }
 
   drawStations() {
-    const z = this.displayOptions.zoom;
+    const z = this.dispo.zoom;
     const self = this;
     // first draw segments
     _.each(this.stations, function(station) {
       // console.log('drawing station', station);
       // draw children
-      self.ctx.lineWidth = z * self.displayOptions.linkSize;
+      self.ctx.lineWidth = z * self.dispo.linkSize;
       self.ctx.strokeStyle = '#666';
       _.each(station.children, function(p) {
         if(typeof(p) === 'string') return;
@@ -176,7 +176,7 @@ export class GameMapGui extends GameMap {
   // Given a pos try to redraw the portion of this map (links for example)
   drawSection(pos) {
     // draw a back box
-    const size = this.displayOptions.linkSize * this.displayOptions.zoom;
+    const size = this.dispo.linkSize * this.dispo.zoom;
     const a = rpos = this.relToRealCoords(pos);
     a.x = a.x - size / 2;
     a.y = a.y - size / 2;
@@ -187,7 +187,7 @@ export class GameMapGui extends GameMap {
     const links = this.getLinks(pos, size);
     this.ctx.font = '14px sans';
     this.ctx.fillStyle = '#9f9';
-    this.ctx.fillText('pos: ' + Math.round(pos.x) + ', ' + Math.round(pos.y) + ', links: ' + links.length, rpos.x - 100, rpos.y + this.displayOptions.linkSize * this.displayOptions.zoom + 10);
+    this.ctx.fillText('pos: ' + Math.round(pos.x) + ', ' + Math.round(pos.y) + ', links: ' + links.length, rpos.x - 100, rpos.y + this.dispo.linkSize * this.dispo.zoom + 10);
   }
 
   draw() {
@@ -212,7 +212,7 @@ export class GameMapGui extends GameMap {
     this.ctx.fillStyle = '#999';
     this.ctx.fillText('pos: ' + this.mouseRelPos.x + ', ' + this.mouseRelPos.y, 20, 20);
     this.ctx.fillText('pan: ' + (this.pan.x) + ', ' + (this.pan.y), 20, 40);
-    this.ctx.fillText('zoom: ' + (this.displayOptions.zoom), 20, 60);
+    this.ctx.fillText('zoom: ' + (this.dispo.zoom), 20, 60);
     this.ctx.fillText('time: ' + (this.drawTime), 20, 80);
   }
 
@@ -221,7 +221,7 @@ export class GameMapGui extends GameMap {
     const c = this.mouseSnappedCoords;
     if(!c) return;
     // display mouse
-    Drawing.drawPoint(this.ctx, c, this.displayOptions.mouseSize * this.displayOptions.zoom);
+    Drawing.drawPoint(this.ctx, c, this.dispo.mouseSize * this.dispo.zoom);
   }
 
   // we have been notified that another client removed this station
@@ -236,18 +236,18 @@ export class GameMapGui extends GameMap {
     e.preventDefault();
     const oldPos = this.relMouseCoords(e);
 
-    const factor = this.displayOptions.zoom / (e.wheelDelta / 45);
-    this.displayOptions.zoom += factor;
-    this.displayOptions.zoom = Math.round(this.displayOptions.zoom * 100) / 100;
-    if(this.displayOptions.zoom < 0.2)
-      this.displayOptions.zoom = 0.2;
-    if(this.displayOptions.zoom > 50)
-      this.displayOptions.zoom = 50;
+    const factor = this.dispo.zoom / (e.wheelDelta / 45);
+    this.dispo.zoom += factor;
+    this.dispo.zoom = Math.round(this.dispo.zoom * 100) / 100;
+    if(this.dispo.zoom < 0.2)
+      this.dispo.zoom = 0.2;
+    if(this.dispo.zoom > 50)
+      this.dispo.zoom = 50;
 
     // zoom depends on mouse position
     const newPos = this.relMouseCoords(e);
-    this.pan.x += (newPos.x - oldPos.x) * this.displayOptions.zoom;
-    this.pan.y += (newPos.y - oldPos.y) * this.displayOptions.zoom;
+    this.pan.x += (newPos.x - oldPos.x) * this.dispo.zoom;
+    this.pan.y += (newPos.y - oldPos.y) * this.dispo.zoom;
     this.pan.x = Math.round(this.pan.x);
     this.pan.y = Math.round(this.pan.y);
 
@@ -263,7 +263,7 @@ export class GameMapGui extends GameMap {
     this.mouseSnappedCoords = this.snappedMouseCoords(e);
     this.mouseRelPos = this.relMouseCoords(e);
     this.mouseMovement = {x: this.mousePos.x - this.mouseOldPos.x, y: this.mousePos.y - this.mouseOldPos.y};
-    this.nearestObj = this.getNearestStation(this.mouseRelPos, this.displayOptions.stationSize);
+    this.nearestObj = this.getNearestStation(this.mouseRelPos, this.dispo.stationSize);
     if(this.mouseIsDown) {
       if(e.ctrlKey) { // pan map
         drawmouse = false;
@@ -293,7 +293,7 @@ export class GameMapGui extends GameMap {
         drawmouse = false;
         document.body.style.cursor = 'move';
         // this.ctx.fillStyle = '#900';
-        // Drawing.drawPoint(this.ctx, this.relToRealCoords(this.nearestObj.pos), this.displayOptions.zoom * this.displayOptions.stationSize);
+        // Drawing.drawPoint(this.ctx, this.relToRealCoords(this.nearestObj.pos), this.dispo.zoom * this.dispo.stationSize);
       }
       else {
         // test if near a link
@@ -305,7 +305,7 @@ export class GameMapGui extends GameMap {
             drawmouse = false;
             document.body.style.cursor = 'pointer';
             this.ctx.fillStyle = '#6f6';
-            Drawing.drawPoint(this.ctx, this.relToRealCoords(this.nearestObj.rel.projection), this.displayOptions.zoom * this.displayOptions.stationSize);
+            Drawing.drawPoint(this.ctx, this.relToRealCoords(this.nearestObj.rel.projection), this.dispo.zoom * this.dispo.stationSize);
           }
         }
         else
@@ -370,7 +370,7 @@ export class GameMapGui extends GameMap {
 
   // return all stations under the mouse
   overlappingStations() {
-    return this.getNearestStations(this.mouseRelPos, this.displayOptions.stationSize * 1.5, 1);
+    return this.getNearestStations(this.mouseRelPos, this.dispo.stationSize * 1.5, 1);
   }
 
   doDragPoint(e) {
@@ -385,7 +385,7 @@ export class GameMapGui extends GameMap {
 
   removePointFromEvent(e) {
     if(!this.game.canModifyMap()) return;
-    this.nearestObj = this.getNearestStation(this.mouseRelPos, this.displayOptions.stationSize);
+    this.nearestObj = this.getNearestStation(this.mouseRelPos, this.dispo.stationSize);
     if(this.nearestObj) {
       this.game.sound('remove');
       const station = this.nearestObj;
@@ -440,14 +440,14 @@ export class GameMapGui extends GameMap {
 
   // transform relative to real coordinates
   relToRealCoords(c) {
-    const factor = this.displayOptions.zoom;
+    const factor = this.dispo.zoom;
     return {x: Math.round((c.x * factor) + (this.pan.x)), y: Math.round((c.y * factor) + (this.pan.y))}
   }
 
   // game mouse coords (relative to zoom and panning)
   relMouseCoords(e) {
     const c = this.mouseCoords(e);
-    const factor = this.displayOptions.zoom;
+    const factor = this.dispo.zoom;
     c.x = Math.round((c.x / factor) - (this.pan.x / factor));
     c.y = Math.round((c.y / factor) - (this.pan.y / factor));
     return c;
