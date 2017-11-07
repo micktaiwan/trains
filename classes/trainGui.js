@@ -3,14 +3,14 @@
  */
 
 import {Train} from './train';
-import {Drawing, Vector} from "./helpers";
+import {Drawing} from "./helpers";
 
 export class TrainGui extends Train {
 
-  constructor(map, doc, id, displayOptions) {
-    super(map, doc, id);
-    this.ctx = map.ctx;
-    displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
+  constructor(doc) {
+    super(doc);
+    this.ctx = this.map.ctx;
+    displayOptions = doc.displayOptions || {}; // why default parameters in es6 does not work here ?
     this.dispo = {
       margin: displayOptions.margin || 0.15, // %
       trainSize: displayOptions.trainSize || 3
@@ -57,16 +57,37 @@ export class TrainGui extends Train {
   doDraw() {
     // console.log('TrainGui#doDraw', this._id);
     // console.log(this.from, this.pos);
-    const z = this.map.dispo.zoom;
+    let size = this.map.dispo.zoom * this.dispo.trainSize;
+    if(size < 10) size = 10;
     // the pos is the destination
     // we calculate the relative position with a vector
-    const progress = this.currentDrawStep / this.moveTotalSteps;
-    let v = new Vector(this.from, this.pos);
-    const projection = v.origin().plus((v.scal(progress))).norm();
+    // const progress = this.currentDrawStep / this.moveTotalSteps;
+    // let v = new Vector(this.from, this.pos);
+    // const projection = v.origin().plus((v.scal(progress))).norm();
     // this.map.drawSection(projection);
-    const rpos = this.map.relToRealCoords(projection);
+    // const rpos = this.map.relToRealCoords(projection);
+
+    // draw path
+    console.log(this.path.length, this.destStation);
+
+    if(this.destStation) {
+      const rpos = this.map.relToRealCoords(this.destStation.pos);
+      this.ctx.fillStyle = "#ff0";
+      Drawing.drawPoint(this.ctx, rpos, size);
+    }
+
+    _.each(this.path, function(p) {
+      console.log(p);
+      this.ctx.fillStyle = "#ff0";
+      const rpos = this.map.relToRealCoords(p.pos);
+      Drawing.drawPoint(this.ctx, rpos, size);
+    });
+
+    const rpos = this.map.relToRealCoords(this.pos);
     this.ctx.fillStyle = "#f00";
-    Drawing.drawPoint(this.ctx, rpos, z * this.dispo.trainSize);
+    Drawing.drawPoint(this.ctx, rpos, size);
+
+
   }
 
 }

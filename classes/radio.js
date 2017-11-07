@@ -28,24 +28,32 @@ export class Radio {
     const s = this.stations[this.currentStation];
     console.log('Playing', s);
     if(this.backgroundSound) this.backgroundSound.unload();
-    this.backgroundSound = new Howl({
-      src: s.src,
-      html5: true, // needed when streaming
-      autoplay: true,
-      format: s.format,
-      volume: 0
-    });
-    this.backgroundSound.fade(0, 0.5, fadeDuration);
+    try {
+      this.backgroundSound = new Howl({
+        src: s.src,
+        html5: true, // needed when streaming
+        autoplay: true,
+        format: s.format,
+        volume: 0
+      });
+      this.backgroundSound.fade(0, 0.5, fadeDuration);
+    }
+    catch(e) {
+      console.log(e);
+      this.next();
+    }
   }
 
   next() {
+    console.log('next', this.backgroundSound);
     const self = this;
-    if(!this.backgroundSound) self.play();
-    else this.backgroundSound.fade(0.5, 0, 500).once('fade', function() {
-      self.currentStation++;
-      if(self.currentStation >= self.stations.length) self.currentStation = 0;
-      self.play();
-    });
+    self.currentStation++;
+    if(self.currentStation >= self.stations.length) self.currentStation = 0;
+    // if(!this.backgroundSound) self.play();
+    // else this.backgroundSound.fade(0.5, 0, 500).once('fade', function() {
+    //   self.play();
+    // });
+    self.play();
   }
 
   previous() {

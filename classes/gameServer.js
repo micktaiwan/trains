@@ -15,7 +15,7 @@ export class GameServer extends Game {
     this.gameStartTimestamp = new Date().getTime();
     this.clockHandle = Meteor.setInterval(function() {
       self.onTime();
-    }, 1000);
+    }, 400);
 
   }
 
@@ -42,8 +42,4 @@ export class GameServer extends Game {
     // if(train.move()) Trains.update({_id: train._id}, {$set: {pos: train.pos, dir: train.dir, interval: Helpers.moveInterval}});
   }
 
-  canTrainStart() {
-    this._canStart.set(Meteor.user() && this.map.stations.length > 0);
-    return this._canStart.get();
-  }
 }

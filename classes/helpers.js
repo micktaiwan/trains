@@ -13,9 +13,10 @@ export class Drawing {
     ctx.stroke();
   }
 
-  static drawArrow(ctx, p1, p2, lengthPercent) {
-    let v = new Vector(p1, p2);
-    const projection = v.origin().plus((v.scal(lengthPercent))).norm();
+  // progress is in %
+  static drawArrow(ctx, p1, p2, progress) {
+    const v = new Vector(p1, p2);
+    const projection = Geometry.getProgressPos(v, progress);
     ctx.beginPath();
     ctx.moveTo(v.p1.x, v.p1.y);
     ctx.lineTo(projection.x, projection.y);
@@ -84,13 +85,18 @@ export class Geometry {
     const v = new Vector(p1, q);
     const progress = u.dotProduct(v) / (u.len() * u.len());
     const inside = progress >= 0 && progress <= 1;
-    const projection = u.origin().plus((u.scal(progress))).norm();
+    const projection = Geometry.getProgressPos(u, progress);
     let dist = 0;
     if(progress < 0) dist = Geometry.dist(p1, q);
     else if(progress > 1) dist = Geometry.dist(p2, q);
     else dist = Geometry.dist(q, projection); // inside
     // console.log(progress, inside, projection, dist);
     return {inside: inside, progress: progress, projection: projection, dist: dist, p1: p1, p2: p2, q: q};
+  }
+
+  // progress is in %
+  static getProgressPos(vector, progress) {
+    return vector.origin().plus((vector.scal(progress))).norm();
   }
 
 }

@@ -32,6 +32,46 @@ Template.game.onRendered(function() {
   // if(!radio.playing()) radio.play(2000);
 
   map.init('canvas', this.data._id);
+  map.addCity({
+    name: 'Paris',
+    map: map,
+    ctx: map.ctx,
+    pos: {x: 250, y: 50},
+    size: 40,
+    color: '#4c5548'
+  });
+  map.addCity({
+    name: 'Falaise',
+    map: map,
+    ctx: map.ctx,
+    pos: {x: 100, y: 40},
+    size: 10,
+    color: '#4c5548'
+  });
+  map.addCity({
+    name: 'Toulouse',
+    map: map,
+    ctx: map.ctx,
+    pos: {x: 150, y: 500},
+    size: 20,
+    color: '#4c5548'
+  });
+  map.addCity({
+    name: 'Nice',
+    map: map,
+    ctx: map.ctx,
+    pos: {x: 500, y: 500},
+    size: 17,
+    color: '#4c5548'
+  });
+  map.addCity({
+    name: 'Tarbes',
+    map: map,
+    ctx: map.ctx,
+    pos: {x: 50, y: 550},
+    size: 10,
+    color: '#4c5548'
+  });
 
   // subscribe to map (or "game") stations
   if(handleStations) handleStations.stop();
@@ -55,11 +95,11 @@ Template.game.onRendered(function() {
   handleTrains = Trains.find({game_id: this.data._id}).observeChanges({
     added: function(id, doc) {
       // console.log('trains: added', id, doc);
-      map.addTrain(id, doc);
+      map.addTrain(_.extend({_id: id, map: map}, doc));
     },
     changed: function(id, doc) {
       // console.log('trains: changed', id, doc);
-      map.updateTrain(id, doc);
+      map.updateTrain(_.extend({_id: id}, doc));
     },
     removed: function(id) {
       // console.log('trains: removed', id);

@@ -13,6 +13,7 @@ export class GameMap {
     this._id = game_id;
     this.trains = [];
     this.stations = [];
+    this.cities = [];
     this.message = new ReactiveVar('');
     if(observeChanges) this.observeChanges();
   }
@@ -121,12 +122,14 @@ export class GameMap {
     return null;
   }
 
+  // if maxdist < 0 then not limit on distance, return all stations
   getNearestStations(pos, maxdist) {
     const rv = [];
     const len = this.stations.length;
     let d;
     for(let p = 0; p < len; p++) {
-      if((d = Geometry.dist(pos, this.stations[p].pos)) <= maxdist)
+      const d = Geometry.dist(pos, this.stations[p].pos);
+      if(maxdist < 0 || d <= maxdist)
         rv.push({station: this.stations[p], dist: d});
     }
     return _.sortBy(rv, function(p) {return p.dist;});
@@ -148,18 +151,17 @@ export class GameMap {
   }
 
   // coming from db
-  addTrain(id, doc) {
-    const pos = doc.pos;
-    const c = this.getTrainById(id);
+  addTrain(doc) {
+    const c = this.getTrainById(doc._id);
     if(c) throw new Error('same train id ?');
-    const train = new Train(this, doc, id);
+    const train = new Train(doc);
     this.trains.push(train);
     return train;
   }
 
-  updateTrain(id, doc) {
-    // console.log('Map#updateTrain', id, doc);
-    let train = this.getTrainById(id);
+  updateTrain(doc) {
+    // console.log('Map#updateTrain', doc);
+    let train = this.getTrainById(doc._id);
     if(!train) return console.error('updateTrain: no train');
     train.updateFromDB(doc);
   }
@@ -177,6 +179,7 @@ export class GameMap {
     }
     return null;
   }
+
 
   // FIXME P0: what about bidirectional links ?
   getNearestObject(pos) {
@@ -221,11 +224,11 @@ export class GameMap {
     Trains.find({game_id: self._id}).observeChanges({
       added: function(id, doc) {
         // console.log('trains: added', id);
-        self.addTrain(id, doc);
+        self.addTrain(_.extend({_id: id, map: self}, doc));
       },
       changed: function(id, doc) {
         // console.log('trains: changed', id, doc);
-        self.updateTrain(id, doc);
+        self.updateTrain(_.extend({_id: id}, doc));
       },
       removed: function(id) {
         console.log('trains: removed', id);

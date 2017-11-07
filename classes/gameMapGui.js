@@ -7,6 +7,7 @@ import {Point} from "./station";
 import {StationGui} from "./stationGui";
 import {TrainGui} from './trainGui';
 import {Drawing} from "./helpers";
+import {CityGui} from "./city";
 
 const defaultZoom = 5;
 
@@ -195,15 +196,13 @@ export class GameMapGui extends GameMap {
     if(!this.ctx) return;
     this.ctx.fillStyle = 'black';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-    // this.dotranslate();
+    for(let i = 0; i < this.cities.length; i++) {
+      this.cities[i].draw();
+    }
     this.drawStations();
-    // this.untranslate();
-
     for(let i = 0; i < this.trains.length; i++) {
       this.trains[i].draw();
     }
-
     this.drawMapBorder();
     this.drawCenter();
     this.drawTime = (new Date().getTime()) - time;
@@ -488,20 +487,26 @@ export class GameMapGui extends GameMap {
   }
 
   // coming from db
-  addTrain(id, doc) {
+  addTrain(doc) {
     const pos = doc.pos;
     const c = this.getTrain(pos);
     //console.log('addTrain', id, doc, 'found', c);
     if(c) // if the client already have it
-      c.id = id; // make sure the object have a DB id so we can remove it later
+      c.id = doc.id; // make sure the object have a DB id so we can remove it later
     else {
-      this.trains.push(new TrainGui(this, doc, id));
+      this.trains.push(new TrainGui(doc));
     }
   }
 
   updateTrain(id, doc) {
     super.updateTrain(id, doc);
     this.draw();
+  }
+
+  addCity(doc) {
+    const c = new CityGui(doc);
+    this.cities.push(c);
+    return c;
   }
 
 }
