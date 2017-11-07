@@ -188,14 +188,11 @@ export class GameMap {
 
   // return array of all link segments near to pos by dist, sorted by dist
   getLinks(pos, dist) {
-    console.log('GameMap#getLinks', pos, dist);
+    // console.log('GameMap#getLinks', pos, dist);
     const rv = [];
     for(let s = 0; s < this.stations.length; s++) {
       for(let p = 0; p < this.stations[s].children.length; p++) {
-        if(typeof(this.stations[s].children[p]) === 'string') {
-          console.log(this.stations[s].children[p]);
-          continue;
-        }
+        if(typeof(this.stations[s].children[p]) === 'string') continue;
         const rel = Geometry.relPointToSegment(this.stations[s].pos, this.stations[s].children[p].pos, pos);
         if(rel.dist <= dist)
           rv.push({stations: [this.stations[s], this.stations[s].children[p]], rel: rel});

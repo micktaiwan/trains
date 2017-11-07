@@ -1,5 +1,5 @@
 import {Game} from "./game";
-import {GameMap} from "./map";
+import {GameMap} from "./gameMap";
 
 // GameServer
 // Simply calls game loop
@@ -25,7 +25,7 @@ export class GameServer extends Game {
 
   onTime() {
     const delay_since_start = (new Date().getTime()) - this.gameStartTimestamp;
-    console.log('delay in secs:', delay_since_start / 1000);
+    // console.log('delay in secs:', delay_since_start / 1000);
     // console.log('game on time');
 
     // FIXME P0: define a planning: when to update trains, when to add people, when to collect taxes...

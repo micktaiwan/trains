@@ -22,9 +22,9 @@ export class Train {
 
   // Will be redone with pathfinding
   move() {
-    console.log('Train#move', this.pos);
+    // console.log('Train#move', this.pos);
     const links = this.map.getLinks(this.pos, 5);
-    console.log('Links:', links.length);
+    // console.log('Links:', links.length);
     if(links.length === 0) {
       this.pos.x = _.random(20, 200);
       this.pos.y = _.random(20, 100);
@@ -35,7 +35,7 @@ export class Train {
       if(_.isEqual(this.pos, dest)) dest = link.stations[0].pos;
       this.pos = _.clone(dest);
     }
-    console.log(this.pos);
+    // console.log(this.pos);
     this.hasMoved = true;
     this.updateDB();
   }

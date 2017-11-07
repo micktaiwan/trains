@@ -2,7 +2,7 @@
  * Created by mfaivremacon on 31/08/2015.
  */
 
-import {GameMap} from './map';
+import {GameMap} from './gameMap';
 import {Point} from "./station";
 import {StationGui} from "./stationGui";
 import {TrainGui} from './trainGui';
@@ -495,7 +495,6 @@ export class GameMapGui extends GameMap {
     if(c) // if the client already have it
       c.id = id; // make sure the object have a DB id so we can remove it later
     else {
-      console.log('pushing');
       this.trains.push(new TrainGui(this, doc, id));
     }
   }
