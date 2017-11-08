@@ -58,24 +58,40 @@ export class Train extends DBObject {
       return;
     }
 
-    this.progress += 10;
-    if(this.progress > 100) {
+    const speed = 100; // the speed of the train in km/h
+    const pixelMeter = 10; // the size of one increment of a coordinate (not necessary a pixel depending on the zoom factor) in meters
+    const refreshSpeed = 0.4; // the server clock speed in seconds
+    const pixelSpeed = (speed / pixelMeter) / 3.6; // the number of pixels we should pass in one second
+    const timePixels = pixelSpeed * refreshSpeed; // the real pixels depending of the refresh time
+    let v = new Vector(this.fromStation.pos, this.nextStation.pos);
+    const segmentLen = v.len() * pixelMeter; // the length of a segment in meters (note hat the coordinates of the vector are already zoomed)
+    const push = (timePixels / segmentLen) * 100; // % progress
+    // we "even out" the number of steps
+    const nbPushInSegment = 100 / push; // segments are 100% long (push is a %)
+    const even = 100 / Math.round(nbPushInSegment);
+    // console.log('push', even, push, even === push, nbPushInSegment);
+    this.progress += even; // total progress
+    this.running = true;
+    if(this.progress >= 100) { // FIXME: we could be very quick and jump a station on the next display
       this.fromStation = this.nextStation;
-      this.nextStation = null;
-      if(this.fromStation === this.destStation) this.running = false;
+      this.nextStation = this.path.shift();
+      this.pos = this.fromStation.pos;
+      this.progress = 0;
+      if(this.fromStation === this.destStation) {
+        this.running = false;
+      }
     }
-    else {
-      this.running = true;
-      // calculate vector to goal
-      // console.log('from', this.fromStation, 'dest', this.nextStation);
-      this.pos = Geometry.getProgressPos(new Vector(this.fromStation.pos, this.nextStation.pos), this.progress / 100);
-      // console.log(this.progress, this.pos, this.fromStation._id, this.nextStation._id);
-    }
+    // calculate vector to goal
+    // console.log('from', this.fromStation, 'dest', this.nextStation);
+    else this.pos = Geometry.getProgressPos(v, this.progress / 100);
+    // console.log(this.progress, this.pos, this.fromStation._id, this.nextStation._id);
   }
 
   // will choose a destination
   findDestination() {
     // FIXME: to avoid going to unreachable stations, we should generate an array all reachable stations and choose from it
+    // but that's maybe not necessary depending on the futur game (take passengers on ours lines, I don't know)
+
     // random
     this.destStation = this.map.stations[_.random(this.map.stations.length - 1)];
     if(!this.destStation) {
@@ -92,7 +108,7 @@ export class Train extends DBObject {
       console.log(id);
       return self.map.getStationById(id);
     });
-    console.log('len', this.path.length);
+    // console.log('len', this.path.length);
     if(this.path.len === 0) this.destStation = null;
   }
 

@@ -22,18 +22,18 @@ export class PathFinder {
       if(current._id === goal._id) {
         // console.log('break');
         found = true;
-        break;
+        // break; // do not break, go all around the graph and find the shortest path
       } // found
-      _.each(current.children, function(next) {
+      _.each(current.children, function(child) {
         // console.log('** child', next._id);
-        const new_cost = cost_so_far[current._id] + PathFinder.heuristic(next.pos, goal.pos);
+        const new_cost = cost_so_far[current._id] + PathFinder.heuristic(current.pos, child.pos);
         // console.log('in', next._id in cost_so_far, new_cost, cost_so_far[next._id]);
-        if(!(next._id in cost_so_far) || new_cost < cost_so_far[next._id]) {
-          cost_so_far[next._id] = new_cost;
-          const priority = new_cost;
-          frontier.push({value: next, priority: priority});
+        if(!(child._id in cost_so_far) || new_cost < cost_so_far[child._id]) {
+          cost_so_far[child._id] = new_cost;
+          const priority = new_cost + PathFinder.heuristic(child.pos, goal.pos);
+          frontier.push({value: child, priority: priority});
           // console.log('pushing', next._id, '=>', current._id);
-          inverse_path[next._id] = current._id;
+          inverse_path[child._id] = current._id;
         }
       });
     }

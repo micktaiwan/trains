@@ -68,7 +68,7 @@ export class TrainGui extends Train {
     // const rpos = this.map.relToRealCoords(projection);
 
     // draw path
-    console.log(this.path.length, this.destStation);
+    // console.log(this.path.length, this.destStation);
 
     if(this.destStation) {
       const rpos = this.map.relToRealCoords(this.destStation.pos);
@@ -86,8 +86,6 @@ export class TrainGui extends Train {
     const rpos = this.map.relToRealCoords(this.pos);
     this.ctx.fillStyle = "#f00";
     Drawing.drawPoint(this.ctx, rpos, size);
-
-
   }
 
 }
