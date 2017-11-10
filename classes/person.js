@@ -21,13 +21,35 @@ export class Person extends DBObject {
     // movement
     // get persons around
     // make a average of pos
+    if(!this.moveTowardsNearestStation())
+      this.moveTowardsPersons();
+  }
+
+  moveTowardsNearestStation() {
+
+    const station = this.map.getNearestStation(this.pos, 200);
+    if(!station) return false;
+    const old = this.pos;
+    if(this.pos.x < station.pos.x - 30) this.pos.x += 2;
+    else if(this.pos.x > station.pos.x - 30) this.pos.x -= 2;
+    else if(this.pos.x > station.pos.x + 30) this.pos.x -= 2;
+    if(this.pos.y < station.pos.y - 30) this.pos.y += 2;
+    else if(this.pos.y > station.pos.y - 30) this.pos.y -= 2;
+    else if(this.pos.y > station.pos.y + 30) this.pos.y -= 2;
+    this.updateDB();
+    if(_.isEqual(old, this.pos)) return false;
+    return true;
+  }
+
+
+  moveTowardsPersons() {
     let x = 0;
     let y = 0;
     let nb = 0;
     for(let i = 0; i < this.map.objects.length; i++) {
       const obj = this.map.objects[i];
       if(obj.type !== 'person') continue;
-      if(Geometry.dist(this.pos, obj.pos) < 50) {
+      if(Geometry.dist(this.pos, obj.pos) < 80) {
         x += obj.pos.x;
         y += obj.pos.y;
         nb++;
@@ -39,10 +61,10 @@ export class Person extends DBObject {
       y = Math.round(y / nb);
       if(this.pos.x < x) this.pos.x += 1;
       else if(this.pos.x > x) this.pos.x -= 1;
-      // else if(this.pos.x === x) this.pos.x += -2 + _.random(4);
+      else if(this.pos.x === x) this.pos.x += -3 + _.random(6);
       if(this.pos.y < y) this.pos.y += 1;
       else if(this.pos.y > y) this.pos.y -= 1;
-      // else if(this.pos.y === y) this.pos.y += -2 + _.random(4);
+      else if(this.pos.y === y) this.pos.y += -3 + _.random(6);
       this.updateDB();
     }
   }

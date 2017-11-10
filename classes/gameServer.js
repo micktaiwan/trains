@@ -38,15 +38,10 @@ export class GameServer extends Game {
     // console.log(this.gameTimePassed);
 
     // Add persons
-    let nb = 0;
-    for(let i = 0; i < this.map.objects.length; i++) {
-      const obj = this.map.objects[i];
-      if(obj.type !== 'person') continue;
-      nb++;
-    }
+    const nbPersons = this.map.getPersons().length;
     // console.log(nb);
     // if(this.clockTick/1000 % 60 === 0)
-    if(nb < 10)
+    if(nbPersons < 50)
       this.addPerson();
 
     // Update all objects

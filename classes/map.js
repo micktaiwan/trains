@@ -70,6 +70,9 @@ export class GameMap {
   getStations() {
     return _.filter(this.objects, function(o) {return o.type === 'station';});
   }
+  getPersons() {
+    return _.filter(this.objects, function(o) {return o.type === 'person';});
+  }
 
   getTrainByPos(pos) {
     for(let i = 0; i < this.objects.length; i++) {

@@ -139,7 +139,7 @@ export class Helpers {
   static observeChanges(params) {
     return MapObjects.find({game_id: params.game_id}).observeChanges({
       added: function(id, doc) {
-        console.log('map_object added', id, doc);
+        // console.log('map_object added', id, doc);
         if(doc.type === 'train') params.map.addTrain(_.extend({_id: id, map: params.map}, doc));
         else if(doc.type === 'station') params.map.addStation(_.extend({_id: id, map: params.map}, doc));
         else if(doc.type === 'person') params.map.addPerson(_.extend({_id: id, map: params.map}, doc));
@@ -155,7 +155,7 @@ export class Helpers {
         else console.error('Do not know this type', id, obj, doc);
       },
       removed: function(id) {
-        console.log('map_object removed', id);
+        // console.log('map_object removed', id);
         params.map.removeObjectById(id);
       }
     });

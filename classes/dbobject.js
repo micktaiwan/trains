@@ -6,7 +6,7 @@ export class DBObject {
     }
     // make sure that _id is set
     this._id = doc._id || properties._id || Random.id();
-    console.log('DBObject', this);
+    // console.log('DBObject', this);
     if(!doc.type && !properties.type) console.log('no type ?', doc);
   }
 

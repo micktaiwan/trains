@@ -3,7 +3,7 @@ import {DBObject} from "./dbobject";
 export class Station extends DBObject {
 
   constructor(doc) {
-    console.log('Station constructor', doc);
+    // console.log('Station constructor', doc);
     super({
       type: 'station',
       game_id: doc.map._id,
