@@ -49,18 +49,7 @@ Template.onlineUser.helpers({
 
 });
 
-Template.gameItem.helpers({
-
-  // FIXME P2: if we use these helpers we must publish all stations and train... find another way: store these info in the game
-  stationsCount: function() {
-    return Stations.find({game_id: this._id}).count();
-  },
-
-  trainPos: function() {
-    return Trains.findOne({game_id: this._id}).pos;
-  }
-
-});
+Template.gameItem.helpers({});
 
 
 Template.lobby.events({

@@ -2,7 +2,7 @@
  * Created by mfaivremacon on 01/09/2015.
  */
 import {DBObject} from "./dbobject";
-import {Geometry, Vector} from "./helpers";
+import {Geometry, Helpers, Vector} from "./helpers";
 import {PathFinder} from "./pathfinder";
 
 export class Train extends DBObject {
@@ -10,7 +10,7 @@ export class Train extends DBObject {
   constructor(doc) {
     // console.log('Train#constructor', doc);
     const def = {
-      _id: Random.id(),
+      type: 'train',
       game_id: null,
       map: null,
       pos: {x: 10, y: 10},
@@ -23,12 +23,8 @@ export class Train extends DBObject {
     this.updateFromDB(doc); // perform additional object transformations
   }
 
-  reset() {
-    this.pos.x = this.pos.y = 1;
-  }
-
   // to be done with pathfinding
-  move() {
+  update(clock) {
     // console.log('Train#move', this.pos);
     // Find the station where we want to go to
     if(this.fromStation === null) { // we are not on a track
@@ -50,22 +46,13 @@ export class Train extends DBObject {
     // get goal
     if(!this.nextStation) {
       this.nextStation = this.path.shift();
-      if(this.nextStation) console.log('next stop is', this.nextStation._id);
       this.progress = 0;
     }
-    if(!this.nextStation) {
-      console.log('**** no nextStation');
-      return;
-    }
+    if(!this.nextStation) return; // end of path
 
-    const speed = 100; // the speed of the train in km/h
-    const pixelMeter = 10; // the size of one increment of a coordinate (not necessary a pixel depending on the zoom factor) in meters
-    const refreshSpeed = 0.4; // the server clock speed in seconds
-    const pixelSpeed = (speed / pixelMeter) / 3.6; // the number of pixels we should pass in one second
-    const timePixels = pixelSpeed * refreshSpeed; // the real pixels depending of the refresh time
     let v = new Vector(this.fromStation.pos, this.nextStation.pos);
-    const segmentLen = v.len() * pixelMeter; // the length of a segment in meters (note hat the coordinates of the vector are already zoomed)
-    const push = (timePixels / segmentLen) * 100; // % progress
+    const segmentLen = v.len(); // the length of a segment in meters (note hat the coordinates of the vector are already zoomed)
+    const push = (Helpers.timePixels / segmentLen) * 100; // % progress
     // we "even out" the number of steps
     const nbPushInSegment = 100 / push; // segments are 100% long (push is a %)
     const even = 100 / Math.round(nbPushInSegment);
@@ -93,27 +80,22 @@ export class Train extends DBObject {
     // but that's maybe not necessary depending on the futur game (take passengers on ours lines, I don't know)
 
     // random
-    this.destStation = this.map.stations[_.random(this.map.stations.length - 1)];
-    if(!this.destStation) {
-      console.log('********** no dest ???', this.map.stations.length);
-      return;
-    }
-    if(this.destStation._id === this.fromStation._id) {
-      console.log('*** on self');
-      return;
-    }
+    const stations = this.map.getStations();
+    this.destStation = stations[_.random(stations.length - 1)];
+    if(!this.destStation) return console.error('no dest ???', this.map.stations.length);
+    if(this.destStation._id === this.fromStation._id) return console.error('on self');
+
     console.log('======= New Trip:', this.fromStation._id, '=>', this.destStation._id);
     const self = this;
     this.path = _.map(PathFinder.path(this.fromStation, this.destStation), function(id) {
-      console.log(id);
-      return self.map.getStationById(id);
+      // console.log("Station", id);
+      return self.map.getObjectById(id);
     });
     // console.log('len', this.path.length);
     if(this.path.len === 0) this.destStation = null;
   }
 
-
-  toObj() {
+  objToSave() {
     const self = this;
     // console.log('len to map', this.path.length);
     return {
@@ -132,16 +114,6 @@ export class Train extends DBObject {
     };
   }
 
-  saveToDB() {
-    // console.log('saveTrainToDB', this._id);
-    Meteor.call('trainAdd', this._id, this.toObj());
-  }
-
-  updateDB() {
-    // console.log('Train#updateDB', this._id);
-    Meteor.call('trainUpdate', this._id, this.toObj());
-  }
-
   updateFromDB(doc) {
     // console.log('Train#updateFromDB', doc);
     const self = this;
@@ -150,9 +122,9 @@ export class Train extends DBObject {
       if(doc.pos) this.pos = doc.pos;
       this.hasMoved = true;
     }
-    if(doc.fromStation) this.fromStation = this.map.getStationById(doc.fromStation);
-    if(doc.destStation) this.destStation = this.map.getStationById(doc.destStation);
-    if(doc.path) this.path = _.compact(_.map(this.path, function(id) {return self.map.getStationById(id);}))
+    if(doc.fromStation) this.fromStation = this.map.getObjectById(doc.fromStation);
+    if(doc.destStation) this.destStation = this.map.getObjectById(doc.destStation);
+    if(doc.path) this.path = _.compact(_.map(this.path, function(id) {return self.map.getObjectById(id);}))
     // console.log('Train#updateFromDB', doc, "\n", 'this', this);
   }
 

@@ -1,5 +1,10 @@
 export class Drawing {
 
+  static text(ctx, txt, pos) {
+    ctx.fillText(txt, pos.x, pos.y);
+  }
+
+
   static drawPoint(ctx, pos, size) {
     ctx.beginPath();
     ctx.arc(pos.x, pos.y, size, 0, 2 * Math.PI, true);
@@ -66,6 +71,10 @@ export class Geometry {
     return Math.sqrt((b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y));
   }
 
+  static middlePoint(a, b) {
+    return {x: (b.x + a.x) / 2, y: (b.y + a.y) / 2};
+  }
+
   // return information about the relation between a point and a segment
   // [p1, p2] is the segment, q is the point
   // {
@@ -108,11 +117,49 @@ objectCount = 0;
 
 export class Helpers {
 
-  static moveInterval = 1000;
-  static caseRealMeters = 10;
+  static serverInterval = 1000; // the server loop interval
+  static trainSpeed = 50; // the trainSpeed of the train in km/h
+  static pixelMeter = 20; // the size of a pixel in meters (actually, the size of one increment of a coordinate, not necessary a pixel depending on the zoom factor)
+  static pixelSpeed = (Helpers.trainSpeed / Helpers.pixelMeter) / 3.6; // the number of pixels we should pass in one second
+  static defaultZoom = 1;
+  static timeFactor = 60; //  real time / game time factor (60: each second is one minute)
+  static timePixels = Helpers.timeFactor * Helpers.pixelSpeed * Helpers.serverInterval / 1000; // the real pixels depending of the refresh time in seconds
 
   static objectId(object) {
     if(!objIdMap.has(object)) objIdMap.set(object, ++objectCount);
     return objIdMap.get(object);
   }
+
+  static gameDist(realPixels) {
+    let meters = realPixels * Helpers.pixelMeter;
+    if(meters >= 1000) return Math.round(meters / 1000) + "km";
+    return Math.round(meters) + "m";
+  }
+
+  static observeChanges(params) {
+    return MapObjects.find({game_id: params.game_id}).observeChanges({
+      added: function(id, doc) {
+        console.log('map_object added', id, doc);
+        if(doc.type === 'train') params.map.addTrain(_.extend({_id: id, map: params.map}, doc));
+        else if(doc.type === 'station') params.map.addStation(_.extend({_id: id, map: params.map}, doc));
+        else if(doc.type === 'person') params.map.addPerson(_.extend({_id: id, map: params.map}, doc));
+        else console.error('Do not know this type', id, doc);
+      },
+      changed: function(id, doc) {
+        const obj = MapObjects.findOne(id, {fields: {type: 1}});
+        if(!obj) return console.error('map_object changed: no object found', id, doc);
+        // console.log('map_object changed', obj, doc);
+        if(obj.type === 'train') params.map.updateObject(id, doc);
+        else if(obj.type === 'station') params.map.updateObject(id, doc);
+        else if(obj.type === 'person') params.map.updateObject(id, doc);
+        else console.error('Do not know this type', id, obj, doc);
+      },
+      removed: function(id) {
+        console.log('map_object removed', id);
+        params.map.removeObjectById(id);
+      }
+    });
+
+  }
+
 }

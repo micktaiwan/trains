@@ -1,17 +1,23 @@
-export class Station {
+import {DBObject} from "./dbobject";
 
-  constructor(map, doc, id) {
-    this._id = id || Random.id();
-    this.map = map;
-    this.pos = doc.pos;
-    this.children = doc.children || [];
-    this.parents = doc.parents || []; // will copy back all children
-    // console.log('Station constructor', this);
+export class Station extends DBObject {
+
+  constructor(doc) {
+    console.log('Station constructor', doc);
+    super({
+      type: 'station',
+      game_id: doc.map._id,
+      map: doc.map,
+      pos: doc.pos,
+      children: doc.children || [],
+      parents: doc.parents || [] // will copy back all children
+    }, doc);
   }
 
-  toObj() {
+  objToSave() {
     return {
       _id: this._id,
+      type: this.type,
       pos: this.pos,
       game_id: this.map._id,
       children: _.map(this.children, function(l) {return l._id}),
@@ -101,12 +107,12 @@ export class Station {
     return null;
   }
 
-  saveToDB() {
-    Meteor.call('mapInsertStation', this.toObj());
-  }
-
-  updateDB() {
-    Meteor.call('mapUpdateStation', this._id, this.toObj());
+  updateFromDB(doc) {
+    // console.log('station!', doc, obj);
+    if(doc.children) this.children = doc.children;
+    if(doc.parents) this.parents = doc.parents;
+    if(doc.pos) this.pos = doc.pos;
+    this.map.updateStationsLinks();
   }
 
   // merge 2 stations
@@ -117,10 +123,16 @@ export class Station {
       if(dest._id === c._id) return;
       // console.log('***** loop ', dest._id, '=>', c._id);
       dest.addBiChild(c);
+      c.updateDB();
     });
+    dest.updateDB();
     // remove self
     this.map.removeStation(this, true);
     this.map.removeIsolatedStations(); // the only case where we merge a isolated segment
+  }
+
+  update(clock) {
+
   }
 
 }

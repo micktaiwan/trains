@@ -11,33 +11,38 @@ export class PathFinder {
   static search(start, goal) {
     const frontier = new TinyQueue([], function(a, b) {return a.priority - b.priority;});
     frontier.push({value: start, priority: 0});
-    const inverse_path = {};
-    const cost_so_far = {};
-    cost_so_far[start._id] = 0;
+    const inverse_map = {};
+    const costs = {};
+    costs[start._id] = 0;
     let found = false;
+    let nbCurrentNodes = 0, nbChildrenNodes = 0, nbFrontiers = 0;
 
     while(frontier.length) {
+      nbCurrentNodes++;
       const current = frontier.pop().value;
       // console.log('============ current', current._id, 'goal', goal._id);
       if(current._id === goal._id) {
         // console.log('break');
         found = true;
-        // break; // do not break, go all around the graph and find the shortest path
+        break; // do not break, go all around the graph and find the shortest path
       } // found
       _.each(current.children, function(child) {
+        nbChildrenNodes++;
         // console.log('** child', next._id);
-        const new_cost = cost_so_far[current._id] + PathFinder.heuristic(current.pos, child.pos);
+        const new_cost = costs[current._id] + PathFinder.heuristic(current.pos, child.pos);
         // console.log('in', next._id in cost_so_far, new_cost, cost_so_far[next._id]);
-        if(!(child._id in cost_so_far) || new_cost < cost_so_far[child._id]) {
-          cost_so_far[child._id] = new_cost;
+        if(!(child._id in costs) || new_cost < costs[child._id]) {
+          nbFrontiers++;
+          costs[child._id] = new_cost;
           const priority = new_cost + PathFinder.heuristic(child.pos, goal.pos);
           frontier.push({value: child, priority: priority});
           // console.log('pushing', next._id, '=>', current._id);
-          inverse_path[child._id] = current._id;
+          inverse_map[child._id] = current._id;
         }
       });
     }
-    return {found: found, inverse_path: inverse_path, cost_so_far: cost_so_far}
+    console.log("PathFinder#search: nb nodes:", nbCurrentNodes, '/', nbFrontiers, '(', nbChildrenNodes, ' children), total cost:', Math.round(costs[goal._id]));
+    return {found: found, inverse_path: inverse_map, cost_so_far: costs}
   }
 
   static path(start, goal) {

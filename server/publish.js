@@ -2,12 +2,8 @@
  * Created by mfaivremacon on 02/09/2015.
  */
 
-Meteor.publish('stations', function(game_id) {
-  return Stations.find({game_id: game_id});
-});
-
-Meteor.publish('trains', function(game_id) {
-  return Trains.find({game_id: game_id});
+Meteor.publish('map_objects', function(game_id) {
+  return MapObjects.find({game_id: game_id});
 });
 
 Meteor.publish('teams', function(game_id) {

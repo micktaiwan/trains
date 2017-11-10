@@ -2,14 +2,13 @@
  * Created by mfaivremacon on 31/08/2015.
  */
 
-import {GameMap} from './gameMap';
-import {Point} from "./station";
+import {GameMap} from './map';
 import {StationGui} from "./stationGui";
 import {TrainGui} from './trainGui';
-import {Drawing} from "./helpers";
+import {Drawing, Geometry, Helpers} from "./helpers";
 import {CityGui} from "./city";
+import {PersonGui} from "./person";
 
-const defaultZoom = 5;
 
 export class GameMapGui extends GameMap {
 
@@ -17,10 +16,10 @@ export class GameMapGui extends GameMap {
     super(gameId);
     displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
     this.dispo = {
-      zoom: displayOptions.zoom || defaultZoom,
-      mouseSize: displayOptions.mouseSize || 4,
-      stationSize: displayOptions.stationSize || 4,
-      linkSize: displayOptions.linkSize || 5
+      zoom: displayOptions.zoom || Helpers.defaultZoom,
+      mouseSize: displayOptions.mouseSize || 25,
+      stationSize: displayOptions.stationSize || 25, // in real pixels
+      linkSize: displayOptions.linkSize || 20
     };
 
     this.mouseIsDown = false;
@@ -34,6 +33,23 @@ export class GameMapGui extends GameMap {
   static onContextMenu(e) {
     e.preventDefault();
     return false;
+  }
+
+  // real mouse coords
+  static mouseCoords(e) {
+    let cx, cy;
+    if(e.pageX || e.pageY) {
+      cx = e.pageX;
+      cy = e.pageY;
+    }
+    else {
+      cx = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+      cy = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+    }
+    cx -= e.target.offsetLeft;
+    cy -= e.target.offsetTop;
+
+    return {x: cx, y: cy}
   }
 
   init(canvas_id, game_id) {
@@ -55,18 +71,19 @@ export class GameMapGui extends GameMap {
     console.log('map initialized');
   }
 
+  // insert a station q as a child of another p
+  // p => children will become p => q => children
+
   setGame(game) { // only needed for client, in a mapGui
     this.game = game;
   }
 
-  // insert a station q as a child of another p
-  // p => children will become p => q => children
   // p => parents will become q => parents
   insertProjection(rel) {
     const parent = this.getStationByPos(rel.p1).station;
     const child = this.getStationByPos(rel.p2).station;
-    const q = new StationGui(this, {pos: rel.projection, children: [], parents: []});
-    this.stations.push(q);
+    const q = new StationGui({map: this, pos: rel.projection, children: [], parents: []});
+    this.addObject(q);
     parent.removeChild(child); // will remove child's parent ('parent')
     child.removeChild(parent); // will remove parent's parent ('child')
     parent.addBiChild(q);
@@ -84,7 +101,7 @@ export class GameMapGui extends GameMap {
     this.game.sound('station');
     if(!this.game.canModifyMap()) return;
     const c = this.relMouseCoords(e);
-    this.currentStation = new StationGui(this, {pos: c});
+    this.currentStation = new StationGui({map: this, pos: c});
     // this.currentStation.saveToDB();
   }
 
@@ -95,7 +112,6 @@ export class GameMapGui extends GameMap {
 
   drawCurrentLinkFromEvent(e) {
     if(!this.currentStation) return;
-    // if(!this.stations.length) return;
     const c = this.snappedMouseCoords(e);
     this.ctx.lineWidth = this.dispo.zoom * this.dispo.linkSize;
     const cpos = this.relToRealCoords(this.currentStation.pos);
@@ -109,7 +125,7 @@ export class GameMapGui extends GameMap {
     if(!this.currentStation) return;
     this.game.sound('station');
     const c = this.relMouseCoords(e);
-    const endStation = new StationGui(this, {pos: c});
+    const endStation = new StationGui({map: this, pos: c});
     this.currentStation.addBiChild(endStation);
     this.currentStation.saveToDB();
     endStation.saveToDB();
@@ -124,27 +140,26 @@ export class GameMapGui extends GameMap {
   }
 
   resetPosition() {
-    this.dispo.zoom = defaultZoom;
+    this.dispo.zoom = Helpers.defaultZoom;
     this.pan = {x: 0, y: 0};
     this.draw();
   }
 
-  dotranslate() {
-    this.ctx.translate(this.pan.x, this.pan.y);
-  }
-
-  untranslate() {
-    this.ctx.translate(-this.pan.x, -this.pan.y);
-  }
+  // dotranslate() { this.ctx.translate(this.pan.x, this.pan.y); }
+  // untranslate() { this.ctx.translate(-this.pan.x, -this.pan.y); }
 
   drawStations() {
     const z = this.dispo.zoom;
     const self = this;
     // first draw segments
-    _.each(this.stations, function(station) {
+    _.each(this.objects, function(station) {
+      if(station.type !== 'station') return;
       // console.log('drawing station', station);
       // draw children
-      self.ctx.lineWidth = z * self.dispo.linkSize;
+      let size = z * (self.dispo.linkSize);
+      // if(size > self.dispo.linkSize) size = self.dispo.linkSize;
+      self.ctx.lineWidth = size;
+
       self.ctx.strokeStyle = '#666';
       _.each(station.children, function(p) {
         if(typeof(p) === 'string') return;
@@ -153,25 +168,45 @@ export class GameMapGui extends GameMap {
     });
 
     // draw the stations
-    _.each(this.stations, function(p) {p.draw();});
+    _.each(this.objects, function(station) {
+      if(station.type !== 'station') return;
+      station.draw();
+    });
 
     // then links
-    _.each(this.stations, function(station) {
-      // draw children
-      self.ctx.lineWidth = 2;
-      self.ctx.strokeStyle = '#fff';
-      _.each(station.children, function(p) {
-        if(typeof(p) === 'string') return;
-        Drawing.drawArrow(self.ctx, self.relToRealCoords(station.pos), self.relToRealCoords(p.pos), 0.2);
-      });
-      // draw parents links
-      // self.ctx.lineWidth = 4;
-      // self.ctx.strokeStyle = '#f00';
-      // _.each(station.parents, function(p) {
-      //   if(typeof(p) === 'string') return;
-      //   Drawing.drawArrow(self.ctx, self.relToRealCoords(p.pos), self.relToRealCoords(station.pos), 0.1);
-      // });
-    });
+    // if(self.dispo.zoom >= 0.25) {
+    _.each(this.objects, function(station) {
+        if(station.type !== 'station') return;
+        // draw children
+        self.ctx.lineWidth = 2;
+        self.ctx.strokeStyle = '#fff';
+        self.ctx.fillStyle = '#fff';
+        _.each(station.children, function(child) {
+          if(typeof(child) === 'string') return;
+          const distInKm = Geometry.dist(station.pos, child.pos) * Helpers.pixelMeter / 1000;
+          if(self.dispo.zoom >= 0.5)
+            Drawing.drawArrow(self.ctx, self.relToRealCoords(station.pos), self.relToRealCoords(child.pos), 0.2);
+          // display length
+          // FIXME: draw 2 times
+          if(
+            (self.dispo.zoom >= 0.05 && distInKm > 50) ||
+            (self.dispo.zoom >= 0.08 && distInKm > 20) ||
+            (self.dispo.zoom >= 0.14 && distInKm > 10) ||
+            self.dispo.zoom >= 0.45
+          )
+            Drawing.text(self.ctx, Helpers.gameDist(Geometry.dist(station.pos, child.pos)), self.relToRealCoords(Geometry.middlePoint(station.pos, child.pos)));
+        });
+        // draw parents links
+        // self.ctx.lineWidth = 4;
+        // self.ctx.strokeStyle = '#f00';
+        // _.each(station.parents, function(p) {
+        //   if(typeof(p) === 'string') return;
+        //   Drawing.drawArrow(self.ctx, self.relToRealCoords(p.pos), self.relToRealCoords(station.pos), 0.1);
+        // });
+      }
+    )
+    ;
+    // }
   }
 
   // Given a pos try to redraw the portion of this map (links for example)
@@ -196,12 +231,18 @@ export class GameMapGui extends GameMap {
     if(!this.ctx) return;
     this.ctx.fillStyle = 'black';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    for(let i = 0; i < this.cities.length; i++) {
-      this.cities[i].draw();
+    for(let i = 0; i < this.objects.length; i++) {
+      if(this.objects[i].type !== 'city') continue;
+      this.objects[i].draw();
     }
     this.drawStations();
-    for(let i = 0; i < this.trains.length; i++) {
-      this.trains[i].draw();
+    for(let i = 0; i < this.objects.length; i++) {
+      if(this.objects[i].type !== 'train') continue;
+      this.objects[i].draw();
+    }
+    for(let i = 0; i < this.objects.length; i++) {
+      if(this.objects[i].type !== 'person') continue;
+      this.objects[i].draw();
     }
     this.drawMapBorder();
     this.drawCenter();
@@ -220,13 +261,15 @@ export class GameMapGui extends GameMap {
     const c = this.mouseSnappedCoords;
     if(!c) return;
     // display mouse
-    Drawing.drawPoint(this.ctx, c, this.dispo.mouseSize * this.dispo.zoom);
+    let size = this.dispo.mouseSize * this.dispo.zoom;
+    // if(size < 5) size = 5;
+    Drawing.drawPoint(this.ctx, c, size);
   }
 
   // we have been notified that another client removed this station
-  removeStationById(id) {
+  removeObjectById(id) {
     // console.log('removing station', id, '...');
-    super.removeStationById(id);
+    super.removeObjectById(id);
     this.draw();
   }
 
@@ -235,13 +278,13 @@ export class GameMapGui extends GameMap {
     e.preventDefault();
     const oldPos = this.relMouseCoords(e);
 
-    const factor = this.dispo.zoom / (e.wheelDelta / 45);
+    const factor = this.dispo.zoom / (e.wheelDelta / 30);
     this.dispo.zoom += factor;
-    this.dispo.zoom = Math.round(this.dispo.zoom * 100) / 100;
-    if(this.dispo.zoom < 0.2)
-      this.dispo.zoom = 0.2;
-    if(this.dispo.zoom > 50)
-      this.dispo.zoom = 50;
+    this.dispo.zoom = Math.round(this.dispo.zoom * 1000) / 1000;
+    if(this.dispo.zoom < 0.05)
+      this.dispo.zoom = 0.05;
+    if(this.dispo.zoom > 6)
+      this.dispo.zoom = 6;
 
     // zoom depends on mouse position
     const newPos = this.relMouseCoords(e);
@@ -258,7 +301,7 @@ export class GameMapGui extends GameMap {
     this.draw();
     let drawmouse = true;
     this.mouseOldPos = this.mousePos;
-    this.mousePos = this.mouseCoords(e);
+    this.mousePos = GameMapGui.mouseCoords(e);
     this.mouseSnappedCoords = this.snappedMouseCoords(e);
     this.mouseRelPos = this.relMouseCoords(e);
     this.mouseMovement = {x: this.mousePos.x - this.mouseOldPos.x, y: this.mousePos.y - this.mouseOldPos.y};
@@ -287,7 +330,7 @@ export class GameMapGui extends GameMap {
           this.removePointFromEvent(e);
       }
     }
-    else {
+    else { // mouse is up
       if(this.nearestObj) {
         drawmouse = false;
         document.body.style.cursor = 'move';
@@ -296,7 +339,7 @@ export class GameMapGui extends GameMap {
       }
       else {
         // test if near a link
-        this.nearestObj = this.getNearestObject(this.mouseRelPos);
+        this.nearestObj = this.getNearestLinks(this.mouseRelPos);
         if(this.nearestObj) {
           // check if near a station
           // if not near a point, we are on a link
@@ -304,7 +347,9 @@ export class GameMapGui extends GameMap {
             drawmouse = false;
             document.body.style.cursor = 'pointer';
             this.ctx.fillStyle = '#6f6';
-            Drawing.drawPoint(this.ctx, this.relToRealCoords(this.nearestObj.rel.projection), this.dispo.zoom * this.dispo.stationSize);
+            let size = this.dispo.zoom * this.dispo.stationSize;
+            // if(size < 5) size = 5;
+            Drawing.drawPoint(this.ctx, this.relToRealCoords(this.nearestObj.rel.projection), size);
           }
         }
         else
@@ -351,7 +396,6 @@ export class GameMapGui extends GameMap {
     this.endLinkFromEvent(e);
     this.mouseIsDown = false;
     if(this.dragStation) {
-      // if(this.dragStation.notSaved) this.removeStationById(this.dragStation._id);
       // test if draggued onto another Station (to merge them)
       let stations = this.overlappingStations();
       if(stations.length > 1) {
@@ -360,8 +404,8 @@ export class GameMapGui extends GameMap {
         this.game.sound('merge');
         this.dragStation.mergeStation(stations[0].station);
       }
-
-      this.dragStation.updateDB();
+      else
+        this.dragStation.updateDB();
       this.dragStation = null;
     }
     document.body.style.cursor = 'default';
@@ -394,12 +438,12 @@ export class GameMapGui extends GameMap {
     /*
         else {
           // test if near a link
-          this.nearestObj = this.getNearestObject(this.mouseRelPos);
+          this.nearestObj = this.getNearestLinks(this.mouseRelPos);
           if(this.nearestObj) {
             if(this.nearestObj.rel.inside) {
               this.game.sound('remove');
               console.log(2);
-              // this.removeStationFromDb(this.nearestObj.path._id);
+              // this.removeObjectFromDb(this.nearestObj.path._id);
             }
             else
               console.log(this.nearestObj);
@@ -445,35 +489,20 @@ export class GameMapGui extends GameMap {
 
   // game mouse coords (relative to zoom and panning)
   relMouseCoords(e) {
-    const c = this.mouseCoords(e);
+    const c = GameMapGui.mouseCoords(e);
     const factor = this.dispo.zoom;
     c.x = Math.round((c.x / factor) - (this.pan.x / factor));
     c.y = Math.round((c.y / factor) - (this.pan.y / factor));
     return c;
   }
 
-  // real mouse coords
-  mouseCoords(e) {
-    let cx, cy;
-    if(e.pageX || e.pageY) {
-      cx = e.pageX;
-      cy = e.pageY;
-    }
-    else {
-      cx = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-      cy = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
-    }
-    cx -= e.target.offsetLeft;
-    cy -= e.target.offsetTop;
-
-    return {x: cx, y: cy}
-  }
-
   // coming from db
-  addStation(id, doc) {
-    if(this.getStationById(id)) return; // the client could have added it before saving it to the db
-    const s = new StationGui(this, doc, id);
-    super.addStation(s);
+  addStation(doc) {
+    console.log("GameMapGui#addStation", doc);
+    if(this.getObjectById(doc._id)) return; // the client could have added it before saving it to the db
+    const s = new StationGui(doc);
+    super.addObject(s); // not addStation
+    this.updateStationsLinks();
     // for each game change, also set game status
     if(this.game) this.game.setStatus();
     this.draw();
@@ -481,32 +510,33 @@ export class GameMapGui extends GameMap {
   }
 
   // coming from db
-  updateStation(id, doc) {
-    super.updateStation(id, doc);
-    this.draw();
-  }
-
-  // coming from db
   addTrain(doc) {
     const pos = doc.pos;
-    const c = this.getTrain(pos);
-    //console.log('addTrain', id, doc, 'found', c);
-    if(c) // if the client already have it
-      c.id = doc.id; // make sure the object have a DB id so we can remove it later
-    else {
-      this.trains.push(new TrainGui(doc));
-    }
-  }
-
-  updateTrain(id, doc) {
-    super.updateTrain(id, doc);
-    this.draw();
+    const c = this.getTrainByPos(pos);
+    console.log('addTrain', doc._id, doc, 'found', c);
+    if(c) return; // if the client already have it
+    super.addObject(new TrainGui(doc));
   }
 
   addCity(doc) {
     const c = new CityGui(doc);
     this.cities.push(c);
     return c;
+  }
+
+  // coming from db
+  addPerson(doc) {
+    if(this.getObjectById(doc._id)) return; // the client could have added it before saving it to the db
+    // console.log("GameMapGui#addPerson", doc);
+    const p = new PersonGui(doc);
+    super.addObject(p);
+    this.draw();
+  }
+
+  // coming from db
+  updateObject(id, doc) {
+    super.updateObject(id, doc);
+    // this.draw(); // too many draw for all objects update
   }
 
 }

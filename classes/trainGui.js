@@ -13,7 +13,7 @@ export class TrainGui extends Train {
     displayOptions = doc.displayOptions || {}; // why default parameters in es6 does not work here ?
     this.dispo = {
       margin: displayOptions.margin || 0.15, // %
-      trainSize: displayOptions.trainSize || 3
+      trainSize: displayOptions.trainSize || 20
     };
     this.currentDrawStep = this.moveTotalSteps = 20; // default values that are calculated later
     this.animateWait = 100; // constant: draw every animateWait ms
@@ -22,8 +22,8 @@ export class TrainGui extends Train {
 
   draw() {
     return this.doDraw();
-    this.moveTotalSteps = this.moveInterval / this.animateWait;
-    console.log('TrainGui#draw', this.moveInterval, this.moveTotalSteps, this.animateWait);
+    this.moveTotalSteps = this.serverInterval / this.animateWait;
+    // console.log('TrainGui#draw', this.serverInterval, this.moveTotalSteps, this.animateWait);
     if(!this.animating) {
       if(this.hasMoved) {
         this.hasMoved = false;
@@ -58,7 +58,7 @@ export class TrainGui extends Train {
     // console.log('TrainGui#doDraw', this._id);
     // console.log(this.from, this.pos);
     let size = this.map.dispo.zoom * this.dispo.trainSize;
-    if(size < 10) size = 10;
+    // if(size < 5) size = 5;
     // the pos is the destination
     // we calculate the relative position with a vector
     // const progress = this.currentDrawStep / this.moveTotalSteps;
@@ -76,12 +76,13 @@ export class TrainGui extends Train {
       Drawing.drawPoint(this.ctx, rpos, size);
     }
 
-    _.each(this.path, function(p) {
-      console.log(p);
-      this.ctx.fillStyle = "#ff0";
-      const rpos = this.map.relToRealCoords(p.pos);
-      Drawing.drawPoint(this.ctx, rpos, size);
-    });
+    /*
+        _.each(this.path, function(p) {
+          this.ctx.fillStyle = "#ff0";
+          const rpos = this.map.relToRealCoords(p.pos);
+          Drawing.drawPoint(this.ctx, rpos, size);
+        });
+    */
 
     const rpos = this.map.relToRealCoords(this.pos);
     this.ctx.fillStyle = "#f00";

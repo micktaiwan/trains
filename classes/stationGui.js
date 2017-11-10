@@ -1,18 +1,20 @@
 import {Station} from "./station";
-import {Drawing} from "./helpers";
+import {Drawing, Helpers} from "./helpers";
+
 
 export class StationGui extends Station {
 
-  constructor(map, doc, id) {
-    super(map, doc, id);
-    this.ctx = map.ctx;
+  constructor(doc) {
+    super(doc);
+    this.ctx = this.map.ctx;
   }
 
   draw() {
-    const z = this.map.dispo.zoom;
     this.ctx.fillStyle = "#666";
     const rpos = this.map.relToRealCoords(this.pos);
-    Drawing.drawPoint(this.ctx, rpos, z * this.map.dispo.stationSize);
+    let size = this.map.dispo.zoom * this.map.dispo.stationSize;
+    // if(size > this.map.dispo.stationSize) size = this.map.dispo.stationSize;
+    Drawing.drawPoint(this.ctx, rpos, size);
 
     // draw _id
     // this.ctx.fillStyle = '#f00';

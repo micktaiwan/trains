@@ -2,9 +2,9 @@ import {Game} from "./game";
 
 export class GameGui extends Game {
 
-  constructor(map, doc) {
-    super(map, doc);
-    map.setGame(this);
+  constructor(doc) {
+    super(doc);
+    this.map.setGame(this);
     this.setStatus();
     this.sounds = {
       station: new Howl({src: ['/snd/station.wav'], volume: 0.5}),
@@ -53,8 +53,9 @@ export class GameGui extends Game {
     if(!Meteor.user()) status = 'You must be loggued to play<br/>';
     else {
       if(!this.canModifyMap()) status = 'You can not modify this map. Are you a team member ?';
-      else if(this.map.stations.length === 0) status = 'You should place your first station<br/>';
-      else if(this.map.stations.length < 3) status = 'You should build more rails<br/>';
+      // FIXME P1
+      // else if(this.map.stations.length === 0) status = 'You should place your first station<br/>';
+      // else if(this.map.stations.length < 3) status = 'You should build more rails<br/>';
     }
     this.gameStatus.set(status);
   }

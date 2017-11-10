@@ -1,4 +1,4 @@
-import {GameMapGui} from '../../../classes/gameMapGui';
+import {GameMapGui} from '../../../classes/mapGui';
 import {GameGui} from '../../../classes/gameGui';
 import {Helpers} from '../../../classes/helpers';
 import {Radio} from "../../../classes/radio";
@@ -6,14 +6,13 @@ import {Radio} from "../../../classes/radio";
 let radio = null;
 let game = null;
 let map = null;
-let handleStations = null;
-let handleTrains = null;
+let handleMapObjects = null;
 
 Template.game.onCreated(function() {
 
   // console.log('Template.game.onCreated data', this.data);
   map = new GameMapGui(this.data._id);
-  game = new GameGui(map);
+  game = new GameGui({_id: this.data._id, map: map});
 
 });
 
@@ -32,94 +31,64 @@ Template.game.onRendered(function() {
   // if(!radio.playing()) radio.play(2000);
 
   map.init('canvas', this.data._id);
-  map.addCity({
-    name: 'Paris',
-    map: map,
-    ctx: map.ctx,
-    pos: {x: 250, y: 50},
-    size: 40,
-    color: '#4c5548'
-  });
-  map.addCity({
-    name: 'Falaise',
-    map: map,
-    ctx: map.ctx,
-    pos: {x: 100, y: 40},
-    size: 10,
-    color: '#4c5548'
-  });
-  map.addCity({
-    name: 'Toulouse',
-    map: map,
-    ctx: map.ctx,
-    pos: {x: 150, y: 500},
-    size: 20,
-    color: '#4c5548'
-  });
-  map.addCity({
-    name: 'Nice',
-    map: map,
-    ctx: map.ctx,
-    pos: {x: 500, y: 500},
-    size: 17,
-    color: '#4c5548'
-  });
-  map.addCity({
-    name: 'Tarbes',
-    map: map,
-    ctx: map.ctx,
-    pos: {x: 50, y: 550},
-    size: 10,
-    color: '#4c5548'
-  });
+  /*
+    map.addCity({
+      name: 'Paris',
+      map: map,
+      ctx: map.ctx,
+      pos: {x: 250, y: 50},
+      size: 40,
+      color: '#4c5548'
+    });
+    map.addCity({
+      name: 'Falaise',
+      map: map,
+      ctx: map.ctx,
+      pos: {x: 100, y: 40},
+      size: 10,
+      color: '#4c5548'
+    });
+    map.addCity({
+      name: 'Toulouse',
+      map: map,
+      ctx: map.ctx,
+      pos: {x: 150, y: 500},
+      size: 20,
+      color: '#4c5548'
+    });
+    map.addCity({
+      name: 'Nice',
+      map: map,
+      ctx: map.ctx,
+      pos: {x: 500, y: 500},
+      size: 17,
+      color: '#4c5548'
+    });
+    map.addCity({
+      name: 'Tarbes',
+      map: map,
+      ctx: map.ctx,
+      pos: {x: 50, y: 550},
+      size: 10,
+      color: '#4c5548'
+    });
+  */
 
-  // subscribe to map (or "game") stations
-  if(handleStations) handleStations.stop();
-  handleStations = Stations.find({game_id: this.data._id}).observeChanges({
-    added: function(id, doc) {
-      // console.log('Stations: added', id, doc);
-      map.addStation(id, doc);
-    },
-    changed: function(id, doc) {
-      // console.log('Stations: changed', id, doc);
-      map.updateStation(id, doc);
-    },
-    removed: function(id) {
-      // console.log('Stations: removed', id);
-      map.removeStationById(id);
-    }
-
-  });
-
-  if(handleTrains) handleTrains.stop();
-  handleTrains = Trains.find({game_id: this.data._id}).observeChanges({
-    added: function(id, doc) {
-      // console.log('trains: added', id, doc);
-      map.addTrain(_.extend({_id: id, map: map}, doc));
-    },
-    changed: function(id, doc) {
-      // console.log('trains: changed', id, doc);
-      map.updateTrain(_.extend({_id: id}, doc));
-    },
-    removed: function(id) {
-      // console.log('trains: removed', id);
-      map.removeTrain(id);
-    }
-  });
+  if(handleMapObjects) handleMapObjects.stop();
+  handleMapObjects = Helpers.observeChanges({game_id: this.data._id, map: map});
 
 });
 
 Template.game.onDestroyed(function() {
   radio.stop();
   game.stop();
-  if(handleStations) handleStations.stop();
-  if(handleTrains) handleTrains.stop();
+  if(handleMapObjects) handleMapObjects.stop();
 });
 
 Template.game.helpers({
 
-  railsCount: function() {
-    return Stations.find().count();
+  stationCount: function() {
+    return MapObjects.find({type: 'stations'}).count();
   },
 
   canvasWidth: function() {
@@ -144,10 +113,41 @@ Template.game.helpers({
   },
 
   trainSpeed() {
-    // FIXME P0: the train speed is server side !
-    const caseLengthInMeters = Helpers.caseRealMeters;
-    const timeInSeconds = Helpers.moveInterval / 1000;
-    return Math.round((caseLengthInMeters / 1000) / (timeInSeconds / 3600));
+    return Helpers.trainSpeed;
+  },
+
+  gameTime() {
+    let clock = Math.floor(Games.findOne(game._id).clock * Helpers.timeFactor / 1000);
+    clock = Math.floor(clock / 3600);
+    const hours = clock % 24;
+    const days = Math.floor(clock / 24);
+
+    let hrs;
+    if(hours < 10) hrs = "0" + hours;
+    else hrs = "" + hours;
+
+    return `${days} days, ${hrs} hours`;
+  },
+
+  clock() {
+    map.draw();
+    let clock = Math.floor(Games.findOne(game._id).clock / 1000);
+    const seconds = clock % 60;
+    clock = Math.floor(clock / 60);
+    const minutes = clock % 60;
+    clock = Math.floor(clock / 60);
+    const hours = clock % 24;
+    const days = Math.floor(clock / 24);
+
+    let sec, min, hrs;
+    if(seconds < 10) sec = "0" + seconds;
+    else sec = "" + seconds;
+    if(minutes < 10) min = "0" + minutes;
+    else min = "" + minutes;
+    if(hours < 10) hrs = "0" + hours;
+    else hrs = "" + hours;
+
+    return `${days} days, ${hrs}:${min}:${sec}`;
   }
 
 });

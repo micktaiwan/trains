@@ -5,7 +5,6 @@ export class City extends DBObject {
 
   constructor(doc) {
     const properties = {
-      _id: Random.id(),
       name: 'Unnamed',
       map: null,
       ctx: null,
@@ -14,6 +13,11 @@ export class City extends DBObject {
       color: '#fa0'
     };
     super(properties, doc);
+  }
+
+
+  update(clock) {
+
   }
 
 }
@@ -30,13 +34,15 @@ export class CityGui extends City {
     const rpos = this.map.relToRealCoords(this.pos);
     Drawing.drawPoint(this.ctx, rpos, size);
 
-    // draw _id
-    this.ctx.fillStyle = '#999';
-    this.ctx.font = '14px sans';
-    this.ctx.fillText(this.name, rpos.x - 20, rpos.y);
-    // this.ctx.fillStyle = '#800';
-    // this.ctx.font = '14px sans';
-    // this.ctx.fillText(this._id, rpos.x - 20, rpos.y + size + 40);
+    // draw name
+    if(this.map.dispo.zoom > 1) {
+      this.ctx.fillStyle = '#999';
+      this.ctx.font = '14px sans';
+      this.ctx.fillText(this.name, rpos.x - 20, rpos.y);
+      // this.ctx.fillStyle = '#800';
+      // this.ctx.font = '14px sans';
+      // this.ctx.fillText(this._id, rpos.x - 20, rpos.y + size + 40);
+    }
   }
 
 }
