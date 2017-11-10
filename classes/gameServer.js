@@ -32,7 +32,7 @@ export class GameServer extends Game {
     this.clockTick = (Helpers.serverInterval * this.tick); // the time shall should have passed (5000)
     let offset = this.clock - this.clockTick;
     if(offset > Helpers.serverInterval) offset = Helpers.serverInterval;
-    console.log(this.clock, offset, this.clockTick);
+    if(offset > 100) console.error('loop too long:', offset, 'ms');
 
     // define a planning: when to update trains, when to add people, when to collect taxes...
     // console.log(this.gameTimePassed);
@@ -41,7 +41,7 @@ export class GameServer extends Game {
     const nbPersons = this.map.getPersons().length;
     // console.log(nb);
     // if(this.clockTick/1000 % 60 === 0)
-    if(nbPersons < 50)
+    if(nbPersons < 100)
       this.addPerson();
 
     // Update all objects

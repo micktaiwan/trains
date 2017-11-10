@@ -25,7 +25,7 @@ export class Train extends DBObject {
 
   // to be done with pathfinding
   update(clock) {
-    // console.log('Train#move', this.pos);
+    // console.log('Train#move', this.pos, this.fromStation._id);
     // Find the station where we want to go to
     if(this.fromStation === null) { // we are not on a track
       // find the nearest station
@@ -34,7 +34,10 @@ export class Train extends DBObject {
       this.fromStation = station;
     }
     else { // we come from a station
-      if(!this.running) this.findDestination();
+      if(!this.running) {
+        this.getPassengers();
+        this.findDestination();
+      }
       this.goTowardNextStop();
       this.hasMoved = true;
       this.updateDB();
@@ -128,5 +131,17 @@ export class Train extends DBObject {
     // console.log('Train#updateFromDB', doc, "\n", 'this', this);
   }
 
+  getPassengers() {
+    let nb = 0;
+    for(let i = 0; i < this.map.objects.length; i++) {
+      const obj = this.map.objects[i];
+      if(obj.type !== 'person') continue;
+      if(Geometry.dist(this.pos, obj.pos) < 40) {
+        nb++;
+        this.map.objects[i].removeFromDB(); // kill nearby passengers....
+      }
+    }
+    console.log('killed', nb, 'passengers');
+  }
 
 }

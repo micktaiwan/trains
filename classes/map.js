@@ -161,12 +161,10 @@ export class GameMap {
   // if maxdist < 0 then not limit on distance, return all stations
   getNearestStations(pos, maxdist) {
     const rv = [];
-    let d;
     for(let i = 0; i < this.objects.length; i++) {
       if(this.objects[i].type !== 'station') continue;
       const d = Geometry.dist(pos, this.objects[i].pos);
-      if(maxdist < 0 || d <= maxdist)
-        rv.push({station: this.objects[i], dist: d});
+      if(maxdist < 0 || d <= maxdist) rv.push({station: this.objects[i], dist: d});
     }
     return _.sortBy(rv, function(p) {return p.dist;});
   }
