@@ -41,7 +41,7 @@ export class PathFinder {
         }
       });
     }
-    console.log("PathFinder#search: nb nodes:", nbCurrentNodes, '/', nbFrontiers, '(', nbChildrenNodes, ' children), total cost:', Math.round(costs[goal._id]));
+    // console.log("PathFinder#search: nb nodes:", nbCurrentNodes, '/', nbFrontiers, '(', nbChildrenNodes, ' children), total cost:', Math.round(costs[goal._id]));
     return {found: found, inverse_path: inverse_map, cost_so_far: costs}
   }
 

@@ -67,9 +67,11 @@ export class GameMap {
   getTrains() {
     return _.filter(this.objects, function(o) {return o.type === 'train';});
   }
+
   getStations() {
     return _.filter(this.objects, function(o) {return o.type === 'station';});
   }
+
   getPersons() {
     return _.filter(this.objects, function(o) {return o.type === 'person';});
   }

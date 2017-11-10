@@ -11,10 +11,6 @@ export class GameServer extends Game {
     // console.log('GameServer#constructor', new Date(), doc);
     super(_.extend({map: (new GameMap(doc._id, true))}, doc));
 
-    // check trains
-    // console.log("Trains:", this.map.trains.length);
-    if(this.map.getTrains().length === 0) this.addTrain();
-
     // launch clock
     this.gameStartTimestamp = new Date().getTime();
     this.clock = 0; // the start elapsed since 0
@@ -34,6 +30,10 @@ export class GameServer extends Game {
     if(offset > Helpers.serverInterval) offset = Helpers.serverInterval;
     if(offset > 100) console.error('loop too long:', offset, 'ms');
 
+    // check trains
+    // console.log("Trains:", this.map.trains.length);
+    if(this.map.getTrains().length === 0) this.addTrain();
+
     // define a planning: when to update trains, when to add people, when to collect taxes...
     // console.log(this.gameTimePassed);
 
@@ -42,7 +42,7 @@ export class GameServer extends Game {
     // console.log(nb);
     // if(this.clockTick/1000 % 60 === 0)
     if(nbPersons < 100)
-      this.addPerson();
+      this.addPerson(this.tick);
 
     // Update all objects
     for(let i = 0; i < this.map.objects.length; i++) {

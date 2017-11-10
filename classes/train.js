@@ -25,8 +25,11 @@ export class Train extends DBObject {
 
   // to be done with pathfinding
   update(clock) {
-    // console.log('Train#move', this.pos, this.fromStation._id);
+    // const from = this.fromStation ? this.fromStation._id + ' ' + this.fromStation.children.length : 'no from station';
+    // console.log('Train#move', from, this.pos);
     // Find the station where we want to go to
+    this.checkStations();
+
     if(this.fromStation === null) { // we are not on a track
       // find the nearest station
       const station = this.map.getNearestStation(this.pos, -1);
@@ -34,24 +37,26 @@ export class Train extends DBObject {
       this.fromStation = station;
     }
     else { // we come from a station
-      if(!this.running) {
-        this.getPassengers();
+      if(!this.running) { // we are stopped at a station
         this.findDestination();
+        this.getPassengers();
       }
       this.goTowardNextStop();
       this.hasMoved = true;
-      this.updateDB();
     }
+    if(!this.fromStation) this.removeFromDB(); // no rails, remove the train
+    else this.updateDB();
   }
 
   // update train position
   goTowardNextStop() {
-    // get goal
     if(!this.nextStation) {
       this.nextStation = this.path.shift();
       this.progress = 0;
     }
-    if(!this.nextStation) return; // end of path
+    if(!this.nextStation) return this.running = false; // end of path
+
+    this.checkStations();
 
     let v = new Vector(this.fromStation.pos, this.nextStation.pos);
     const segmentLen = v.len(); // the length of a segment in meters (note hat the coordinates of the vector are already zoomed)
@@ -69,12 +74,33 @@ export class Train extends DBObject {
       this.progress = 0;
       if(this.fromStation === this.destStation) {
         this.running = false;
+        // this.leavePassengers();
       }
+      else this.getPassengers();
     }
     // calculate vector to goal
     // console.log('from', this.fromStation, 'dest', this.nextStation);
-    else this.pos = Geometry.getProgressPos(v, this.progress / 100);
+    else
+      this.pos = Geometry.getProgressPos(v, this.progress / 100);
     // console.log(this.progress, this.pos, this.fromStation._id, this.nextStation._id);
+  }
+
+  checkStations() {
+    //check if the stations are still alive
+    if(!this.fromStation) return this.running = false;
+    this.fromStation = this.map.getObjectById(this.fromStation._id); // we get the real object again in case of DB update (we need it later to check the children)
+    if(!this.fromStation) return this.running = false;
+    if(!this.nextStation) return;
+    if(!this.map.getObjectById(this.nextStation._id)) {
+      this.nextStation = this.path.shift();
+      return;
+    }
+    // reset path if the next is not a child of from anymore
+    const children = _.map(this.fromStation.children, function(child) {return child._id});
+    if(!children.includes(this.nextStation._id)) {
+      this.setPath();
+      this.nextStation = this.path.shift();
+    }
   }
 
   // will choose a destination
@@ -85,10 +111,13 @@ export class Train extends DBObject {
     // random
     const stations = this.map.getStations();
     this.destStation = stations[_.random(stations.length - 1)];
-    if(!this.destStation) return console.error('no dest ???', this.map.stations.length);
+    if(!this.destStation) return;// console.error('no dest ???');
     if(this.destStation._id === this.fromStation._id) return console.error('on self');
+    // console.log('======= New Trip:', this.fromStation._id, '=>', this.destStation._id);
+    this.setPath();
+  }
 
-    console.log('======= New Trip:', this.fromStation._id, '=>', this.destStation._id);
+  setPath() {
     const self = this;
     this.path = _.map(PathFinder.path(this.fromStation, this.destStation), function(id) {
       // console.log("Station", id);
@@ -104,6 +133,7 @@ export class Train extends DBObject {
     return {
       // game_id: this.map._id,
       pos: this.pos,
+      progress: this.progress,
       fromStation: this.fromStation ? this.fromStation._id : null,
       destStation: this.destStation ? this.destStation._id : null,
       /*
@@ -125,6 +155,7 @@ export class Train extends DBObject {
       if(doc.pos) this.pos = doc.pos;
       this.hasMoved = true;
     }
+    if(typeof(doc.progress) !== "undefined") this.progress = doc.progress;
     if(doc.fromStation) this.fromStation = this.map.getObjectById(doc.fromStation);
     if(doc.destStation) this.destStation = this.map.getObjectById(doc.destStation);
     if(doc.path) this.path = _.compact(_.map(this.path, function(id) {return self.map.getObjectById(id);}))
@@ -133,15 +164,19 @@ export class Train extends DBObject {
 
   getPassengers() {
     let nb = 0;
+    const passengers = [];
     for(let i = 0; i < this.map.objects.length; i++) {
       const obj = this.map.objects[i];
       if(obj.type !== 'person') continue;
-      if(Geometry.dist(this.pos, obj.pos) < 40) {
+      if(Geometry.dist(this.pos, obj.pos) < Helpers.getPassengersRadius) {
         nb++;
-        this.map.objects[i].removeFromDB(); // kill nearby passengers....
+        passengers.push(this.map.objects[i]);
       }
     }
-    console.log('killed', nb, 'passengers');
+    _.each(passengers, function(p) {
+      p.removeFromDB(); // kill nearby passengers....
+    });
+    if(nb) console.log('killed', nb, 'passengers');
   }
 
 }

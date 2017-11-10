@@ -498,7 +498,7 @@ export class GameMapGui extends GameMap {
 
   // coming from db
   addStation(doc) {
-    console.log("GameMapGui#addStation", doc);
+    // console.log("GameMapGui#addStation", doc);
     if(this.getObjectById(doc._id)) return; // the client could have added it before saving it to the db
     const s = new StationGui(doc);
     super.addObject(s); // not addStation

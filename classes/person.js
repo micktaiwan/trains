@@ -22,6 +22,7 @@ export class Person extends DBObject {
     // get persons around
     // make a average of pos
     if(!this.moveTowardsNearestStation())
+    // this.moveTowardsNearestStation();
       this.moveTowardsPersons();
   }
 
@@ -29,16 +30,21 @@ export class Person extends DBObject {
 
     const station = this.map.getNearestStation(this.pos, 200);
     if(!station) return false;
-    const old = this.pos;
-    const maxdist = 20;
-    if(this.pos.x < station.pos.x - maxdist) this.pos.x += 2;
-    else if(this.pos.x > station.pos.x - maxdist) this.pos.x -= 1;
-    else if(this.pos.x > station.pos.x + maxdist) this.pos.x -= 2;
-    if(this.pos.y < station.pos.y - maxdist) this.pos.y += 2;
-    else if(this.pos.y > station.pos.y - maxdist) this.pos.y -= 1;
-    else if(this.pos.y > station.pos.y + maxdist) this.pos.y -= 2;
-    this.updateDB();
+    const old = _.clone(this.pos);
+    const maxdist = 25;
+    const speed = 5;
+    const randomness = _.random(2);
+    // FIXME P2: does not work
+    if(this.pos.x < station.pos.x - maxdist) this.pos.x += speed + randomness;
+    else if(this.pos.x > station.pos.x + maxdist) this.pos.x -= speed + randomness;
+    else if(this.pos.x > station.pos.x - maxdist) this.pos.x -= speed + randomness;
+    else if(this.pos.x < station.pos.x + maxdist) this.pos.x += speed + randomness;
+    if(this.pos.y < station.pos.y - maxdist) this.pos.y += speed + randomness;
+    else if(this.pos.y > station.pos.y + maxdist) this.pos.y -= speed + randomness;
+    else if(this.pos.y > station.pos.y - maxdist) this.pos.y -= speed + randomness;
+    else if(this.pos.y < station.pos.y + maxdist) this.pos.y += speed + randomness;
     if(_.isEqual(old, this.pos)) return false;
+    this.updateDB();
     return true;
   }
 
@@ -58,14 +64,19 @@ export class Person extends DBObject {
     }
 
     if(nb > 1) {
+      const old = _.clone(this.pos);
       x = Math.round(x / nb);
       y = Math.round(y / nb);
-      if(this.pos.x < x) this.pos.x += 1;
-      else if(this.pos.x > x) this.pos.x -= 1;
-      else if(this.pos.x === x) this.pos.x += -3 + _.random(6);
-      if(this.pos.y < y) this.pos.y += 1;
-      else if(this.pos.y > y) this.pos.y -= 1;
-      else if(this.pos.y === y) this.pos.y += -3 + _.random(6);
+      const speed = 2;
+      // if(this.pos.x === x) this.pos.x += -speed + _.random(speed * 2);
+      // if(this.pos.y === y) this.pos.y += -speed + _.random(speed * 2);
+      if(Geometry.dist(this.pos, {x: x, y: y}) < nb / 2) return false;
+      const randomness = _.random(2);
+      if(this.pos.x < x) this.pos.x += speed + randomness;
+      else if(this.pos.x > x) this.pos.x -= speed + randomness;
+      if(this.pos.y < y) this.pos.y += speed + randomness;
+      else if(this.pos.y > y) this.pos.y -= speed + randomness;
+      if(_.isEqual(old, this.pos)) return false;
       this.updateDB();
     }
   }

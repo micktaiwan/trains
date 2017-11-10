@@ -3,7 +3,7 @@
  */
 
 import {Train} from './train';
-import {Drawing} from "./helpers";
+import {Drawing, Helpers} from "./helpers";
 
 export class TrainGui extends Train {
 
@@ -70,9 +70,10 @@ export class TrainGui extends Train {
     // draw path
     // console.log(this.path.length, this.destStation);
 
+    // destination
     if(this.destStation) {
       const rpos = this.map.relToRealCoords(this.destStation.pos);
-      this.ctx.fillStyle = "#ff0";
+      this.ctx.fillStyle = "#fa0";
       Drawing.drawPoint(this.ctx, rpos, size);
     }
 
@@ -84,9 +85,16 @@ export class TrainGui extends Train {
         });
     */
 
+    // train's position
     const rpos = this.map.relToRealCoords(this.pos);
     this.ctx.fillStyle = "#f00";
     Drawing.drawPoint(this.ctx, rpos, size);
+
+    this.ctx.lineWidth = 1;
+    this.ctx.strokeStyle = '#fff';
+    if(this.progress === 0) {
+      Drawing.drawCircle(this.ctx, rpos, Helpers.getPassengersRadius * this.map.dispo.zoom);
+    }
   }
 
 }

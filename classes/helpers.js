@@ -11,6 +11,12 @@ export class Drawing {
     ctx.fill();
   }
 
+  static drawCircle(ctx, pos, size) {
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, size, 0, 2 * Math.PI, true);
+    ctx.stroke();
+  }
+
   static drawLine(ctx, p1, p2) {
     ctx.beginPath();
     ctx.moveTo(p1.x, p1.y);
@@ -124,6 +130,7 @@ export class Helpers {
   static defaultZoom = 1;
   static timeFactor = 60; //  real time / game time factor (60: each second is one minute)
   static timePixels = Helpers.timeFactor * Helpers.pixelSpeed * Helpers.serverInterval / 1000; // the real pixels depending of the refresh time in seconds
+  static getPassengersRadius = 50;
 
   static objectId(object) {
     if(!objIdMap.has(object)) objIdMap.set(object, ++objectCount);
@@ -147,7 +154,11 @@ export class Helpers {
       },
       changed: function(id, doc) {
         const obj = MapObjects.findOne(id, {fields: {type: 1}});
-        if(!obj) return console.error('map_object changed: no object found', id, doc);
+        if(!obj) {
+          console.error('map_object changed: no object found', id, doc);
+          params.map.removeObjectById(id);
+          return;
+        }
         // console.log('map_object changed', obj, doc);
         if(obj.type === 'train') params.map.updateObject(id, doc);
         else if(obj.type === 'station') params.map.updateObject(id, doc);
