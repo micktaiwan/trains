@@ -28,8 +28,8 @@ export class Game extends DBObject {
   addPerson(width) {
     // if(width > 1200) width = 1200;
     for(var i = 0; i < 10; i++) {
-      const x = _.random(100, 100 + 10 * 1000 / Helpers.pixelMeter);
-      const y = _.random(100, 100 + 10 * 1000 / Helpers.pixelMeter);
+      const x = _.random(100, 100 + 10 * 2000 / Helpers.pixelMeter);
+      const y = _.random(100, 100 + 10 * 2000 / Helpers.pixelMeter);
       Meteor.call('mapInsert', {_id: Random.id(), type: 'person', game_id: this.map._id, pos: {x: x, y: y}});
     }
   }

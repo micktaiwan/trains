@@ -28,7 +28,7 @@ export class GameServer extends Game {
     this.clockTick = (Helpers.serverInterval * this.tick); // the time shall should have passed (5000)
     let offset = this.clock - this.clockTick;
     if(offset > Helpers.serverInterval) offset = Helpers.serverInterval;
-    if(offset > 100) console.error('loop too long:', offset, 'ms');
+    if(offset > 200) console.error('loop too long:', offset, 'ms');
 
     // check trains
     // console.log("Trains:", this.map.trains.length);

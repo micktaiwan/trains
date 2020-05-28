@@ -28,7 +28,7 @@ export class Person extends DBObject {
 
   moveTowardsNearestStation() {
 
-    const station = this.map.getNearestStation(this.pos, 200);
+    const station = this.map.getNearestStation(this.pos, 400);
     if(!station) return false;
     const old = _.clone(this.pos);
     const maxdist = 25;
@@ -48,7 +48,6 @@ export class Person extends DBObject {
     return true;
   }
 
-
   moveTowardsPersons() {
     let x = 0;
     let y = 0;
@@ -56,7 +55,7 @@ export class Person extends DBObject {
     for(let i = 0; i < this.map.objects.length; i++) {
       const obj = this.map.objects[i];
       if(obj.type !== 'person') continue;
-      if(Geometry.dist(this.pos, obj.pos) < 80) {
+      if(Geometry.dist(this.pos, obj.pos) < 200) {
         x += obj.pos.x;
         y += obj.pos.y;
         nb++;

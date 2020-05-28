@@ -78,7 +78,7 @@ export class Train extends DBObject {
       }
       else this.getPassengers();
     }
-    // calculate vector to goal
+      // calculate vector to goal
     // console.log('from', this.fromStation, 'dest', this.nextStation);
     else
       this.pos = Geometry.getProgressPos(v, this.progress / 100);
@@ -96,7 +96,7 @@ export class Train extends DBObject {
       return;
     }
     // reset path if the next is not a child of from anymore
-    const children = _.map(this.fromStation.children, function(child) {return child._id});
+    const children = _.map(this.fromStation.children, function(child) {return child._id;});
     if(!children.includes(this.nextStation._id)) {
       this.setPath();
       this.nextStation = this.path.shift();
@@ -155,10 +155,10 @@ export class Train extends DBObject {
       if(doc.pos) this.pos = doc.pos;
       this.hasMoved = true;
     }
-    if(typeof(doc.progress) !== "undefined") this.progress = doc.progress;
+    if(typeof (doc.progress) !== "undefined") this.progress = doc.progress;
     if(doc.fromStation) this.fromStation = this.map.getObjectById(doc.fromStation);
     if(doc.destStation) this.destStation = this.map.getObjectById(doc.destStation);
-    if(doc.path) this.path = _.compact(_.map(this.path, function(id) {return self.map.getObjectById(id);}))
+    if(doc.path) this.path = _.compact(_.map(this.path, function(id) {return self.map.getObjectById(id);}));
     // console.log('Train#updateFromDB', doc, "\n", 'this', this);
   }
 
@@ -176,7 +176,7 @@ export class Train extends DBObject {
     _.each(passengers, function(p) {
       p.removeFromDB(); // kill nearby passengers....
     });
-    if(nb) console.log('killed', nb, 'passengers');
+    if(nb) console.log('train killed', nb, 'people');
   }
 
 }
