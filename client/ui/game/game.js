@@ -29,6 +29,7 @@ Template.game.onRendered(function() {
   $('.dropdown').dropdown('restore default text');
 
   radio = new Radio();
+  radio.play();
   // if(!radio.playing()) radio.play(2000);
 
   map.init('canvas', this.data._id);

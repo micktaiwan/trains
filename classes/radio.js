@@ -3,8 +3,8 @@ export class Radio {
   constructor() {
 
     this.stations = [
-      {name: 'Police', descr: "[SomaFM] Ambient music mixed with the sounds of San Francisco public safety radio traffic", src: ['http://ice1.somafm.com/sf1033-128-mp3'], format: ['mp3']},
       {name: 'AI Radio', descr: "Gaming radio", src: ['http://listen.ai-radio.org:8000/128.ogg'], format: ['ogg']},
+      {name: 'Police', descr: "[SomaFM] Ambient music mixed with the sounds of San Francisco public safety radio traffic", src: ['http://ice1.somafm.com/sf1033-128-mp3'], format: ['mp3']},
       {name: 'Mario Radio', descr: "All Mario, all the time", src: ['http://radio.themushroomkingdom.net:8000/wtmk.ogg'], format: ['ogg']},
       {name: 'Groove Salad', descr: "[SomaFM] A nicely chilled plate of ambient/downtempo beats and grooves", src: ['http://ice1.somafm.com/groovesalad-128-mp3'], format: ['mp3']},
       {name: 'Slay Radio', descr: "Gaming music", src: ['http://relay3.slayradio.org:8100/'], format: ['mp3']},
