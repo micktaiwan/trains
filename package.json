@@ -1,6 +1,7 @@
 {
   "dependencies": {
+    "@babel/runtime": "^7.10.1",
     "babel-runtime": "^6.26.0",
-    "bcrypt": "^1.0.3"
+    "bcrypt": "^3.0.8"
   }
 }
