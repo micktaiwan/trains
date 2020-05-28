@@ -42,7 +42,7 @@ export class GameServer extends Game {
     // console.log(nb);
     // if(this.clockTick/1000 % 60 === 0)
     if(nbPersons < 100)
-      this.addPerson(this.tick);
+      this.addPerson();
 
     // Update all objects
     for(let i = 0; i < this.map.objects.length; i++) {

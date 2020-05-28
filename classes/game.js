@@ -25,8 +25,7 @@ export class Game extends DBObject {
   }
 
   // add a person to the map
-  addPerson(width) {
-    // if(width > 1200) width = 1200;
+  addPerson() {
     for(var i = 0; i < 10; i++) {
       const x = _.random(100, 100 + 10 * 2000 / Helpers.pixelMeter);
       const y = _.random(100, 100 + 10 * 2000 / Helpers.pixelMeter);

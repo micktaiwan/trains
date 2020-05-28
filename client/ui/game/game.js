@@ -29,7 +29,6 @@ Template.game.onRendered(function() {
   $('.dropdown').dropdown('restore default text');
 
   radio = new Radio();
-  radio.play();
   // if(!radio.playing()) radio.play(2000);
 
   map.init('canvas', this.data._id);
@@ -124,11 +123,13 @@ Template.game.helpers({
     const hours = clock % 24;
     const days = Math.floor(clock / 24);
 
-    let hrs;
-    if(hours < 10) hrs = "0" + hours;
-    else hrs = "" + hours;
+    // let hrs;
+    // if(hours < 10) hrs = "0" + hours;
+    // else hrs = "" + hours;
 
-    return `${days} days, ${hrs} hours`;
+    let txt = `${hours} hours`;
+    if(days) txt = `${days} days, ` + txt;
+    return txt;
   },
 
   clock() {
