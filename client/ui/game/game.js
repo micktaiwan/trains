@@ -22,7 +22,7 @@ Template.game.onRendered(function() {
   $('.pup').popup({
     inline: true,
     hoverable: true,
-    position: 'bottom left'
+    position: 'bottom left',
   });
 
   $('.dropdown').dropdown('restore default text');
@@ -148,7 +148,7 @@ Template.game.helpers({
     else hrs = "" + hours;
 
     return `${days} days, ${hrs}:${min}:${sec}`;
-  }
+  },
 
 });
 
@@ -200,6 +200,6 @@ Template.game.events({
 
   'click .js-radio-previous-station'() {
     radio.previous();
-  }
+  },
 
 });
