@@ -17,9 +17,9 @@ export class GameMapGui extends GameMap {
     //displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
     this.dispo = {
       zoom: displayOptions.zoom || Helpers.defaultZoom,
-      mouseSize: displayOptions.mouseSize || 25,
-      stationSize: displayOptions.stationSize || 25, // in real pixels
-      linkSize: displayOptions.linkSize || 20
+      mouseSize: displayOptions.mouseSize || 15,
+      stationSize: displayOptions.stationSize || 15, // in real pixels
+      linkSize: displayOptions.linkSize || 10
     };
 
     this.mouseIsDown = false;

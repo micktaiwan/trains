@@ -10,7 +10,7 @@ export class Station extends DBObject {
       map: doc.map,
       pos: doc.pos,
       children: doc.children || [],
-      parents: doc.parents || [] // will copy back all children
+      parents: doc.parents || [], // will copy back all children
     }, doc);
   }
 
@@ -20,14 +20,14 @@ export class Station extends DBObject {
       type: this.type,
       pos: this.pos,
       game_id: this.map._id,
-      children: _.map(this.children, function(l) {return l._id}),
-      parents: _.map(this.parents, function(l) {return l._id})
+      children: _.map(this.children, function(l) {return l._id;}),
+      parents: _.map(this.parents, function(l) {return l._id;}),
     };
   }
 
   hasChild(station) {
     // console.log(this._id, '=>', _.find(this.children, function(c) { return c._id === station._id}));
-    return _.find(this.children, function(c) { return c._id === station._id});
+    return _.find(this.children, function(c) { return c._id === station._id;});
   }
 
   // add unidirectional child to a point
@@ -80,15 +80,16 @@ export class Station extends DBObject {
   // return a list of updated stations
   addTransChildren() {
     const rv = [];
-    let i = j = 0;
+    let i = 0;
+    let j = 0;
     // for each parent add all children to it
     const self = this;
     _.each(self.parents, function(p) {
-      if(!_.find(rv, function(s) {return s._id === p._id})) rv.push(p);
+      if(!_.find(rv, function(s) {return s._id === p._id;})) rv.push(p);
       _.each(self.children, function(c) {
         if(c._id === self._id) return;
         if(c._id === p._id) return;
-        if(!_.find(rv, function(s) {return s._id === c._id})) rv.push(c);
+        if(!_.find(rv, function(s) {return s._id === c._id;})) rv.push(c);
         // console.log(p._id, c._id);
         p.addChild(c);
       });
