@@ -106,7 +106,7 @@ export class Train extends DBObject {
   // will choose a destination
   findDestination() {
     // FIXME: to avoid going to unreachable stations, we should generate an array all reachable stations and choose from it
-    // but that's maybe not necessary depending on the futur game (take passengers on ours lines, I don't know)
+    // but that's maybe not necessary depending on the future game (take passengers on ours lines, I don't know)
 
     // random
     const stations = this.map.getStations();
