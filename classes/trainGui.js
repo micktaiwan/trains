@@ -10,7 +10,7 @@ export class TrainGui extends Train {
   constructor(doc) {
     super(doc);
     this.ctx = this.map.ctx;
-    displayOptions = doc.displayOptions || {}; // why default parameters in es6 does not work here ?
+    const displayOptions = doc.displayOptions || {};
     this.dispo = {
       margin: displayOptions.margin || 0.15, // %
       trainSize: displayOptions.trainSize || 20

@@ -12,9 +12,9 @@ import {PersonGui} from "./person";
 
 export class GameMapGui extends GameMap {
 
-  constructor(gameId, displayOptions) {
+  constructor(gameId, displayOptions = {}) {
     super(gameId);
-    displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
+    //displayOptions = displayOptions || {}; // why default parameters in es6 does not work here ?
     this.dispo = {
       zoom: displayOptions.zoom || Helpers.defaultZoom,
       mouseSize: displayOptions.mouseSize || 25,

@@ -115,6 +115,7 @@ export class GameMap {
   // coming from db
   updateObject(id, doc) {
     const obj = this.getObjectById(id);
+    // if(!obj) return console.error("updateObject: could not find object", id, doc);
     obj.updateFromDB(doc);
     // for each game change, also set game status
     // if(this.game) this.game.setStatus();
@@ -126,11 +127,11 @@ export class GameMap {
     _.each(this.objects, function(s) {
       if(s.type !== 'station') return;
       s.children = _.compact(_.map(s.children, function(l) {
-        if(typeof(l) === 'string') return self.getObjectById(l) || l;
+        if(typeof (l) === 'string') return self.getObjectById(l) || l;
         return l;
       }));
       s.parents = _.compact(_.map(s.parents, function(l) {
-        if(typeof(l) === 'string') return self.getObjectById(l) || l;
+        if(typeof (l) === 'string') return self.getObjectById(l) || l;
         return l;
       }));
     });
@@ -186,7 +187,7 @@ export class GameMap {
     for(let s = 0; s < this.objects.length; s++) {
       if(this.objects[s].type !== 'station') continue;
       for(let p = 0; p < this.objects[s].children.length; p++) {
-        if(typeof(this.objects[s].children[p]) === 'string') continue;
+        if(typeof (this.objects[s].children[p]) === 'string') continue;
         const rel = Geometry.relPointToSegment(this.objects[s].pos, this.objects[s].children[p].pos, pos);
         if(rel.dist <= dist)
           rv.push({stations: [this.objects[s], this.objects[s].children[p]], rel: rel});

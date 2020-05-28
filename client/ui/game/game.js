@@ -11,6 +11,7 @@ let handleMapObjects = null;
 Template.game.onCreated(function() {
 
   // console.log('Template.game.onCreated data', this.data);
+  if(!this.data) return console.error("game.onCreated: this game does not exists");
   map = new GameMapGui(this.data._id);
   game = new GameGui({_id: this.data._id, map: map});
 
