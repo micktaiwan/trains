@@ -17,11 +17,11 @@
 
         <div class="ui red ribbon label">Games</div>
 
-        <ul>
+        <div class="ui list">
           {{#each games}}
             {{> gameItem}}
           {{/each}}
-        </ul>
+        </div>
 
         <div class="ui blue ribbon label">New game</div>
 
@@ -80,7 +80,7 @@
 </template>
 
 <template name="gameItem">
-  <li><a href="{{pathFor "game" _id=_id}}">{{name}}</a></li>
+  <div class="item"><a href="{{pathFor "game" _id=_id}}" class="ui grey label">{{name}}</a></div>
 </template>
 
 <template name="onlineUser">
