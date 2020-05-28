@@ -13,7 +13,7 @@ export class TrainGui extends Train {
     const displayOptions = doc.displayOptions || {};
     this.dispo = {
       margin: displayOptions.margin || 0.15, // %
-      trainSize: displayOptions.trainSize || 20
+      trainSize: displayOptions.trainSize || 15
     };
     this.currentDrawStep = this.moveTotalSteps = 20; // default values that are calculated later
     this.animateWait = 100; // constant: draw every animateWait ms
