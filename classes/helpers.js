@@ -124,11 +124,11 @@ objectCount = 0;
 export class Helpers {
 
   static serverInterval = 1000; // the server loop interval
-  static trainSpeed = 50; // the trainSpeed of the train in km/h
-  static pixelMeter = 20; // the size of a pixel in meters (actually, the size of one increment of a coordinate, not necessary a pixel depending on the zoom factor)
+  static trainSpeed = 60; // the trainSpeed of the train in km/h
+  static pixelMeter = 1; // the size of a pixel in meters (actually, the size of one increment of a coordinate, not necessary a pixel depending on the zoom factor)
   static pixelSpeed = (Helpers.trainSpeed / Helpers.pixelMeter) / 3.6; // the number of pixels we should pass in one second
   static defaultZoom = 1;
-  static timeFactor = 60; //  real time / game time factor (60: each second is one minute)
+  static timeFactor = 1; //  real time / game time factor (60: each second is one minute)
   static timePixels = Helpers.timeFactor * Helpers.pixelSpeed * Helpers.serverInterval / 1000; // the real pixels depending of the refresh time in seconds
   static getPassengersRadius = 50;
 
