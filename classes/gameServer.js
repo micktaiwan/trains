@@ -8,7 +8,7 @@ import {Helpers} from "./helpers";
 export class GameServer extends Game {
 
   constructor(doc) {
-    // console.log('GameServer#constructor', new Date(), doc);
+    console.log('GameServer#constructor', new Date(), doc);
     super(_.extend({map: (new GameMap(doc._id, true))}, doc));
 
     // launch clock
@@ -22,13 +22,15 @@ export class GameServer extends Game {
   loop() {
     // Clock management
     const currentTime = new Date().getTime();
-    const newClock = (currentTime - this.gameStartTimestamp);
+    const newClock = currentTime - this.gameStartTimestamp;
     // this.gameTimePassed = Math.round((newClock - this.clock) * Helpers.timeFactor / (1000 * 60)); // game time in minutes
-    this.clock = newClock; // the time passed since the server started in ms (5003)
-    this.clockTick = (Helpers.serverInterval * this.tick); // the time shall should have passed (5000)
+    this.clock = newClock; // the passed time since the server started in ms (5003)
+    this.clockTick = (Helpers.serverInterval * this.tick); // the time that should have passed (5000)
     let offset = this.clock - this.clockTick;
-    if(offset > Helpers.serverInterval) offset = Helpers.serverInterval;
     if(offset > 200) console.error('loop too long:', offset, 'ms');
+    if(offset > Helpers.serverInterval) offset = Helpers.serverInterval;
+    let nextDelay = Helpers.serverInterval - offset;
+    if(nextDelay < 100) nextDelay = 100; // let the server breathe
 
     // check trains
     // console.log("Trains:", this.map.trains.length);
@@ -52,7 +54,7 @@ export class GameServer extends Game {
     // if(train.move()) Trains.update({_id: train._id}, {$set: {pos: train.pos, dir: train.dir, interval: Helpers.moveInterval}});
 
     const self = this;
-    Meteor.setTimeout(function() {self.loop();}, Helpers.serverInterval - offset);
+    Meteor.setTimeout(function() {self.loop();}, nextDelay);
     Meteor.call('gameUpdateClock', this._id, this.clock);
     this.tick++;
   }
