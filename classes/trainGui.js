@@ -3,17 +3,18 @@
  */
 
 import {Train} from './train';
-import {Drawing, Helpers} from "./helpers";
+import {Drawing, Helpers, Vector} from "./helpers";
 
 export class TrainGui extends Train {
 
   constructor(doc) {
+    // console.log('trainGui#constructor', doc);
     super(doc);
     this.ctx = this.map.ctx;
     const displayOptions = doc.displayOptions || {};
     this.dispo = {
       margin: displayOptions.margin || 0.15, // %
-      trainSize: displayOptions.trainSize || 15
+      trainSize: displayOptions.trainSize || 15,
     };
     this.currentDrawStep = this.moveTotalSteps = 20; // default values that are calculated later
     this.animateWait = 100; // constant: draw every animateWait ms
@@ -21,9 +22,9 @@ export class TrainGui extends Train {
   }
 
   draw() {
-    return this.doDraw();
-    this.moveTotalSteps = this.serverInterval / this.animateWait;
-    // console.log('TrainGui#draw', this.serverInterval, this.moveTotalSteps, this.animateWait);
+    // return this.doDraw();
+    this.moveTotalSteps = Helpers.serverInterval / this.animateWait;
+    // console.log('TrainGui#draw', Helpers.serverInterval, this.moveTotalSteps, this.animateWait);
     if(!this.animating) {
       if(this.hasMoved) {
         this.hasMoved = false;
@@ -61,20 +62,20 @@ export class TrainGui extends Train {
     // if(size < 5) size = 5;
     // the pos is the destination
     // we calculate the relative position with a vector
-    // const progress = this.currentDrawStep / this.moveTotalSteps;
-    // let v = new Vector(this.from, this.pos);
-    // const projection = v.origin().plus((v.scal(progress))).norm();
-    // this.map.drawSection(projection);
-    // const rpos = this.map.relToRealCoords(projection);
+    const progress = this.currentDrawStep / this.moveTotalSteps;
+    let v = new Vector(this.from, this.pos);
+    const projection = v.origin().plus((v.scal(progress))).norm();
+    this.map.drawSection(projection);
+    const rpos = this.map.relToRealCoords(projection);
 
     // draw path
     // console.log(this.path.length, this.destStation);
 
     // destination
     if(this.destStation) {
-      const rpos = this.map.relToRealCoords(this.destStation.pos);
+      const destpos = this.map.relToRealCoords(this.destStation.pos);
       this.ctx.fillStyle = "#fa0";
-      Drawing.drawPoint(this.ctx, rpos, size);
+      Drawing.drawPoint(this.ctx, destpos, size);
     }
 
     /*
@@ -86,7 +87,7 @@ export class TrainGui extends Train {
     */
 
     // train's position
-    const rpos = this.map.relToRealCoords(this.pos);
+    // const rpos = this.map.relToRealCoords(this.pos);
     this.ctx.fillStyle = "#f00";
     Drawing.drawPoint(this.ctx, rpos, size);
 

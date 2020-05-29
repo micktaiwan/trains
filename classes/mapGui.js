@@ -9,7 +9,6 @@ import {Drawing, Geometry, Helpers} from "./helpers";
 import {CityGui} from "./city";
 import {PersonGui} from "./person";
 
-
 export class GameMapGui extends GameMap {
 
   constructor(gameId, displayOptions = {}) {
@@ -19,7 +18,7 @@ export class GameMapGui extends GameMap {
       zoom: displayOptions.zoom || Helpers.defaultZoom,
       mouseSize: displayOptions.mouseSize || 15,
       stationSize: displayOptions.stationSize || 15, // in real pixels
-      linkSize: displayOptions.linkSize || 10
+      linkSize: displayOptions.linkSize || 10,
     };
 
     this.mouseIsDown = false;
@@ -49,7 +48,7 @@ export class GameMapGui extends GameMap {
     cx -= e.target.offsetLeft;
     cy -= e.target.offsetTop;
 
-    return {x: cx, y: cy}
+    return {x: cx, y: cy};
   }
 
   init(canvas_id, game_id) {
@@ -162,7 +161,7 @@ export class GameMapGui extends GameMap {
 
       self.ctx.strokeStyle = '#666';
       _.each(station.children, function(p) {
-        if(typeof(p) === 'string') return;
+        if(typeof (p) === 'string') return;
         Drawing.drawLine(self.ctx, self.relToRealCoords(station.pos), self.relToRealCoords(p.pos));
       });
     });
@@ -182,7 +181,7 @@ export class GameMapGui extends GameMap {
         self.ctx.strokeStyle = '#fff';
         self.ctx.fillStyle = '#fff';
         _.each(station.children, function(child) {
-          if(typeof(child) === 'string') return;
+          if(typeof (child) === 'string') return;
           const distInKm = Geometry.dist(station.pos, child.pos) * Helpers.pixelMeter / 1000;
           if(self.dispo.zoom >= 0.5)
             Drawing.drawArrow(self.ctx, self.relToRealCoords(station.pos), self.relToRealCoords(child.pos), 0.2);
@@ -203,7 +202,7 @@ export class GameMapGui extends GameMap {
         //   if(typeof(p) === 'string') return;
         //   Drawing.drawArrow(self.ctx, self.relToRealCoords(p.pos), self.relToRealCoords(station.pos), 0.1);
         // });
-      }
+      },
     )
     ;
     // }
@@ -211,19 +210,24 @@ export class GameMapGui extends GameMap {
 
   // Given a pos try to redraw the portion of this map (links for example)
   drawSection(pos) {
-    // draw a back box
-    const size = this.dispo.linkSize * this.dispo.zoom;
-    const a = rpos = this.relToRealCoords(pos);
+    // draw a back box over the position to erase movement trace
+    const size = this.dispo.stationSize * 2.2 * this.dispo.zoom;
+    const a = this.relToRealCoords(pos);
+    // const rpos = _.clone(a);
     a.x = a.x - size / 2;
     a.y = a.y - size / 2;
-    this.ctx.fillStyle = '#333';
+    this.ctx.fillStyle = '#000';
+    // console.log(a, size);
     this.ctx.fillRect(a.x, a.y, size, size);
 
     // find if we are near a segment
-    const links = this.getLinks(pos, size);
-    this.ctx.font = '14px sans';
-    this.ctx.fillStyle = '#9f9';
-    this.ctx.fillText('pos: ' + Math.round(pos.x) + ', ' + Math.round(pos.y) + ', links: ' + links.length, rpos.x - 100, rpos.y + this.dispo.linkSize * this.dispo.zoom + 10);
+    // const links = this.getLinks(pos, size);
+    // this.ctx.font = '14px sans';
+    // this.ctx.fillStyle = '#9f9';
+    // this.ctx.fillText('pos: ' + Math.round(pos.x) + ', ' + Math.round(pos.y) + ', links: ' + links.length, rpos.x - 100, rpos.y + this.dispo.linkSize * this.dispo.zoom + 10);
+
+
+    // TODO: redraw the segment
   }
 
   draw() {
@@ -400,7 +404,7 @@ export class GameMapGui extends GameMap {
       let stations = this.overlappingStations();
       if(stations.length > 1) {
         const self = this;
-        stations = _.reject(stations, function(s) {return s.station._id === self.dragStation._id});
+        stations = _.reject(stations, function(s) {return s.station._id === self.dragStation._id;});
         this.game.sound('merge');
         this.dragStation.mergeStation(stations[0].station);
       }
@@ -484,7 +488,7 @@ export class GameMapGui extends GameMap {
   // transform relative to real coordinates
   relToRealCoords(c) {
     const factor = this.dispo.zoom;
-    return {x: Math.round((c.x * factor) + (this.pan.x)), y: Math.round((c.y * factor) + (this.pan.y))}
+    return {x: Math.round((c.x * factor) + (this.pan.x)), y: Math.round((c.y * factor) + (this.pan.y))};
   }
 
   // game mouse coords (relative to zoom and panning)
