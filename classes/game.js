@@ -21,15 +21,20 @@ export class Game extends DBObject {
     // FIXME P1: should pick a station near a city
     const station = MapObjects.findOne({type: 'station'});
     if(station)
-      Meteor.call('mapInsert', {_id: Random.id(), type: 'train', game_id: this.map._id, pos: station.pos});
+      Meteor.call('mapInsert', {type: 'train', game_id: this.map._id, pos: station.pos});
   }
 
   // add a person to the map
   addPerson() {
-    for(var i = 0; i < 10; i++) {
-      const x = _.random(100, 100 + 10 * 2000 / Helpers.pixelMeter);
-      const y = _.random(100, 100 + 10 * 2000 / Helpers.pixelMeter);
-    Meteor.call('mapInsert', {_id: Random.id(), type: 'person', game_id: this.map._id, pos: {x: x, y: y}});
+    const person = new Person({map: this.map});
+    // game_id: this.map._id,
+    for(let i = 0; i < 10; i++) {
+      person.birthAt = {x: _.random(0, 1000), y: _.random(0, 1000)};
+      person.birthDate = new Date; // L'age pourrait jouer sur les compétences...
+      person.name = 'John Doe'; // à randomizer
+      person.to = {x: _.random(0, 1000), y: _.random(0, 1000)};
+      person.pos = person.birthAt;
+      person.saveToDB()
     }
   }
 

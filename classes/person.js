@@ -1,5 +1,5 @@
 import {DBObject} from "./dbobject";
-import {Drawing, Geometry} from "./helpers";
+import {Drawing, Geometry, Helpers} from "./helpers";
 
 export class Person extends DBObject {
 
@@ -8,41 +8,41 @@ export class Person extends DBObject {
       map: null,
       ctx: null,
       type: 'person',
-      pos: {x: 0, y: 0}
+      pos: {x: 0, y: 0},
+      health: 100,
+      speed: 5,
     };
     super(properties, doc);
   }
 
   update(clock) {
     // death
-    // if(0 === _.random(10000)) return this.removeFromDB();
-
+    if(this.health <= 0) return this.removeFromDB();
 
     // movement
     // get persons around
     // make a average of pos
     if(!this.moveTowardsNearestStation())
-    // this.moveTowardsNearestStation();
+      // this.moveTowardsNearestStation();
       this.moveTowardsPersons();
   }
 
   moveTowardsNearestStation() {
 
-    const station = this.map.getNearestStation(this.pos, 400);
+    const station = this.map.getNearestStation(this.pos, Helpers.maxDistGetNearestStation);
     if(!station) return false;
     const old = _.clone(this.pos);
     const maxdist = 25;
-    const speed = 5;
     const randomness = _.random(2);
     // FIXME P2: does not work
-    if(this.pos.x < station.pos.x - maxdist) this.pos.x += speed + randomness;
-    else if(this.pos.x > station.pos.x + maxdist) this.pos.x -= speed + randomness;
-    else if(this.pos.x > station.pos.x - maxdist) this.pos.x -= speed + randomness;
-    else if(this.pos.x < station.pos.x + maxdist) this.pos.x += speed + randomness;
-    if(this.pos.y < station.pos.y - maxdist) this.pos.y += speed + randomness;
-    else if(this.pos.y > station.pos.y + maxdist) this.pos.y -= speed + randomness;
-    else if(this.pos.y > station.pos.y - maxdist) this.pos.y -= speed + randomness;
-    else if(this.pos.y < station.pos.y + maxdist) this.pos.y += speed + randomness;
+    if(this.pos.x < station.pos.x - maxdist) this.pos.x += this.speed + randomness;
+    else if(this.pos.x > station.pos.x + maxdist) this.pos.x -= this.speed + randomness;
+    else if(this.pos.x > station.pos.x - maxdist) this.pos.x -= this.speed + randomness;
+    else if(this.pos.x < station.pos.x + maxdist) this.pos.x += this.speed + randomness;
+    if(this.pos.y < station.pos.y - maxdist) this.pos.y += this.speed + randomness;
+    else if(this.pos.y > station.pos.y + maxdist) this.pos.y -= this.speed + randomness;
+    else if(this.pos.y > station.pos.y - maxdist) this.pos.y -= this.speed + randomness;
+    else if(this.pos.y < station.pos.y + maxdist) this.pos.y += this.speed + randomness;
     if(_.isEqual(old, this.pos)) return false;
     this.updateDB();
     return true;
@@ -66,22 +66,25 @@ export class Person extends DBObject {
       const old = _.clone(this.pos);
       x = Math.round(x / nb);
       y = Math.round(y / nb);
-      const speed = 2;
       // if(this.pos.x === x) this.pos.x += -speed + _.random(speed * 2);
       // if(this.pos.y === y) this.pos.y += -speed + _.random(speed * 2);
       if(Geometry.dist(this.pos, {x: x, y: y}) < nb / 2) return false;
       const randomness = _.random(2);
-      if(this.pos.x < x) this.pos.x += speed + randomness;
-      else if(this.pos.x > x) this.pos.x -= speed + randomness;
-      if(this.pos.y < y) this.pos.y += speed + randomness;
-      else if(this.pos.y > y) this.pos.y -= speed + randomness;
+      if(this.pos.x < x) this.pos.x += this.speed + randomness;
+      else if(this.pos.x > x) this.pos.x -= this.speed + randomness;
+      if(this.pos.y < y) this.pos.y += this.speed + randomness;
+      else if(this.pos.y > y) this.pos.y -= this.speed + randomness;
       if(_.isEqual(old, this.pos)) return false;
       this.updateDB();
     }
   }
 
   objToSave() {
-    return {pos: this.pos};
+    return {
+      type: this.type,
+      birthAt: this.birthAt,
+      pos: this.pos
+    };
   }
 
   updateFromDB(doc) {

@@ -131,6 +131,7 @@ export class Helpers {
   static timeFactor = 1; //  real time / game time factor (60: each second is one minute)
   static timePixels = Helpers.timeFactor * Helpers.pixelSpeed * Helpers.serverInterval / 1000; // the real pixels depending of the refresh time in seconds
   static getPassengersRadius = 50;
+  static maxDistGetNearestStation = 400;
 
   static objectId(object) {
     if(!objIdMap.has(object)) objIdMap.set(object, ++objectCount);
