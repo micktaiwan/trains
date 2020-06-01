@@ -113,10 +113,10 @@ export class PersonGui extends Person {
     // draw name
     if(this.map.dispo.zoom > 5) {
       const dist = Math.round(Geometry.dist(this.birthAt, this.pos) * Helpers.pixelMeter);
-      const age = new Date() - this.birthAt;
+      const age = Math.round((new Date() - this.birthDate) / 1000);
       this.ctx.fillStyle = '#999';
       this.ctx.font = '14px sans';
-      this.ctx.fillText(dist + ' ' + age, rpos.x + 20, rpos.y);
+      this.ctx.fillText(dist + 'm, ' + age + 's', rpos.x + 20, rpos.y);
       // this.ctx.fillStyle = '#800';
       // this.ctx.font = '14px sans';
       // this.ctx.fillText(this._id, rpos.x - 20, rpos.y + size + 40);
