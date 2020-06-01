@@ -9,6 +9,7 @@ export class Person extends DBObject {
       ctx: null,
       type: 'person',
       pos: {x: 0, y: 0},
+      birthAt: null,
       health: 100,
       speed: 5,
     };
@@ -84,7 +85,7 @@ export class Person extends DBObject {
       game_id: this.map._id,
       type: this.type,
       birthAt: this.birthAt,
-      pos: this.pos
+      pos: this.pos,
     };
   }
 
@@ -109,9 +110,10 @@ export class PersonGui extends Person {
 
     // draw name
     if(this.map.dispo.zoom > 5) {
+      const dist = Math.round(Geometry.dist(this.birthAt, this.pos) * Helpers.pixelMeter);
       this.ctx.fillStyle = '#999';
       this.ctx.font = '14px sans';
-      this.ctx.fillText(this._id, rpos.x - 20, rpos.y);
+      this.ctx.fillText(dist, rpos.x + 20, rpos.y);
       // this.ctx.fillStyle = '#800';
       // this.ctx.font = '14px sans';
       // this.ctx.fillText(this._id, rpos.x - 20, rpos.y + size + 40);
