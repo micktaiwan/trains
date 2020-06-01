@@ -118,8 +118,8 @@ export class Geometry {
 
 // Note that object must be an object or array,
 // NOT a primitive value like string, number, etc.
-objIdMap = new WeakMap;
-objectCount = 0;
+const objIdMap = new WeakMap;
+let objectCount = 0;
 
 export class Helpers {
 
