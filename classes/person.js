@@ -81,6 +81,7 @@ export class Person extends DBObject {
 
   objToSave() {
     return {
+      game_id: this.map._id,
       type: this.type,
       birthAt: this.birthAt,
       pos: this.pos

@@ -41,7 +41,7 @@ export class GameServer extends Game {
 
     // Add persons
     const nbPersons = this.map.getPersons().length;
-    // console.log(nb);
+    // console.log(nbPersons);
     // if(this.clockTick/1000 % 60 === 0)
     if(nbPersons < 100)
       this.addPerson();
