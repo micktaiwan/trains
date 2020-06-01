@@ -8,7 +8,7 @@ export class Game extends DBObject {
     super({
       _id: null,
       type: 'game',
-      map: null
+      map: null,
     }, doc);
     this._canStart = new ReactiveVar(false);
     this._canModifyMap = false;
@@ -29,7 +29,7 @@ export class Game extends DBObject {
     for(var i = 0; i < 10; i++) {
       const x = _.random(100, 100 + 10 * 2000 / Helpers.pixelMeter);
       const y = _.random(100, 100 + 10 * 2000 / Helpers.pixelMeter);
-      Meteor.call('mapInsert', {_id: Random.id(), type: 'person', game_id: this.map._id, pos: {x: x, y: y}});
+    Meteor.call('mapInsert', {_id: Random.id(), type: 'person', game_id: this.map._id, pos: {x: x, y: y}});
     }
   }
 

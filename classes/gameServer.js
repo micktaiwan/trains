@@ -4,7 +4,7 @@ import {Helpers} from "./helpers";
 
 // GameServer
 // Simply calls game loop
-// a map automatically subscribe to its Stations so a game's map with always be up to date
+// a map automatically subscribe to its Stations so a game's map will always be up to date
 export class GameServer extends Game {
 
   constructor(doc) {
