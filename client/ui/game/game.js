@@ -96,7 +96,7 @@ Template.game.helpers({
     return window.innerWidth - 40;
   },
 
-  canvasHeigth: function() {
+  canvasHeight: function() {
     return window.innerHeight - 110;
   },
 

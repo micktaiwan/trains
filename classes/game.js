@@ -1,6 +1,7 @@
 // Base class for GameGui and GameServer
 import {DBObject} from "./dbobject";
 import {Helpers} from "./helpers";
+import {Person} from "./person.js";
 
 export class Game extends DBObject {
 
@@ -34,7 +35,7 @@ export class Game extends DBObject {
       person.name = 'John Doe'; // à randomizer
       person.to = {x: _.random(0, 1000), y: _.random(0, 1000)};
       person.pos = person.birthAt;
-      person.saveToDB()
+      person.saveToDB();
     }
   }
 
