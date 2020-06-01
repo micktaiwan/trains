@@ -30,6 +30,7 @@ export class Game extends DBObject {
     for(let i = 0; i < 10; i++) {
       const person = new Person({
         map: this.map,
+        game_id: this.map._id
       });
       person.birthAt = {x: _.random(0, 1000), y: _.random(0, 1000)};
       person.birthDate = new Date; // L'age pourrait jouer sur les compétences...
