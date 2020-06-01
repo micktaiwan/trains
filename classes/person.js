@@ -80,7 +80,11 @@ export class Person extends DBObject {
   }
 
   objToSave() {
-    return {pos: this.pos};
+    return {
+      type: this.type,
+      birthAt: this.birthAt,
+      pos: this.pos
+    };
   }
 
   updateFromDB(doc) {
