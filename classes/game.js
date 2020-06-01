@@ -33,7 +33,7 @@ export class Game extends DBObject {
         game_id: this.map._id
       });
       person.birthAt = {x: _.random(0, 1000), y: _.random(0, 1000)};
-      person.birthDate = new Date; // L'age pourrait jouer sur les compétences...
+      person.birthDate = new Date(); // L'age pourrait jouer sur les compétences...
       person.name = 'John Doe'; // à randomizer
       person.to = {x: _.random(0, 1000), y: _.random(0, 1000)};
       person.pos = person.birthAt;
