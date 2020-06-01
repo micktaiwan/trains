@@ -8,7 +8,7 @@ export class Game extends DBObject {
     super({
       _id: null,
       type: 'game',
-      map: null
+      map: null,
     }, doc);
     this._canStart = new ReactiveVar(false);
     this._canModifyMap = false;
@@ -21,15 +21,24 @@ export class Game extends DBObject {
     // FIXME P1: should pick a station near a city
     const station = MapObjects.findOne({type: 'station'});
     if(station)
-      Meteor.call('mapInsert', {_id: Random.id(), type: 'train', game_id: this.map._id, pos: station.pos});
+      Meteor.call('mapInsert', {type: 'train', game_id: this.map._id, pos: station.pos});
   }
 
   // add a person to the map
   addPerson() {
-    for(var i = 0; i < 10; i++) {
-      const x = _.random(100, 100 + 10 * 2000 / Helpers.pixelMeter);
-      const y = _.random(100, 100 + 10 * 2000 / Helpers.pixelMeter);
-      Meteor.call('mapInsert', {_id: Random.id(), type: 'person', game_id: this.map._id, pos: {x: x, y: y}});
+    let person = {
+      type: 'person',
+      game_id: this.map._id,
+      health: 100,
+      speed: 5,
+    };
+    for(let i = 0; i < 10; i++) {
+      person.birthAt = {x: _.random(0, 1000), y: _.random(0, 1000)};
+      person.birthDate = new Date; // L'age pourrait jouer sur les compétances...
+      person.name = 'John Doe'; // à randomizer
+      person.to = {x: _.random(0, 1000), y: _.random(0, 1000)};
+      person.pos = person.birthAt;
+      Meteor.call('mapInsert', person);
     }
   }
 

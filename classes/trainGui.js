@@ -22,7 +22,7 @@ export class TrainGui extends Train {
   }
 
   draw() {
-    // return this.doDraw();
+    return this.doDraw();
     this.moveTotalSteps = Helpers.serverInterval / this.animateWait;
     // console.log('TrainGui#draw', Helpers.serverInterval, this.moveTotalSteps, this.animateWait);
     if(!this.animating) {
@@ -65,7 +65,7 @@ export class TrainGui extends Train {
     const progress = this.currentDrawStep / this.moveTotalSteps;
     let v = new Vector(this.from, this.pos);
     const projection = v.origin().plus((v.scal(progress))).norm();
-    this.map.drawSection(projection);
+    //this.map.drawSection(projection);
     const rpos = this.map.relToRealCoords(projection);
 
     // draw path
