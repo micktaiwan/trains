@@ -116,7 +116,7 @@ export class PersonGui extends Person {
       const age = Math.round((new Date() - this.birthDate) / 1000);
       this.ctx.fillStyle = '#999';
       this.ctx.font = '14px sans';
-      this.ctx.fillText(dist + 'm, ' + age + 's', rpos.x + 20, rpos.y);
+      this.ctx.fillText(dist + 'm, ' + Helpers.toHHMMSS(age), rpos.x + 20, rpos.y);
       // this.ctx.fillStyle = '#800';
       // this.ctx.font = '14px sans';
       // this.ctx.fillText(this._id, rpos.x - 20, rpos.y + size + 40);
