@@ -4,7 +4,6 @@ export class Drawing {
     ctx.fillText(txt, pos.x, pos.y);
   }
 
-
   static drawPoint(ctx, pos, size) {
     ctx.beginPath();
     ctx.arc(pos.x, pos.y, size, 0, 2 * Math.PI, true);
@@ -169,21 +168,21 @@ export class Helpers {
       removed: function(id) {
         // console.log('map_object removed', id);
         params.map.removeObjectById(id);
-      }
+      },
     });
 
   }
 
-  static toHHMMSS = function (seconds) {
+  static toHHMMSS = function(seconds) {
     var sec_num = parseInt(seconds, 10); // don't forget the second param
-    var hours   = Math.floor(sec_num / 3600);
+    var hours = Math.floor(sec_num / 3600);
     var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
     var secs = sec_num - (hours * 3600) - (minutes * 60);
 
-    if (hours   < 10) {hours   = "0"+hours;}
-    if (minutes < 10) {minutes = "0"+minutes;}
-    if (secs < 10) {secs = "0"+secs;}
-    return hours+':'+minutes+':'+secs;
-  }
+    if(hours < 10) {hours = "0" + hours;}
+    if(minutes < 10) {minutes = "0" + minutes;}
+    if(secs < 10) {secs = "0" + secs;}
+    return hours + ':' + minutes + ':' + secs;
+  };
 
 }
