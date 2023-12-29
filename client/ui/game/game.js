@@ -29,7 +29,7 @@ Template.game.onRendered(function() {
   $('.dropdown').dropdown('restore default text');
 
   radio = new Radio();
-  // if(!radio.playing()) radio.play(2000);
+  if(!radio.playing()) radio.play(2000);
 
   map.init('canvas', this.data._id);
   /*
