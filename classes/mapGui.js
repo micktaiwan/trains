@@ -282,7 +282,8 @@ export class GameMapGui extends GameMap {
     e.preventDefault();
     const oldPos = this.relMouseCoords(e);
 
-    const factor = this.dispo.zoom / (e.wheelDelta / 30);
+    const delta = Math.max(-1, Math.min(1, (e.deltaY || e.wheelDelta || -e.detail)));
+    const factor = this.dispo.zoom / (delta * 60);
     this.dispo.zoom += factor;
     this.dispo.zoom = Math.round(this.dispo.zoom * 1000) / 1000;
     if(this.dispo.zoom < 0.05)
