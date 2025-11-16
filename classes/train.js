@@ -46,9 +46,17 @@ export class Train extends DBObject {
           this.findDestination();
         }
         await this.getPassengers();
+
+        // If we now have a destination, start moving toward it
+        if(this.destStation) {
+          this.running = true; // Start the journey
+        }
       }
-      this.goTowardNextStop();
-      this.hasMoved = true;
+
+      if(this.running) { // Only move if running
+        this.goTowardNextStop();
+        this.hasMoved = true;
+      }
     }
     if(!this.fromStation) await this.removeFromDB(); // no rails, remove the train
     else await this.updateDB();
@@ -80,6 +88,7 @@ export class Train extends DBObject {
       this.progress = 0;
       if(this.fromStation === this.destStation) {
         this.running = false;
+        this.destStation = null; // Clear destination to trigger recalculation on next update
         // this.leavePassengers();
       }
       else this.getPassengers();
