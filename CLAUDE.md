@@ -80,6 +80,15 @@ The `semantic:ui` Meteor package is **not compatible** with Meteor 3 (attempts t
 - **Client code mostly unchanged**: Most async conversions are server-side only
 - **observeChangesAsync returns Promise**: Handle returned LiveQueryHandle appropriately
 
+### ⚠️ Development Guidelines
+
+**IMPORTANT - For AI Assistants:**
+- ❌ **DO NOT** kill Meteor processes (`pkill meteor`)
+- ❌ **DO NOT** start the Meteor application automatically (`meteor run`)
+- ❌ **DO NOT** control the application lifecycle
+- ✅ **DO** let the user start/stop/restart the application themselves
+- ✅ **DO** provide commands or suggestions, but let the user execute them
+
 ---
 
 # Trains Project - Technical Analysis

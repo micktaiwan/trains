@@ -3,6 +3,9 @@
  */
 
 // user online status monitoring
+// TODO: Re-enable when compatible user-status package is found for Meteor 3
+// Options: ostrio:user-status or custom implementation
+/*
 Tracker.autorun(function() {
   try {
     if(Meteor.userId()) {
@@ -20,6 +23,7 @@ Tracker.autorun(function() {
     // console.log(err); // Seems that if(UserStatus.isMonitoring) does not work so catching every error
   }
 });
+*/
 
 Meteor.startup(function() {
   Accounts.ui.config({
