@@ -97,14 +97,15 @@ export class GameMapGui extends GameMap {
 
   // given a mouse down, start creating a link between 2 new stations
   startLinkFromEvent(e) {
-    this.game.sound('station');
     if(!this.game.canModifyMap()) return;
+    this.game.sound('station');
     const c = this.relMouseCoords(e);
     this.currentStation = new StationGui({map: this, pos: c});
     // this.currentStation.saveToDB();
   }
 
   async insertStationToLink() {
+    if(!this.game.canModifyMap()) return;
     this.game.sound('station');
     this.dragStation = await this.insertProjection(this.nearestObj.rel);
   }
@@ -122,6 +123,10 @@ export class GameMapGui extends GameMap {
 
   async endLinkFromEvent(e) {
     if(!this.currentStation) return;
+    if(!this.game.canModifyMap()) {
+      this.currentStation = null;
+      return;
+    }
     this.game.sound('station');
     const c = this.relMouseCoords(e);
     const endStation = new StationGui({map: this, pos: c});
@@ -374,8 +379,10 @@ export class GameMapGui extends GameMap {
             this.startLinkFromEvent(e);
           else { // on a path or station
             if(!this.nearestObj.rel) { // a station
-              this.dragStation = this.nearestObj;
-              this.game.sound('drag');
+              if(this.game.canModifyMap()) {
+                this.dragStation = this.nearestObj;
+                this.game.sound('drag');
+              }
             }
             else // it's a path
               await this.insertStationToLink();
