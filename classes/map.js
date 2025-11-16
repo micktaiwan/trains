@@ -22,9 +22,9 @@ export class GameMap {
     this._id = game_id;
   }
 
-  resetMap() {
+  async resetMap() {
     this.objects.length = 0;
-    Meteor.call('mapReset', this._id);
+    await Meteor.callAsync('mapReset', this._id);
   }
 
   draw() {
@@ -44,9 +44,9 @@ export class GameMap {
     }
   }
 
-  removeObjectFromDb(id) {
+  async removeObjectFromDb(id) {
     this.removeObjectById(id);
-    Meteor.call('mapRemove', id);
+    await Meteor.callAsync('mapRemove', id);
   }
 
   getObjectById(id) {

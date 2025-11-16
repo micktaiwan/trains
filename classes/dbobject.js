@@ -14,16 +14,16 @@ export class DBObject {
     throw new Error('objToSave needs to be overridden')
   }
 
-  saveToDB() {
-    Meteor.call('mapInsert', this.objToSave());
+  async saveToDB() {
+    await Meteor.callAsync('mapInsert', this.objToSave());
   }
 
-  updateDB() {
-    Meteor.call('mapUpdate', this._id, this.objToSave());
+  async updateDB() {
+    await Meteor.callAsync('mapUpdate', this._id, this.objToSave());
   }
 
-  removeFromDB() {
-    Meteor.call('mapRemove', this._id);
+  async removeFromDB() {
+    await Meteor.callAsync('mapRemove', this._id);
   }
 
 }

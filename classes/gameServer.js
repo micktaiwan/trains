@@ -19,7 +19,7 @@ export class GameServer extends Game {
     this.loop();
   }
 
-  loop() {
+  async loop() {
     // Clock management
     const currentTime = new Date().getTime();
     const newClock = currentTime - this.gameStartTimestamp;
@@ -55,7 +55,7 @@ export class GameServer extends Game {
 
     const self = this;
     Meteor.setTimeout(function() {self.loop();}, nextDelay);
-    Meteor.call('gameUpdateClock', this._id, this.clock);
+    await Meteor.callAsync('gameUpdateClock', this._id, this.clock);
     this.tick++;
   }
 

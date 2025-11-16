@@ -143,8 +143,8 @@ export class Helpers {
     return Math.round(meters) + "m";
   }
 
-  static observeChanges(params) {
-    return MapObjects.find({game_id: params.game_id}).observeChanges({
+  static async observeChanges(params) {
+    return await MapObjects.find({game_id: params.game_id}).observeChangesAsync({
       added: function(id, doc) {
         // console.log('map_object added', id, doc);
         if(doc.type === 'train') params.map.addTrain(_.extend({_id: id, map: params.map}, doc));
@@ -152,8 +152,8 @@ export class Helpers {
         else if(doc.type === 'person') params.map.addPerson(_.extend({_id: id, map: params.map}, doc));
         else console.error('Do not know this type', id, doc);
       },
-      changed: function(id, doc) {
-        const obj = MapObjects.findOne(id, {fields: {type: 1}});
+      changed: async function(id, doc) {
+        const obj = await MapObjects.findOneAsync(id, {fields: {type: 1}});
         if(!obj) {
           console.error('map_object changed: no object found', id, doc);
           params.map.removeObjectById(id);
