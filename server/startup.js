@@ -4,13 +4,27 @@
 
 import {GameServer} from "../classes/gameServer";
 
+// Accounts configuration moved to /lib/accountsConfig.js (shared between client and server)
+
+// Store active game server instances for lifecycle management
+const activeGameServers = new Map();
+
 Meteor.startup(async function() {
 
   // server observe for new games
   await Games.find().observeChangesAsync({
-    added: function(id, doc) {
-      // console.log('startup: server added', id, doc);
-      new GameServer(_.extend({_id: id}, doc));
+    added: async function(id, doc) {
+      console.log('startup: server added game', id, doc.name);
+      const gameServer = await GameServer.create(_.extend({_id: id}, doc));
+      activeGameServers.set(id, gameServer);
+    },
+    removed: function(id) {
+      console.log('startup: server removed game', id);
+      const gameServer = activeGameServers.get(id);
+      if (gameServer) {
+        gameServer.stop();
+        activeGameServers.delete(id);
+      }
     }
   });
 

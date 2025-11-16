@@ -15,11 +15,34 @@ export class GameServer extends Game {
     this.gameStartTimestamp = new Date().getTime();
     this.clock = 0; // the start elapsed since 0
     this.tick = 0; // each game loop count
+    this.isRunning = false; // track if the game loop is active
 
-    this.loop();
+    // Don't start the loop here - it will be started after async initialization
+  }
+
+  // Initialize the game server asynchronously
+  static async create(doc) {
+    const gameServer = new GameServer(doc);
+    await gameServer.map.initAsync();
+    console.log('GameServer created and initialized with', gameServer.map.objects.length, 'objects');
+    gameServer.isRunning = true;
+    gameServer.loop();
+    return gameServer;
+  }
+
+  // Stop the game loop
+  stop() {
+    console.log('GameServer#stop', this._id, this.name);
+    this.isRunning = false;
   }
 
   async loop() {
+    // Check if the game should continue running
+    if (!this.isRunning) {
+      console.log('GameServer#loop stopped for game', this._id);
+      return;
+    }
+
     // Clock management
     const currentTime = new Date().getTime();
     const newClock = currentTime - this.gameStartTimestamp;
@@ -48,7 +71,7 @@ export class GameServer extends Game {
 
     // Update all objects
     for(let i = 0; i < this.map.objects.length; i++) {
-      this.map.objects[i].update(this.clockTick);
+      await this.map.objects[i].update(this.clockTick);
     }
 
     // if(train.move()) Trains.update({_id: train._id}, {$set: {pos: train.pos, dir: train.dir, interval: Helpers.moveInterval}});
