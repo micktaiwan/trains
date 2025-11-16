@@ -36,15 +36,20 @@ export class Person extends DBObject {
     const old = _.clone(this.pos);
     const maxdist = 25;
     const randomness = _.random(2);
-    // FIXME P2: does not work
-    if(this.pos.x < station.pos.x - maxdist) this.pos.x += this.speed + randomness;
-    else if(this.pos.x > station.pos.x + maxdist) this.pos.x -= this.speed + randomness;
-    else if(this.pos.x > station.pos.x - maxdist) this.pos.x -= this.speed + randomness;
-    else if(this.pos.x < station.pos.x + maxdist) this.pos.x += this.speed + randomness;
-    if(this.pos.y < station.pos.y - maxdist) this.pos.y += this.speed + randomness;
-    else if(this.pos.y > station.pos.y + maxdist) this.pos.y -= this.speed + randomness;
-    else if(this.pos.y > station.pos.y - maxdist) this.pos.y -= this.speed + randomness;
-    else if(this.pos.y < station.pos.y + maxdist) this.pos.y += this.speed + randomness;
+
+    // Move towards station if outside the target zone
+    if(this.pos.x < station.pos.x - maxdist) {
+      this.pos.x += this.speed + randomness;
+    } else if(this.pos.x > station.pos.x + maxdist) {
+      this.pos.x -= this.speed + randomness;
+    }
+
+    if(this.pos.y < station.pos.y - maxdist) {
+      this.pos.y += this.speed + randomness;
+    } else if(this.pos.y > station.pos.y + maxdist) {
+      this.pos.y -= this.speed + randomness;
+    }
+
     if(_.isEqual(old, this.pos)) return false;
     await this.updateDB();
     return true;
@@ -105,7 +110,7 @@ export class PersonGui extends Person {
   }
 
   draw() {
-    const size = this.map.dispo.zoom * 2;
+    const size = this.map.dispo.zoom * 4;
     this.ctx.fillStyle = '#ff0';
     const rpos = this.map.relToRealCoords(this.pos);
     Drawing.drawPoint(this.ctx, rpos, size);
