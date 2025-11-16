@@ -78,7 +78,7 @@ export class GameMapGui extends GameMap {
   }
 
   // p => parents will become q => parents
-  insertProjection(rel) {
+  async insertProjection(rel) {
     const parent = this.getStationByPos(rel.p1).station;
     const child = this.getStationByPos(rel.p2).station;
     const q = new StationGui({map: this, pos: rel.projection, children: [], parents: []});
@@ -89,9 +89,9 @@ export class GameMapGui extends GameMap {
     child.addBiChild(q);
     // console.log('parent:', parent);
     // console.log('q', q);
-    q.saveToDB();
-    parent.updateDB();
-    child.updateDB();
+    await q.saveToDB();
+    await parent.updateDB();
+    await child.updateDB();
     return q;
   }
 
@@ -104,9 +104,9 @@ export class GameMapGui extends GameMap {
     // this.currentStation.saveToDB();
   }
 
-  insertStationToLink() {
+  async insertStationToLink() {
     this.game.sound('station');
-    this.dragStation = this.insertProjection(this.nearestObj.rel);
+    this.dragStation = await this.insertProjection(this.nearestObj.rel);
   }
 
   drawCurrentLinkFromEvent(e) {
@@ -120,21 +120,21 @@ export class GameMapGui extends GameMap {
     Drawing.drawPoint(this.ctx, c, this.dispo.mouseSize * this.dispo.zoom);
   }
 
-  endLinkFromEvent(e) {
+  async endLinkFromEvent(e) {
     if(!this.currentStation) return;
     this.game.sound('station');
     const c = this.relMouseCoords(e);
     const endStation = new StationGui({map: this, pos: c});
     this.currentStation.addBiChild(endStation);
-    this.currentStation.saveToDB();
-    endStation.saveToDB();
+    await this.currentStation.saveToDB();
+    await endStation.saveToDB();
     this.currentStation = null;
     this.draw();
   }
 
-  resetMap() {
+  async resetMap() {
     this.game.sound('success', {stereo: 0});
-    super.resetMap();
+    await super.resetMap();
     this.resetPosition();
   }
 
@@ -364,7 +364,7 @@ export class GameMapGui extends GameMap {
     if(drawmouse) this.drawMouse();
   }
 
-  onMouseDown(e) {
+  async onMouseDown(e) {
     e.preventDefault();
     let draw = true;
     if(!e.ctrlKey) { // Ctrl is for panning
@@ -378,12 +378,12 @@ export class GameMapGui extends GameMap {
               this.game.sound('drag');
             }
             else // it's a path
-              this.insertStationToLink();
+              await this.insertStationToLink();
             draw = false;
           }
           break;
         case 3: // right button
-          this.removePointFromEvent(e);
+          await this.removePointFromEvent(e);
           break;
       }
     }
@@ -396,9 +396,9 @@ export class GameMapGui extends GameMap {
     document.body.style.cursor = 'none';
   }
 
-  onMouseUp(e) {
+  async onMouseUp(e) {
     this.game.sounds['drag'].fade(0.1, 0, 100);
-    this.endLinkFromEvent(e);
+    await this.endLinkFromEvent(e);
     this.mouseIsDown = false;
     if(this.dragStation) {
       // test if draggued onto another Station (to merge them)
@@ -407,10 +407,10 @@ export class GameMapGui extends GameMap {
         const self = this;
         stations = _.reject(stations, function(s) {return s.station._id === self.dragStation._id;});
         this.game.sound('merge');
-        this.dragStation.mergeStation(stations[0].station);
+        await this.dragStation.mergeStation(stations[0].station);
       }
       else
-        this.dragStation.updateDB();
+        await this.dragStation.updateDB();
       this.dragStation = null;
     }
     document.body.style.cursor = 'default';
@@ -431,14 +431,14 @@ export class GameMapGui extends GameMap {
     else this.dragStation.pos = this.mouseRelPos;
   }
 
-  removePointFromEvent(e) {
+  async removePointFromEvent(e) {
     if(!this.game.canModifyMap()) return;
     this.nearestObj = this.getNearestStation(this.mouseRelPos, this.dispo.stationSize);
     if(this.nearestObj) {
       this.game.sound('remove');
       const station = this.nearestObj;
-      this.removeStation(station);
-      this.removeIsolatedStations(); // FIXME P1: should be automatic
+      await this.removeStation(station);
+      await this.removeIsolatedStations(); // FIXME P1: should be automatic
     }
     /*
         else {
@@ -516,10 +516,10 @@ export class GameMapGui extends GameMap {
 
   // coming from db
   addTrain(doc) {
-    const pos = doc.pos;
-    const c = this.getTrainByPos(pos);
-    console.log('addTrain', doc._id, doc, 'found', c);
-    if(c) return; // if the client already have it
+    // Check by ID, not by position (position can change)
+    const existing = this.getObjectById(doc._id);
+    console.log('addTrain', doc._id, doc, 'found', existing);
+    if(existing) return; // if the client already has it
     super.addObject(new TrainGui(doc));
   }
 

@@ -17,19 +17,19 @@ export class Person extends DBObject {
     super(properties, doc);
   }
 
-  update(clock) {
+  async update(clock) {
     // death
-    if(this.health <= 0) return this.removeFromDB();
+    if(this.health <= 0) return await this.removeFromDB();
 
     // movement
     // get persons around
     // make a average of pos
-    if(!this.moveTowardsNearestStation())
+    if(!(await this.moveTowardsNearestStation()))
       // this.moveTowardsNearestStation();
-      this.moveTowardsPersons();
+      await this.moveTowardsPersons();
   }
 
-  moveTowardsNearestStation() {
+  async moveTowardsNearestStation() {
 
     const station = this.map.getNearestStation(this.pos, Helpers.maxDistGetNearestStation);
     if(!station) return false;
@@ -46,11 +46,11 @@ export class Person extends DBObject {
     else if(this.pos.y > station.pos.y - maxdist) this.pos.y -= this.speed + randomness;
     else if(this.pos.y < station.pos.y + maxdist) this.pos.y += this.speed + randomness;
     if(_.isEqual(old, this.pos)) return false;
-    this.updateDB();
+    await this.updateDB();
     return true;
   }
 
-  moveTowardsPersons() {
+  async moveTowardsPersons() {
     let x = 0;
     let y = 0;
     let nb = 0;
@@ -77,7 +77,7 @@ export class Person extends DBObject {
       if(this.pos.y < y) this.pos.y += this.speed + randomness;
       else if(this.pos.y > y) this.pos.y -= this.speed + randomness;
       if(_.isEqual(old, this.pos)) return false;
-      this.updateDB();
+      await this.updateDB();
     }
   }
 

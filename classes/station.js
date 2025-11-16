@@ -45,15 +45,15 @@ export class Station extends DBObject {
     station.parents = _.without(station.parents, this);
   }
 
-  removeChildren() {
+  async removeChildren() {
     const rv = [];
     // console.log('removeChildren', this._id, this.children);
     const self = this;
-    _.each(this.children, function(point) {
+    for(const point of this.children) {
       self.removeChild(point);
       point.removeChild(self);
-      point.updateDB();
-    });
+      await point.updateDB();
+    }
   }
 
   removeParent(station) {
@@ -78,7 +78,7 @@ export class Station extends DBObject {
   // will add all transitive children where this child 'q' is in between
   // a => q => b will add a => b
   // return a list of updated stations
-  addTransChildren() {
+  async addTransChildren() {
     const rv = [];
     let i = 0;
     let j = 0;
@@ -95,9 +95,9 @@ export class Station extends DBObject {
       });
     });
     // console.log(rv);
-    _.each(rv, function(station) {
-      station.updateDB();
-    });
+    for(const station of rv) {
+      await station.updateDB();
+    }
     return rv;
   }
 
@@ -117,19 +117,19 @@ export class Station extends DBObject {
   }
 
   // merge 2 stations
-  mergeStation(dest) {
+  async mergeStation(dest) {
     // console.log('***** MERGE ', this._id, '=>', dest._id);
     // add all links to dest
-    _.each(this.children, function(c) {
-      if(dest._id === c._id) return;
+    for(const c of this.children) {
+      if(dest._id === c._id) continue;
       // console.log('***** loop ', dest._id, '=>', c._id);
       dest.addBiChild(c);
-      c.updateDB();
-    });
-    dest.updateDB();
+      await c.updateDB();
+    }
+    await dest.updateDB();
     // remove self
-    this.map.removeStation(this, true);
-    this.map.removeIsolatedStations(); // the only case where we merge a isolated segment
+    await this.map.removeStation(this, true);
+    await this.map.removeIsolatedStations(); // the only case where we merge a isolated segment
   }
 
   update(clock) {

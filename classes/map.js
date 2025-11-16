@@ -9,17 +9,36 @@ import {Station} from "./station";
 // a map is a set of stations belonging to a game_id
 export class GameMap {
 
-  constructor(game_id, observeChanges) {
-    console.log('GameMap#constructor: game_id', game_id, observeChanges);
+  constructor(game_id, shouldObserveChanges = false) {
+    console.log('GameMap#constructor: game_id', game_id, shouldObserveChanges);
     this._id = game_id;
     this.objects = [];
     this.message = new ReactiveVar('');
-    if(observeChanges) Helpers.observeChanges({game_id: game_id, map: this});
+    this.observeHandle = null;
+    this.shouldObserveChanges = shouldObserveChanges;
+  }
+
+  // Initialize the map and wait for existing objects to be loaded
+  async initAsync() {
+    console.log('GameMap#initAsync: game_id', this._id);
+    if(this.shouldObserveChanges) {
+      this.observeHandle = await Helpers.observeChanges({game_id: this._id, map: this});
+      console.log('GameMap#initAsync: observeChanges initialized, loaded', this.objects.length, 'objects');
+    }
+    return this;
   }
 
   init(game_id) {
     console.log('GameMap#init: game_id', game_id);
     this._id = game_id;
+  }
+
+  // Cleanup method to stop observing
+  stopObserving() {
+    if(this.observeHandle) {
+      this.observeHandle.stop();
+      this.observeHandle = null;
+    }
   }
 
   async resetMap() {
@@ -115,7 +134,7 @@ export class GameMap {
   // coming from db
   updateObject(id, doc) {
     const obj = this.getObjectById(id);
-    // if(!obj) return console.error("updateObject: could not find object", id, doc);
+    if(!obj) return console.error("updateObject: could not find object", id, doc);
     obj.updateFromDB(doc);
     // for each game change, also set game status
     // if(this.game) this.game.setStatus();
@@ -140,19 +159,19 @@ export class GameMap {
   // a map can observe the stations itself
   // but if it is the case, will create simple stations, not StationGui
 
-  removeStation(station, withoutTrans) {
-    if(!withoutTrans) station.addTransChildren();
-    station.removeChildren();
+  async removeStation(station, withoutTrans) {
+    if(!withoutTrans) await station.addTransChildren();
+    await station.removeChildren();
     this.removeObjectById(station._id); // FIXME P1: try without it, as removeObjectFromDb will update the map back
-    this.removeObjectFromDb(station._id);
+    await this.removeObjectFromDb(station._id);
   }
 
-  removeIsolatedStations() {
+  async removeIsolatedStations() {
     const self = this;
-    _.each(this.objects, function(station) {
-      if(station.type !== 'station') return;
-      if(station.children.length === 0 && station.parents.length === 0) self.removeObjectFromDb(station._id);
-    });
+    for(const station of this.objects) {
+      if(station.type !== 'station') continue;
+      if(station.children.length === 0 && station.parents.length === 0) await self.removeObjectFromDb(station._id);
+    }
   }
 
   getNearestStation(pos, maxdist) {

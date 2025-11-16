@@ -24,7 +24,7 @@ export class Train extends DBObject {
   }
 
   // to be done with pathfinding
-  update(clock) {
+  async update(clock) {
     // const from = this.fromStation ? this.fromStation._id + ' ' + this.fromStation.children.length : 'no from station';
     // console.log('Train#move', from, this.pos);
     // Find the station where we want to go to
@@ -39,13 +39,13 @@ export class Train extends DBObject {
     else { // we come from a station
       if(!this.running) { // we are stopped at a station
         this.findDestination();
-        this.getPassengers();
+        await this.getPassengers();
       }
       this.goTowardNextStop();
       this.hasMoved = true;
     }
-    if(!this.fromStation) this.removeFromDB(); // no rails, remove the train
-    else this.updateDB();
+    if(!this.fromStation) await this.removeFromDB(); // no rails, remove the train
+    else await this.updateDB();
   }
 
   // update train position
@@ -162,7 +162,7 @@ export class Train extends DBObject {
     // console.log('Train#updateFromDB', doc, "\n", 'this', this);
   }
 
-  getPassengers() {
+  async getPassengers() {
     let nb = 0;
     const passengers = [];
     for(let i = 0; i < this.map.objects.length; i++) {
@@ -173,9 +173,9 @@ export class Train extends DBObject {
         passengers.push(this.map.objects[i]);
       }
     }
-    _.each(passengers, function(p) {
-      p.removeFromDB(); // kill nearby passengers....
-    });
+    for(const p of passengers) {
+      await p.removeFromDB(); // kill nearby passengers....
+    }
     if(nb) console.log('train killed', nb, 'people');
   }
 
