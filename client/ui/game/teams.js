@@ -16,19 +16,26 @@ Template.teams.helpers({
 
 Template.teams.events({
 
-  'submit': function(e) {
+  'submit': async function(e) {
     e.preventDefault();
     let name = $('#teamName').val();
     console.log('teamCreate: ', name);
-    Meteor.call('teamCreate', this._id, name);
-    $('#teamName').val('');
-    $('.teams-modal').hide();
-
+    try {
+      await Meteor.callAsync('teamCreate', this._id, name);
+      $('#teamName').val('');
+      $('.teams-modal').hide();
+    } catch(err) {
+      console.error('Error creating team:', err);
+    }
   },
 
-  'click .join': function(e) {
-    Meteor.call('teamJoin', this.game_id, e.target.getAttribute("data-teamId"));
-    $('.teams-modal').hide();
+  'click .join': async function(e) {
+    try {
+      await Meteor.callAsync('teamJoin', this.game_id, e.target.getAttribute("data-teamId"));
+      $('.teams-modal').hide();
+    } catch(err) {
+      console.error('Error joining team:', err);
+    }
   },
 
   'click .cancel': function() {

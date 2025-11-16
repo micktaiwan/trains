@@ -7,6 +7,7 @@ let radio = null;
 let game = null;
 let map = null;
 let handleMapObjects = null;
+let radioStationInfo = new ReactiveVar('Radio');
 
 Template.game.onCreated(function() {
 
@@ -30,6 +31,28 @@ Template.game.onRendered(function() {
 
   radio = new Radio();
   if(!radio.playing()) radio.play(2000);
+
+  // Update radio station info reactively
+  const updateRadioInfo = () => {
+    const station = radio.stations[radio.currentStation];
+    if(station) {
+      radioStationInfo.set(`${station.name} - ${station.descr}`);
+    }
+  };
+  updateRadioInfo();
+
+  // Update popup content when radio station changes
+  Tracker.autorun(() => {
+    const stationInfo = radioStationInfo.get();
+    Meteor.defer(() => {
+      $('.js-radio-toggle-volume').popup('destroy').popup({
+        inline: true,
+        hoverable: true,
+        position: 'bottom left',
+        content: stationInfo
+      });
+    });
+  });
 
   map.init('canvas', this.data._id);
   /*
@@ -153,6 +176,10 @@ Template.game.helpers({
     return `${days} days, ${hrs}:${min}:${sec}`;
   },
 
+  radioStation: function() {
+    return radioStationInfo.get();
+  }
+
 });
 
 Template.game.events({
@@ -199,10 +226,22 @@ Template.game.events({
 
   'click .js-radio-next-station'() {
     radio.next();
+    // Update radio station info reactively
+    const station = radio.stations[radio.currentStation];
+    if(station) {
+      radioStationInfo.set(`${station.name} - ${station.descr}`);
+    }
   },
 
   'click .js-radio-previous-station'() {
     radio.previous();
+    // Update radio station info reactively after fade completes
+    setTimeout(() => {
+      const station = radio.stations[radio.currentStation];
+      if(station) {
+        radioStationInfo.set(`${station.name} - ${station.descr}`);
+      }
+    }, 600); // Wait for fade to complete
   },
 
 });

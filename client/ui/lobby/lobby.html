@@ -5,7 +5,15 @@
     {{#unless connected}}
       <div class="ui active item" href="#">Connection issue...</div>
     {{/unless}}
-    <div class="right menu"><a class="ui item">{{> loginButtons}}</a></div>
+    <div class="right menu">
+      <a class="ui item">
+        {{#if currentUser}}
+          {{currentUser.username}} (Logged in)
+        {{else}}
+          Guest (Login UI TODO)
+        {{/if}}
+      </a>
+    </div>
   </div>
 
   <div class="ui three column grid">

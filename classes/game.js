@@ -18,15 +18,15 @@ export class Game extends DBObject {
   }
 
   // add a train to the map
-  addTrain() {
+  async addTrain() {
     // FIXME P1: should pick a station near a city
-    const station = MapObjects.findOne({type: 'station'});
+    const station = await MapObjects.findOneAsync({type: 'station'});
     if(station)
-      Meteor.call('mapInsert', {type: 'train', game_id: this.map._id, pos: station.pos});
+      await Meteor.callAsync('mapInsert', {type: 'train', game_id: this.map._id, pos: station.pos});
   }
 
   // add a person to the map
-  addPerson() {
+  async addPerson() {
     for(let i = 0; i < 10; i++) {
       const person = new Person({
         map: this.map,
@@ -37,7 +37,7 @@ export class Game extends DBObject {
       person.name = 'John Doe'; // à randomizer
       person.to = {x: _.random(0, 1000), y: _.random(0, 1000)};
       person.pos = person.birthAt;
-      person.saveToDB();
+      await person.saveToDB();
     }
   }
 

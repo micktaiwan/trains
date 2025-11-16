@@ -1,6 +1,13 @@
 <template name="game">
   <div class="pull-right">
-    {{name}} : {{{gameStatus}}}
+    {{#if currentUser}}
+      {{name}} : {{{gameStatus}}}
+    {{else}}
+      <div class="ui large red label">
+        <i class="exclamation triangle icon"></i>
+        You must be logged in to play
+      </div>
+    {{/if}}
     {{{mapMessage}}}
   </div>
 
@@ -38,7 +45,7 @@
     <button class="ui button js-radio-previous-station">
       <i class="step backward icon"></i>
     </button>
-    <button class="ui button js-radio-toggle-volume pup" data-content="Radio">
+    <button class="ui button js-radio-toggle-volume pup" data-content="{{radioStation}}">
       <i class="stop icon"></i>
     </button>
     <button class="ui button js-radio-next-station">

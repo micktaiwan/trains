@@ -34,7 +34,7 @@ export class GameServer extends Game {
 
     // check trains
     // console.log("Trains:", this.map.trains.length);
-    if(this.map.getTrains().length === 0) this.addTrain();
+    if(this.map.getTrains().length === 0) await this.addTrain();
 
     // define a planning: when to update trains, when to add people, when to collect taxes...
     // console.log(this.gameTimePassed);
@@ -44,7 +44,7 @@ export class GameServer extends Game {
     // console.log(nbPersons);
     // if(this.clockTick/1000 % 60 === 0)
     if(nbPersons < 100)
-      this.addPerson();
+      await this.addPerson();
 
     // Update all objects
     for(let i = 0; i < this.map.objects.length; i++) {

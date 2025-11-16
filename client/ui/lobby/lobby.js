@@ -54,20 +54,26 @@ Template.gameItem.helpers({});
 
 Template.lobby.events({
 
-  'submit .newgame': function(e) { //FIXME P0: check if loggued
+  'submit .newgame': async function(e) { //FIXME P0: check if loggued
     e.preventDefault();
     const name = $('#gameName').val();
-    Meteor.call('gameCreate', name, function(err, rv) {
-      Router.go('/game/' + rv);
-    });
+    try {
+      const gameId = await Meteor.callAsync('gameCreate', name);
+      Router.go('/game/' + gameId);
+    } catch(err) {
+      console.error('Error creating game:', err);
+    }
   },
 
-  'submit .chatmsg': function(e) {
+  'submit .chatmsg': async function(e) {
     e.preventDefault();
     const msg = $('#chatMsg').val();
-    Meteor.call('chatPost', msg, 'lobby', function(err, rv) {
+    try {
+      await Meteor.callAsync('chatPost', msg, 'lobby');
       $('#chatMsg').val('');
-    });
+    } catch(err) {
+      console.error('Error posting chat:', err);
+    }
   }
 
 });
