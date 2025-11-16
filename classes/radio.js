@@ -14,7 +14,20 @@ export class Radio {
       {name: 'Drone Zone', descr: "[SomaFM] Served best chilled, safe with most medications. Atmospheric textures with minimal beats", src: ['http://ice1.somafm.com/dronezone-128-mp3'], format: ['mp3']},
     ];
     this.backgroundSound = null;
-    this.currentStation = 0;
+
+    // Restore last station from localStorage (default: 0)
+    const savedStation = localStorage.getItem('radioStation');
+    this.currentStation = savedStation ? parseInt(savedStation, 10) : 0;
+
+    // Validate index is within bounds
+    if(this.currentStation < 0 || this.currentStation >= this.stations.length) {
+      this.currentStation = 0;
+    }
+  }
+
+  // Save current station to localStorage
+  saveStation() {
+    localStorage.setItem('radioStation', this.currentStation.toString());
   }
 
   playing() {
@@ -47,6 +60,7 @@ export class Radio {
     const self = this;
     self.currentStation++;
     if(self.currentStation >= self.stations.length) self.currentStation = 0;
+    self.saveStation(); // Save new station
     // if(!this.backgroundSound) self.play();
     // else this.backgroundSound.fade(0.5, 0, 500).once('fade', function() {
     //   self.play();
@@ -56,10 +70,16 @@ export class Radio {
 
   previous() {
     const self = this;
-    if(!this.backgroundSound) self.play();
+    if(!this.backgroundSound) {
+      self.currentStation--;
+      if(self.currentStation < 0) self.currentStation = self.stations.length - 1;
+      self.saveStation(); // Save new station
+      self.play();
+    }
     else this.backgroundSound.fade(0.5, 0, 500).once('fade', function() {
       self.currentStation--;
       if(self.currentStation < 0) self.currentStation = self.stations.length - 1;
+      self.saveStation(); // Save new station
       self.play();
     });
   }
