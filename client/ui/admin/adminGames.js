@@ -2,22 +2,24 @@
  * Admin games management
  */
 
+import { Helpers } from '../../../classes/helpers';
+
 const gamesVar = new ReactiveVar([]);
 const loadingGamesVar = new ReactiveVar(false);
 let currentGameId = null;
 let currentGameData = null;
 
 Template.adminGames.onCreated(function() {
-  this.loadGames = () => {
+  this.loadGames = async () => {
     loadingGamesVar.set(true);
-    Meteor.call('adminGetAllGames', (err, result) => {
+    try {
+      const result = await Meteor.callAsync('adminGetAllGames');
+      gamesVar.set(result);
+    } catch (err) {
+      console.error('Error loading games:', err);
+    } finally {
       loadingGamesVar.set(false);
-      if (err) {
-        console.error('Error loading games:', err);
-      } else {
-        gamesVar.set(result);
-      }
-    });
+    }
   };
 
   // Load games on creation
@@ -25,14 +27,16 @@ Template.adminGames.onCreated(function() {
 });
 
 Template.adminGames.onRendered(function() {
-  // Initialize modals
+  // Initialize modals with detachable: false to keep them in Blaze template DOM
   $('.ui.modal.edit-game-modal').modal({
+    detachable: false,
     onApprove: function() {
       return false; // Prevent auto-close
     }
   });
 
   $('.ui.modal.delete-game-modal').modal({
+    detachable: false,
     onApprove: function() {
       return false; // Prevent auto-close
     }
@@ -78,7 +82,7 @@ Template.adminGames.events({
     }
   },
 
-  'click .confirm-edit-game': function(e, template) {
+  'click .confirm-edit-game': async function(e, template) {
     e.preventDefault();
 
     const gameName = $('.edit-game-modal input[name="gameName"]').val();
@@ -94,15 +98,13 @@ Template.adminGames.events({
       clock: gameClock
     };
 
-    Meteor.call('adminUpdateGame', currentGameId, updates, (err) => {
-      if (err) {
-        alert('Error: ' + err.message);
-      } else {
-        alert('Game updated successfully');
-        $('.ui.modal.edit-game-modal').modal('hide');
-        template.loadGames();
-      }
-    });
+    try {
+      await Meteor.callAsync('adminUpdateGame', currentGameId, updates);
+      $('.ui.modal.edit-game-modal').modal('hide');
+      template.loadGames();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
   },
 
   'click .delete-game': function(e) {
@@ -111,17 +113,20 @@ Template.adminGames.events({
     $('.ui.modal.delete-game-modal').modal('show');
   },
 
-  'click .confirm-delete-game': function(e, template) {
+  'click .confirm-delete-game': async function(e, template) {
     e.preventDefault();
 
-    Meteor.call('adminDeleteGame', currentGameId, (err) => {
-      if (err) {
-        alert('Error: ' + err.message);
-      } else {
-        alert('Game deleted successfully');
-        $('.ui.modal.delete-game-modal').modal('hide');
-        template.loadGames();
-      }
-    });
+    if (!currentGameId) {
+      alert('Error: No game selected');
+      return;
+    }
+
+    try {
+      await Meteor.callAsync('adminDeleteGame', currentGameId);
+      $('.ui.modal.delete-game-modal').modal('hide');
+      template.loadGames();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
   }
 });

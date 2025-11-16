@@ -2,44 +2,23 @@
  * Admin logs viewer
  */
 
+Template.adminLogs.onCreated(function() {
+  // Subscribe to admin logs
+  this.subscribe('admin_logs', 50);
+});
+
 Template.adminLogs.helpers({
   logs: function() {
     return AdminLogs.find({}, { sort: { timestamp: -1 } });
   },
 
+  logsCount: function() {
+    return AdminLogs.find().count();
+  },
+
   formatDate: function(date) {
     if (!date) return 'N/A';
     return moment(date).format('YYYY-MM-DD HH:mm:ss');
-  },
-
-  formatAction: function(action) {
-    return action.replace(/_/g, ' ').toUpperCase();
-  },
-
-  getActionIcon: function(action) {
-    const icons = {
-      'delete_user': 'user delete',
-      'toggle_admin': 'shield',
-      'reset_password': 'key',
-      'delete_game': 'gamepad',
-      'update_game': 'edit',
-      'delete_chat': 'comment',
-      'auto_admin_assignment': 'star'
-    };
-    return icons[action] || 'info circle';
-  },
-
-  getActionColor: function(action) {
-    const colors = {
-      'delete_user': 'red',
-      'toggle_admin': 'orange',
-      'reset_password': 'yellow',
-      'delete_game': 'red',
-      'update_game': 'blue',
-      'delete_chat': 'red',
-      'auto_admin_assignment': 'green'
-    };
-    return colors[action] || 'grey';
   },
 
   getLogDetails: function(log) {
@@ -62,17 +41,5 @@ Template.adminLogs.helpers({
       default:
         return log.details || 'No details available';
     }
-  }
-});
-
-Template.adminLogs.events({
-  'click .refresh-logs': function(e) {
-    e.preventDefault();
-    // Logs are reactive via subscription, but we can trigger a manual refresh if needed
-    Meteor.call('adminGetLogs', 50, (err, result) => {
-      if (err) {
-        console.error('Error loading logs:', err);
-      }
-    });
   }
 });

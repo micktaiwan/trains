@@ -75,15 +75,16 @@
           </h3>
 
           {{#if recentLogs.length}}
-            <div class="ui feed">
+            <div class="ui relaxed divided list">
               {{#each recentLogs}}
-                <div class="event">
+                <div class="item">
+                  <i class="large {{getActionIcon action}} middle aligned icon"></i>
                   <div class="content">
-                    <div class="summary">
-                      <span class="ui small {{getActionColor action}} label">{{formatLogAction action}}</span>
-                      <div class="date">{{formatDate timestamp}}</div>
+                    <div class="header">
+                      <span class="ui {{getActionColor action}} label" style="min-width: 100px; text-align: center;">{{formatLogAction action}}</span>
+                      <span class="ui grey text" style="margin-left: 1em; font-size: 0.9em;">{{formatDate timestamp}}</span>
                     </div>
-                    <div class="extra text">
+                    <div class="description" style="margin-top: 0.5em;">
                       {{getLogDetails this}}
                     </div>
                   </div>

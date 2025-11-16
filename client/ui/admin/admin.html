@@ -17,40 +17,40 @@
     </h1>
 
     <div class="ui top attached tabular menu">
-      <a class="item active" data-tab="dashboard">
+      <a class="item {{#if isActiveTab 'dashboard'}}active{{/if}}" data-tab="dashboard" href="/admin/dashboard">
         <i class="chart bar icon"></i> Dashboard
       </a>
-      <a class="item" data-tab="users">
+      <a class="item {{#if isActiveTab 'users'}}active{{/if}}" data-tab="users" href="/admin/users">
         <i class="users icon"></i> Users
       </a>
-      <a class="item" data-tab="games">
+      <a class="item {{#if isActiveTab 'games'}}active{{/if}}" data-tab="games" href="/admin/games">
         <i class="gamepad icon"></i> Games
       </a>
-      <a class="item" data-tab="chat">
+      <a class="item {{#if isActiveTab 'chat'}}active{{/if}}" data-tab="chat" href="/admin/chat">
         <i class="comments icon"></i> Chat Moderation
       </a>
-      <a class="item" data-tab="logs">
+      <a class="item {{#if isActiveTab 'logs'}}active{{/if}}" data-tab="logs" href="/admin/logs">
         <i class="history icon"></i> Admin Logs
       </a>
     </div>
 
-    <div class="ui bottom attached tab segment active" data-tab="dashboard">
+    <div class="ui bottom attached tab segment {{#if isActiveTab 'dashboard'}}active{{/if}}" data-tab="dashboard">
       {{> adminDashboard}}
     </div>
 
-    <div class="ui bottom attached tab segment" data-tab="users">
+    <div class="ui bottom attached tab segment {{#if isActiveTab 'users'}}active{{/if}}" data-tab="users">
       {{> adminUsers}}
     </div>
 
-    <div class="ui bottom attached tab segment" data-tab="games">
+    <div class="ui bottom attached tab segment {{#if isActiveTab 'games'}}active{{/if}}" data-tab="games">
       {{> adminGames}}
     </div>
 
-    <div class="ui bottom attached tab segment" data-tab="chat">
+    <div class="ui bottom attached tab segment {{#if isActiveTab 'chat'}}active{{/if}}" data-tab="chat">
       {{> adminChat}}
     </div>
 
-    <div class="ui bottom attached tab segment" data-tab="logs">
+    <div class="ui bottom attached tab segment {{#if isActiveTab 'logs'}}active{{/if}}" data-tab="logs">
       {{> adminLogs}}
     </div>
   </div>

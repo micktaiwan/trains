@@ -8,17 +8,17 @@ const chatLimitVar = new ReactiveVar(100);
 let currentChatId = null;
 
 Template.adminChat.onCreated(function() {
-  this.loadChats = () => {
+  this.loadChats = async () => {
     loadingChatsVar.set(true);
     const limit = chatLimitVar.get();
-    Meteor.call('adminGetAllChats', limit, (err, result) => {
+    try {
+      const result = await Meteor.callAsync('adminGetAllChats', limit);
+      chatsVar.set(result);
+    } catch (err) {
+      console.error('Error loading chats:', err);
+    } finally {
       loadingChatsVar.set(false);
-      if (err) {
-        console.error('Error loading chats:', err);
-      } else {
-        chatsVar.set(result);
-      }
-    });
+    }
   };
 
   // Load chats on creation
@@ -40,8 +40,9 @@ Template.adminChat.onRendered(function() {
   // Initialize dropdown
   $('.ui.dropdown').dropdown();
 
-  // Initialize modal
+  // Initialize modal with detachable: false to keep it in Blaze template DOM
   $('.ui.modal.delete-chat-modal').modal({
+    detachable: false,
     onApprove: function() {
       return false; // Prevent auto-close
     }
@@ -90,16 +91,15 @@ Template.adminChat.events({
     $('.ui.modal.delete-chat-modal').modal('show');
   },
 
-  'click .confirm-delete-chat': function(e, template) {
+  'click .confirm-delete-chat': async function(e, template) {
     e.preventDefault();
 
-    Meteor.call('adminDeleteChat', currentChatId, (err) => {
-      if (err) {
-        alert('Error: ' + err.message);
-      } else {
-        $('.ui.modal.delete-chat-modal').modal('hide');
-        template.loadChats();
-      }
-    });
+    try {
+      await Meteor.callAsync('adminDeleteChat', currentChatId);
+      $('.ui.modal.delete-chat-modal').modal('hide');
+      template.loadChats();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
   }
 });

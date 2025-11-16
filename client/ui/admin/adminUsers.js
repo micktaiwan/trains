@@ -5,14 +5,16 @@
 let currentUserId = null;
 
 Template.adminUsers.onRendered(function() {
-  // Initialize modals
+  // Initialize modals with detachable: false to keep them in Blaze template DOM
   $('.ui.modal.reset-password-modal').modal({
+    detachable: false,
     onApprove: function() {
       return false; // Prevent auto-close, we'll handle it in the button click
     }
   });
 
   $('.ui.modal.delete-user-modal').modal({
+    detachable: false,
     onApprove: function() {
       return false; // Prevent auto-close
     }
@@ -56,17 +58,16 @@ Template.adminUsers.helpers({
 });
 
 Template.adminUsers.events({
-  'click .toggle-admin': function(e) {
+  'click .toggle-admin': async function(e) {
     e.preventDefault();
     const userId = $(e.currentTarget).data('user-id');
 
-    Meteor.call('adminToggleAdmin', userId, (err, result) => {
-      if (err) {
-        alert('Error: ' + err.message);
-      } else {
-        console.log('Admin status toggled:', result);
-      }
-    });
+    try {
+      const result = await Meteor.callAsync('adminToggleAdmin', userId);
+      console.log('Admin status toggled:', result);
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
   },
 
   'click .reset-password': function(e) {
@@ -75,7 +76,7 @@ Template.adminUsers.events({
     $('.ui.modal.reset-password-modal').modal('show');
   },
 
-  'click .confirm-reset-password': function(e) {
+  'click .confirm-reset-password': async function(e) {
     e.preventDefault();
 
     const newPassword = $('.reset-password-modal input[name="newPassword"]').val();
@@ -96,15 +97,13 @@ Template.adminUsers.events({
       return;
     }
 
-    Meteor.call('adminResetPassword', currentUserId, newPassword, (err) => {
-      if (err) {
-        alert('Error: ' + err.message);
-      } else {
-        alert('Password reset successfully');
-        $('.ui.modal.reset-password-modal').modal('hide');
-        $('.reset-password-modal form')[0].reset();
-      }
-    });
+    try {
+      await Meteor.callAsync('adminResetPassword', currentUserId, newPassword);
+      $('.ui.modal.reset-password-modal').modal('hide');
+      $('.reset-password-modal form')[0].reset();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
   },
 
   'click .delete-user': function(e) {
@@ -113,16 +112,14 @@ Template.adminUsers.events({
     $('.ui.modal.delete-user-modal').modal('show');
   },
 
-  'click .confirm-delete-user': function(e) {
+  'click .confirm-delete-user': async function(e) {
     e.preventDefault();
 
-    Meteor.call('adminDeleteUser', currentUserId, (err) => {
-      if (err) {
-        alert('Error: ' + err.message);
-      } else {
-        alert('User deleted successfully');
-        $('.ui.modal.delete-user-modal').modal('hide');
-      }
-    });
+    try {
+      await Meteor.callAsync('adminDeleteUser', currentUserId);
+      $('.ui.modal.delete-user-modal').modal('hide');
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
   }
 });
