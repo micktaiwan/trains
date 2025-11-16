@@ -13,13 +13,13 @@ Template.trainsLoginButtons.events({
     $('.ui.modal.login-modal').modal('show');
   },
 
-  'click .logout-button': async function(e) {
+  'click .logout-button': function(e) {
     e.preventDefault();
-    try {
-      await Meteor.logoutAsync();
-    } catch(err) {
-      console.error('Logout error:', err);
-    }
+    Meteor.logout(function(err) {
+      if(err) {
+        console.error('Logout error:', err);
+      }
+    });
   }
 });
 
