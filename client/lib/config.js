@@ -25,11 +25,4 @@ Tracker.autorun(function() {
 });
 */
 
-// Meteor 3 compatible accounts configuration using accounts-ui-unstyled
-// Custom Semantic UI styled login component in client/ui/components/login.js
-Meteor.startup(function() {
-  Accounts.config({
-    // Require username for login
-    forbidClientAccountCreation: false
-  });
-});
+// Accounts configuration moved to /lib/accountsConfig.js (shared between client and server)
