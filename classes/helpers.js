@@ -185,4 +185,24 @@ export class Helpers {
     return hours + ':' + minutes + ':' + secs;
   };
 
+  // Admin role helpers
+  static async isAdmin(userId) {
+    if(Meteor.isServer) {
+      const user = await Meteor.users.findOneAsync(userId);
+      return user && user.roles && user.roles.includes('admin');
+    } else {
+      // Client-side: use current user
+      const user = Meteor.user();
+      return user && user.roles && user.roles.includes('admin');
+    }
+  }
+
+  static async requireAdmin(userId) {
+    const isAdmin = await Helpers.isAdmin(userId);
+    if(!isAdmin) {
+      throw new Meteor.Error(403, 'Admin access required');
+    }
+    return true;
+  }
+
 }

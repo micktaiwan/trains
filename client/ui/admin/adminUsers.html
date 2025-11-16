@@ -1,0 +1,138 @@
+<template name="adminUsers">
+  <h3 class="ui header">
+    <i class="users icon"></i>
+    <div class="content">
+      User Management
+      <div class="sub header">Manage user accounts and permissions</div>
+    </div>
+  </h3>
+
+  {{#if Template.subscriptionsReady}}
+    <table class="ui celled striped table">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Last Login</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each users}}
+          <tr class="{{#if isCurrentUser _id}}positive{{/if}}">
+            <td>
+              <h4 class="ui header">
+                <i class="user icon"></i>
+                <div class="content">
+                  {{username}}
+                  {{#if isCurrentUser _id}}
+                    <div class="sub header">(You)</div>
+                  {{/if}}
+                </div>
+              </h4>
+            </td>
+            <td>{{getUserEmail this}}</td>
+            <td>
+              {{#if isAdmin this}}
+                <div class="ui red label">
+                  <i class="shield icon"></i> Admin
+                </div>
+              {{else}}
+                <div class="ui grey label">
+                  <i class="user icon"></i> User
+                </div>
+              {{/if}}
+            </td>
+            <td>
+              {{#if isOnline this}}
+                <div class="ui green label">
+                  <i class="circle icon"></i> Online
+                </div>
+              {{else}}
+                <div class="ui grey label">
+                  <i class="circle outline icon"></i> Offline
+                </div>
+              {{/if}}
+            </td>
+            <td>{{formatLastLogin this}}</td>
+            <td>
+              {{#unless isCurrentUser _id}}
+                <div class="ui small buttons">
+                  <button class="ui button toggle-admin" data-user-id="{{_id}}">
+                    {{#if isAdmin this}}
+                      <i class="minus icon"></i> Remove Admin
+                    {{else}}
+                      <i class="plus icon"></i> Make Admin
+                    {{/if}}
+                  </button>
+                  <button class="ui button reset-password" data-user-id="{{_id}}">
+                    <i class="key icon"></i> Reset Password
+                  </button>
+                  <button class="ui negative button delete-user" data-user-id="{{_id}}">
+                    <i class="trash icon"></i> Delete
+                  </button>
+                </div>
+              {{else}}
+                <em class="ui grey text">Cannot modify own account</em>
+              {{/unless}}
+            </td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+
+    {{#if noUsers}}
+      <div class="ui info message">
+        <p>No users found</p>
+      </div>
+    {{/if}}
+  {{else}}
+    <div class="ui active centered inline loader"></div>
+  {{/if}}
+
+  <!-- Reset Password Modal -->
+  <div class="ui small modal reset-password-modal">
+    <i class="close icon"></i>
+    <div class="header">
+      <i class="key icon"></i> Reset Password
+    </div>
+    <div class="content">
+      <form class="ui form">
+        <div class="field">
+          <label>New Password</label>
+          <input type="password" name="newPassword" placeholder="Enter new password" required>
+        </div>
+        <div class="field">
+          <label>Confirm Password</label>
+          <input type="password" name="confirmPassword" placeholder="Confirm new password" required>
+        </div>
+      </form>
+    </div>
+    <div class="actions">
+      <div class="ui black deny button">Cancel</div>
+      <div class="ui positive button confirm-reset-password">
+        <i class="checkmark icon"></i> Reset Password
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete User Confirmation Modal -->
+  <div class="ui small modal delete-user-modal">
+    <i class="close icon"></i>
+    <div class="header">
+      <i class="warning icon"></i> Confirm Delete User
+    </div>
+    <div class="content">
+      <p>Are you sure you want to delete this user? This action cannot be undone.</p>
+      <p>The user will be removed from all teams and games.</p>
+    </div>
+    <div class="actions">
+      <div class="ui black deny button">Cancel</div>
+      <div class="ui negative button confirm-delete-user">
+        <i class="trash icon"></i> Delete User
+      </div>
+    </div>
+  </div>
+</template>

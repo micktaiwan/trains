@@ -10,6 +10,11 @@ Template.lobby.helpers({
     return Meteor.status().connected;
   },
 
+  isAdmin: function() {
+    const user = Meteor.user();
+    return user && user.roles && user.roles.includes('admin');
+  },
+
   games: function() {
     return Games.find();
   },

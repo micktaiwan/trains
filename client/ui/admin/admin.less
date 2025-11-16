@@ -1,0 +1,178 @@
+/* Admin panel styles */
+
+.admin-container {
+  margin-top: 2em !important;
+  margin-bottom: 3em !important;
+  background-color: #f9fafb;
+  padding: 2em;
+  border-radius: 4px;
+
+  h1.header {
+    margin-bottom: 1.5em;
+  }
+
+  h3.header {
+    margin-bottom: 1em;
+  }
+
+  .tabular.menu {
+    .item {
+      font-weight: 500;
+
+      i.icon {
+        margin-right: 0.5em;
+      }
+    }
+  }
+
+  .tab.segment {
+    min-height: 400px;
+    padding: 2em;
+  }
+}
+
+// User management styles
+.admin-users {
+  table {
+    td {
+      vertical-align: middle !important;
+    }
+  }
+}
+
+// Chat moderation styles
+.chat-message {
+  max-width: 400px;
+  word-wrap: break-word;
+}
+
+// Dashboard statistics
+.ui.statistics {
+  margin-bottom: 2em;
+
+  .statistic {
+    .value {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3em;
+
+      i.icon {
+        margin: 0;
+      }
+    }
+  }
+}
+
+// Admin feed (logs)
+.ui.feed {
+  .event {
+    padding: 1em 0;
+    border-bottom: 1px solid rgba(34, 36, 38, 0.1);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .label {
+      width: 3em;
+
+      i.icon {
+        font-size: 1.5em;
+      }
+    }
+
+    .content {
+      .summary {
+        display: flex;
+        align-items: center;
+        gap: 1em;
+        margin-bottom: 0.5em;
+        flex-wrap: wrap;
+
+        .ui.label {
+          margin: 0;
+          white-space: nowrap;
+          word-break: keep-all;
+        }
+
+        .date {
+          color: rgba(0, 0, 0, 0.4);
+          font-size: 0.9em;
+          white-space: nowrap;
+        }
+      }
+
+      .extra.text {
+        color: rgba(0, 0, 0, 0.6);
+        line-height: 1.6;
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media only screen and (max-width: 767px) {
+  .admin-container {
+    .ui.buttons {
+      .button {
+        padding: 0.5em;
+        font-size: 0.9em;
+      }
+    }
+
+    table {
+      font-size: 0.9em;
+
+      .ui.buttons {
+        flex-direction: column;
+
+        .button {
+          margin-bottom: 0.3em;
+        }
+      }
+    }
+  }
+}
+
+// Modal styles
+.ui.modal {
+  .form {
+    .field {
+      label {
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+// Button improvements
+.ui.buttons {
+  .button {
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+}
+
+// Table improvements
+.ui.celled.table {
+  thead {
+    th {
+      background-color: #f9fafb;
+      font-weight: 600;
+    }
+  }
+
+  tbody {
+    tr {
+      transition: background-color 0.15s ease;
+
+      &:hover {
+        background-color: #f9fafb;
+      }
+    }
+  }
+}

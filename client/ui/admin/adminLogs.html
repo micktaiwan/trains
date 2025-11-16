@@ -1,0 +1,46 @@
+<template name="adminLogs">
+  <h3 class="ui header">
+    <i class="history icon"></i>
+    <div class="content">
+      Admin Activity Logs
+      <div class="sub header">Track all administrative actions</div>
+    </div>
+  </h3>
+
+  <div class="ui right floated buttons">
+    <button class="ui button refresh-logs">
+      <i class="refresh icon"></i> Refresh
+    </button>
+  </div>
+
+  <div style="clear: both; margin-bottom: 1em;"></div>
+
+  {{#if Template.subscriptionsReady}}
+    {{#if logs.length}}
+      <div class="ui feed">
+        {{#each logs}}
+          <div class="event">
+            <div class="label">
+              <i class="{{getActionIcon action}} icon"></i>
+            </div>
+            <div class="content">
+              <div class="summary">
+                <span class="ui {{getActionColor action}} label">{{formatAction action}}</span>
+                <div class="date">{{formatDate timestamp}}</div>
+              </div>
+              <div class="extra text">
+                {{getLogDetails this}}
+              </div>
+            </div>
+          </div>
+        {{/each}}
+      </div>
+    {{else}}
+      <div class="ui info message">
+        <p>No admin logs found</p>
+      </div>
+    {{/if}}
+  {{else}}
+    <div class="ui active centered inline loader"></div>
+  {{/if}}
+</template>

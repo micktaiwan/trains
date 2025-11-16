@@ -1,0 +1,102 @@
+<template name="adminDashboard">
+  {{#if loading}}
+    <div class="ui active centered inline loader"></div>
+  {{else}}
+    {{#with stats}}
+      <div class="ui four statistics">
+        <div class="statistic">
+          <div class="value">
+            <i class="users icon"></i> {{totalUsers}}
+          </div>
+          <div class="label">
+            Total Users
+          </div>
+        </div>
+
+        <div class="statistic">
+          <div class="value">
+            <i class="green circle icon"></i> {{onlineUsers}}
+          </div>
+          <div class="label">
+            Online Now
+          </div>
+        </div>
+
+        <div class="statistic">
+          <div class="value">
+            <i class="gamepad icon"></i> {{totalGames}}
+          </div>
+          <div class="label">
+            Total Games
+          </div>
+        </div>
+
+        <div class="statistic">
+          <div class="value">
+            <i class="play icon"></i> {{activeGames}}
+          </div>
+          <div class="label">
+            Active Games
+          </div>
+        </div>
+      </div>
+
+      <div class="ui divider"></div>
+
+      <div class="ui two column stackable grid">
+        <div class="column">
+          <h3 class="ui header">
+            <i class="chart pie icon"></i>
+            <div class="content">System Statistics</div>
+          </h3>
+
+          <table class="ui celled table">
+            <tbody>
+              <tr>
+                <td><i class="cube icon"></i> Total Map Objects</td>
+                <td class="right aligned"><strong>{{totalMapObjects}}</strong></td>
+              </tr>
+              <tr>
+                <td><i class="sitemap icon"></i> Total Teams</td>
+                <td class="right aligned"><strong>{{totalTeams}}</strong></td>
+              </tr>
+              <tr>
+                <td><i class="comments icon"></i> Total Chat Messages</td>
+                <td class="right aligned"><strong>{{totalChats}}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="column">
+          <h3 class="ui header">
+            <i class="history icon"></i>
+            <div class="content">Recent Admin Actions</div>
+          </h3>
+
+          {{#if recentLogs.length}}
+            <div class="ui feed">
+              {{#each recentLogs}}
+                <div class="event">
+                  <div class="content">
+                    <div class="summary">
+                      <span class="ui small {{getActionColor action}} label">{{formatLogAction action}}</span>
+                      <div class="date">{{formatDate timestamp}}</div>
+                    </div>
+                    <div class="extra text">
+                      {{getLogDetails this}}
+                    </div>
+                  </div>
+                </div>
+              {{/each}}
+            </div>
+          {{else}}
+            <div class="ui info message">
+              <p>No recent admin actions</p>
+            </div>
+          {{/if}}
+        </div>
+      </div>
+    {{/with}}
+  {{/if}}
+</template>

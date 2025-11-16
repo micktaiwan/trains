@@ -1,18 +1,18 @@
 <template name="lobby">
+  {{> loginModal}}
 
   <div class="ui pathing menu">
     <a class="item" href="/">Home</a>
+    {{#if isAdmin}}
+      <a class="item" href="/admin">
+        <i class="shield icon"></i> Admin
+      </a>
+    {{/if}}
     {{#unless connected}}
       <div class="ui active item" href="#">Connection issue...</div>
     {{/unless}}
     <div class="right menu">
-      <a class="ui item">
-        {{#if currentUser}}
-          {{currentUser.username}} (Logged in)
-        {{else}}
-          Guest (Login UI TODO)
-        {{/if}}
-      </a>
+      {{> trainsLoginButtons}}
     </div>
   </div>
 

@@ -1,0 +1,128 @@
+<template name="adminGames">
+  <h3 class="ui header">
+    <i class="gamepad icon"></i>
+    <div class="content">
+      Game Management
+      <div class="sub header">View and manage all games</div>
+    </div>
+  </h3>
+
+  <div class="ui right floated buttons">
+    <button class="ui button refresh-games">
+      <i class="refresh icon"></i> Refresh
+    </button>
+  </div>
+
+  <div style="clear: both; margin-bottom: 1em;"></div>
+
+  {{#if loadingGames}}
+    <div class="ui active centered inline loader"></div>
+  {{else}}
+    {{#if games.length}}
+      <table class="ui celled striped table">
+        <thead>
+          <tr>
+            <th>Game Name</th>
+            <th>Players</th>
+            <th>Teams</th>
+            <th>Objects</th>
+            <th>Clock</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each games}}
+            <tr>
+              <td>
+                <h4 class="ui header">
+                  <i class="gamepad icon"></i>
+                  <div class="content">
+                    {{name}}
+                    <div class="sub header">ID: {{_id}}</div>
+                  </div>
+                </h4>
+              </td>
+              <td>
+                <div class="ui label">
+                  <i class="users icon"></i> {{playerCount}}
+                </div>
+              </td>
+              <td>
+                <div class="ui label">
+                  <i class="sitemap icon"></i> {{teamCount}}
+                </div>
+              </td>
+              <td>
+                <div class="ui label">
+                  <i class="cube icon"></i> {{objectCount}}
+                </div>
+              </td>
+              <td>{{formatClock clock}}</td>
+              <td>
+                <div class="ui small buttons">
+                  <a href="/game/{{_id}}" class="ui button" target="_blank">
+                    <i class="external icon"></i> View
+                  </a>
+                  <button class="ui button edit-game" data-game-id="{{_id}}">
+                    <i class="edit icon"></i> Edit
+                  </button>
+                  <button class="ui negative button delete-game" data-game-id="{{_id}}">
+                    <i class="trash icon"></i> Delete
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    {{else}}
+      <div class="ui info message">
+        <p>No games found</p>
+      </div>
+    {{/if}}
+  {{/if}}
+
+  <!-- Edit Game Modal -->
+  <div class="ui small modal edit-game-modal">
+    <i class="close icon"></i>
+    <div class="header">
+      <i class="edit icon"></i> Edit Game
+    </div>
+    <div class="content">
+      <form class="ui form">
+        <div class="field">
+          <label>Game Name</label>
+          <input type="text" name="gameName" placeholder="Game name" required>
+        </div>
+        <div class="field">
+          <label>Clock (seconds)</label>
+          <input type="number" name="gameClock" placeholder="Game clock in seconds">
+        </div>
+      </form>
+    </div>
+    <div class="actions">
+      <div class="ui black deny button">Cancel</div>
+      <div class="ui positive button confirm-edit-game">
+        <i class="checkmark icon"></i> Save Changes
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Game Confirmation Modal -->
+  <div class="ui small modal delete-game-modal">
+    <i class="close icon"></i>
+    <div class="header">
+      <i class="warning icon"></i> Confirm Delete Game
+    </div>
+    <div class="content">
+      <p>Are you sure you want to delete this game? This action cannot be undone.</p>
+      <p>All associated map objects, teams, and chat messages will be deleted.</p>
+    </div>
+    <div class="actions">
+      <div class="ui black deny button">Cancel</div>
+      <div class="ui negative button confirm-delete-game">
+        <i class="trash icon"></i> Delete Game
+      </div>
+    </div>
+  </div>
+</template>

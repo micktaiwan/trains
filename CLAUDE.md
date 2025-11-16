@@ -34,6 +34,12 @@ All server-side MongoDB operations and Meteor methods have been converted to asy
 - `Collection.findOne()` → `await Collection.findOneAsync()`
 - `Collection.find().observeChanges()` → `await Collection.find().observeChangesAsync()`
 
+#### 3. Authentication System Restored
+- ✅ Added `accounts-ui-unstyled` package (Meteor 3 compatible)
+- ✅ Created custom Semantic UI styled login component in `client/ui/components/`
+- ✅ Login/logout/signup functionality with async/await
+- ✅ Integrated into lobby page
+
 ### ⚠️ Outstanding Issues
 
 #### Semantic UI Compatibility
@@ -88,6 +94,12 @@ The `semantic:ui` Meteor package is **not compatible** with Meteor 3 (attempts t
 - ❌ **DO NOT** control the application lifecycle
 - ✅ **DO** let the user start/stop/restart the application themselves
 - ✅ **DO** provide commands or suggestions, but let the user execute them
+
+**STYLING:**
+- ⚠️ **ALWAYS use LESS, NEVER CSS** - This project uses LESS preprocessor for all styles
+- ⚠️ Files should have `.less` extension, not `.css`
+- ✅ Use LESS nesting syntax (see `client/ui/game/game.less` for examples)
+- ✅ Follow existing LESS patterns in the codebase
 
 ---
 

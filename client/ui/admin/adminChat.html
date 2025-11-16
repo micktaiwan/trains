@@ -1,0 +1,97 @@
+<template name="adminChat">
+  <h3 class="ui header">
+    <i class="comments icon"></i>
+    <div class="content">
+      Chat Moderation
+      <div class="sub header">Monitor and moderate chat messages</div>
+    </div>
+  </h3>
+
+  <div class="ui right floated buttons">
+    <button class="ui button refresh-chats">
+      <i class="refresh icon"></i> Refresh
+    </button>
+    <div class="ui dropdown button">
+      Limit: {{currentLimit}}
+      <i class="dropdown icon"></i>
+      <div class="menu">
+        <div class="item set-limit" data-limit="50">50 messages</div>
+        <div class="item set-limit" data-limit="100">100 messages</div>
+        <div class="item set-limit" data-limit="200">200 messages</div>
+        <div class="item set-limit" data-limit="500">500 messages</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="clear: both; margin-bottom: 1em;"></div>
+
+  {{#if loadingChats}}
+    <div class="ui active centered inline loader"></div>
+  {{else}}
+    {{#if chats.length}}
+      <table class="ui celled striped table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Type</th>
+            <th>User</th>
+            <th>Message</th>
+            <th>Game</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each chats}}
+            <tr>
+              <td class="collapsing">{{formatDate time}}</td>
+              <td class="collapsing">
+                {{#if eq type 'lobby'}}
+                  <div class="ui blue label">Lobby</div>
+                {{else}}
+                  <div class="ui green label">Game</div>
+                {{/if}}
+              </td>
+              <td>{{user.name}}</td>
+              <td class="chat-message">{{msg}}</td>
+              <td class="collapsing">
+                {{#if game_id}}
+                  <a href="/game/{{game_id}}" target="_blank" class="ui mini label">
+                    <i class="external icon"></i> View Game
+                  </a>
+                {{else}}
+                  -
+                {{/if}}
+              </td>
+              <td class="collapsing">
+                <button class="ui small negative button delete-chat" data-chat-id="{{_id}}">
+                  <i class="trash icon"></i> Delete
+                </button>
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    {{else}}
+      <div class="ui info message">
+        <p>No chat messages found</p>
+      </div>
+    {{/if}}
+  {{/if}}
+
+  <!-- Delete Chat Confirmation Modal -->
+  <div class="ui small modal delete-chat-modal">
+    <i class="close icon"></i>
+    <div class="header">
+      <i class="warning icon"></i> Confirm Delete Message
+    </div>
+    <div class="content">
+      <p>Are you sure you want to delete this chat message? This action cannot be undone.</p>
+    </div>
+    <div class="actions">
+      <div class="ui black deny button">Cancel</div>
+      <div class="ui negative button confirm-delete-chat">
+        <i class="trash icon"></i> Delete Message
+      </div>
+    </div>
+  </div>
+</template>
