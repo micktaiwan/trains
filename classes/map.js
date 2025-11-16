@@ -206,7 +206,6 @@ export class GameMap {
     return _.sortBy(rv, function(p) {return p.dist;});
   }
 
-  // FIXME P0: what about bidirectional links ?
   getNearestLinks(pos) {
     const dist = this.dispo.linkSize;
     let obj = this.getLinks(pos, dist);
@@ -215,16 +214,31 @@ export class GameMap {
   }
 
   // return array of all link segments near to pos by dist, sorted by dist
+  // handles bidirectional links by deduplicating station pairs
   getLinks(pos, dist) {
     // console.log('GameMap#getLinks', pos, dist);
     const rv = [];
+    const processed = new Set(); // Track processed station pairs
+
     for(let s = 0; s < this.objects.length; s++) {
       if(this.objects[s].type !== 'station') continue;
+
       for(let p = 0; p < this.objects[s].children.length; p++) {
         if(typeof (this.objects[s].children[p]) === 'string') continue;
-        const rel = Geometry.relPointToSegment(this.objects[s].pos, this.objects[s].children[p].pos, pos);
-        if(rel.dist <= dist)
-          rv.push({stations: [this.objects[s], this.objects[s].children[p]], rel: rel});
+
+        const child = this.objects[s].children[p];
+
+        // Create unique key for this station pair (sorted to handle bidirectional)
+        const pairKey = [this.objects[s]._id, child._id].sort().join('-');
+
+        // Skip if we've already processed this pair
+        if(processed.has(pairKey)) continue;
+        processed.add(pairKey);
+
+        const rel = Geometry.relPointToSegment(this.objects[s].pos, child.pos, pos);
+        if(rel.dist <= dist) {
+          rv.push({stations: [this.objects[s], child], rel: rel});
+        }
       }
     }
     return _.sortBy(rv, function(e) {return e.rel.dist;});
