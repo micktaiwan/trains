@@ -66,7 +66,7 @@ export class GameServer extends Game {
     const nbPersons = this.map.getPersons().length;
     // console.log(nbPersons);
     // if(this.clockTick/1000 % 60 === 0)
-    if(nbPersons < 100)
+    if(nbPersons < 50)
       await this.addPerson();
 
     // Update all objects

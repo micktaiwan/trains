@@ -122,7 +122,7 @@ let objectCount = 0;
 
 export class Helpers {
 
-  static serverInterval = 1000; // the server loop interval
+  static serverInterval = 500; // the server loop interval
   static trainSpeed = 60; // the trainSpeed of the train in km/h
   static pixelMeter = 1; // the size of a pixel in meters (actually, the size of one increment of a coordinate, not necessary a pixel depending on the zoom factor)
   static pixelSpeed = (Helpers.trainSpeed / Helpers.pixelMeter) / 3.6; // the number of pixels we should pass in one second
