@@ -25,13 +25,11 @@ Tracker.autorun(function() {
 });
 */
 
-// TODO: Find Meteor 3 compatible accounts-ui package or implement custom login UI
-// Previous package: iandouglas:accounts-ui-semantic-ui (not compatible with Meteor 3)
-// Options: useraccounts:core, custom implementation, or accounts-ui-unstyled
-/*
+// Meteor 3 compatible accounts configuration using accounts-ui-unstyled
+// Custom Semantic UI styled login component in client/ui/components/login.js
 Meteor.startup(function() {
-  Accounts.ui.config({
-    passwordSignupFields: "USERNAME_AND_EMAIL"
+  Accounts.config({
+    // Require username for login
+    forbidClientAccountCreation: false
   });
 });
-*/

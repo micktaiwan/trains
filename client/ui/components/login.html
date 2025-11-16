@@ -1,0 +1,76 @@
+<template name="trainsLoginButtons">
+  <div class="ui item login-buttons">
+    {{#if currentUser}}
+      <div class="ui simple dropdown item">
+        <i class="user icon"></i>
+        {{currentUser.username}}
+        <i class="dropdown icon"></i>
+        <div class="menu">
+          <a class="item logout-button">
+            <i class="sign out icon"></i>
+            Logout
+          </a>
+        </div>
+      </div>
+    {{else}}
+      <a class="ui primary button login-button">
+        <i class="sign in icon"></i>
+        Login / Sign up
+      </a>
+    {{/if}}
+  </div>
+</template>
+
+<template name="loginModal">
+  <div class="ui small modal login-modal">
+    <i class="close icon"></i>
+    <div class="header">
+      <i class="sign in icon"></i>
+      {{#if isSignUp}}Sign Up{{else}}Login{{/if}}
+    </div>
+    <div class="content">
+      <form class="ui form login-form">
+        {{#if errorMessage}}
+          <div class="ui error message">
+            <p>{{errorMessage}}</p>
+          </div>
+        {{/if}}
+
+        <div class="field">
+          <label>Username</label>
+          <div class="ui left icon input">
+            <i class="user icon"></i>
+            <input type="text" name="username" placeholder="Username" required>
+          </div>
+        </div>
+
+        {{#if isSignUp}}
+          <div class="field">
+            <label>Email</label>
+            <div class="ui left icon input">
+              <i class="mail icon"></i>
+              <input type="email" name="email" placeholder="Email" required>
+            </div>
+          </div>
+        {{/if}}
+
+        <div class="field">
+          <label>Password</label>
+          <div class="ui left icon input">
+            <i class="lock icon"></i>
+            <input type="password" name="password" placeholder="Password" required>
+          </div>
+        </div>
+
+        <button class="ui primary fluid button submit-button" type="submit">
+          {{#if isSignUp}}Create Account{{else}}Login{{/if}}
+        </button>
+      </form>
+    </div>
+    <div class="actions">
+      <a class="ui basic button toggle-signup" href="#">
+        {{#if isSignUp}}Already have an account? Login{{else}}Need an account? Sign up{{/if}}
+      </a>
+    </div>
+  </div>
+</template>

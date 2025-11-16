@@ -98,15 +98,21 @@ Template.game.onRendered(function() {
     });
   */
 
-  if(handleMapObjects) handleMapObjects.stop();
-  handleMapObjects = Helpers.observeChanges({game_id: this.data._id, map: map});
+  if(handleMapObjects && typeof handleMapObjects.stop === 'function') {
+    handleMapObjects.stop();
+  }
+  Helpers.observeChanges({game_id: this.data._id, map: map}).then((handle) => {
+    handleMapObjects = handle;
+  });
 
 });
 
 Template.game.onDestroyed(function() {
   radio.stop();
   game.stop();
-  if(handleMapObjects) handleMapObjects.stop();
+  if(handleMapObjects && typeof handleMapObjects.stop === 'function') {
+    handleMapObjects.stop();
+  }
 });
 
 Template.game.helpers({
