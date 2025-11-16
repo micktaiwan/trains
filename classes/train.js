@@ -16,7 +16,10 @@ export class Train extends DBObject {
       pos: {x: 10, y: 10},
       fromStation: null, // station
       destStation: null, // station
+      nextStation: null, // current target station in path
       path: [], // stations without fromStation
+      progress: 0, // progress along current segment (0-100)
+      running: false, // whether train is currently moving
       hasMoved: false,
     };
     super(def, doc);
@@ -38,7 +41,10 @@ export class Train extends DBObject {
     }
     else { // we come from a station
       if(!this.running) { // we are stopped at a station
-        this.findDestination();
+        // If no destination set (e.g., after page refresh), calculate one
+        if(!this.destStation) {
+          this.findDestination();
+        }
         await this.getPassengers();
       }
       this.goTowardNextStop();
@@ -103,17 +109,43 @@ export class Train extends DBObject {
     }
   }
 
-  // will choose a destination
+  // will choose a destination based on passenger demand
   findDestination() {
-    // FIXME: to avoid going to unreachable stations, we should generate an array all reachable stations and choose from it
-    // but that's maybe not necessary depending on the future game (take passengers on ours lines, I don't know)
-
-    // random
+    // Get all stations
     const stations = this.map.getStations();
-    this.destStation = stations[_.random(stations.length - 1)];
-    if(!this.destStation) return;// console.error('no dest ???');
+    if(stations.length === 0) return;
+
+    // Count people waiting at each station
+    const stationDemand = {};
+    for(const s of stations) {
+      stationDemand[s._id] = this.map.countPeopleNearStation(s);
+    }
+
+    // Find station with most waiting passengers (excluding current station)
+    let bestStation = null;
+    let maxPeople = 0;
+
+    for(const station of stations) {
+      if(station._id === this.fromStation._id) continue; // Skip current station
+      const demand = stationDemand[station._id];
+      if(demand > maxPeople) {
+        maxPeople = demand;
+        bestStation = station;
+      }
+    }
+
+    // Fallback to random if no people waiting anywhere
+    if(!bestStation || maxPeople === 0) {
+      // Filter out current station
+      const availableStations = stations.filter(s => s._id !== this.fromStation._id);
+      if(availableStations.length === 0) return;
+      bestStation = availableStations[_.random(availableStations.length - 1)];
+    }
+
+    this.destStation = bestStation;
+    if(!this.destStation) return;
     if(this.destStation._id === this.fromStation._id) return console.error('on self');
-    // console.log('======= New Trip:', this.fromStation._id, '=>', this.destStation._id);
+    // console.log('======= New Trip:', this.fromStation._id, '=>', this.destStation._id, 'demand:', maxPeople);
     this.setPath();
   }
 
@@ -124,7 +156,7 @@ export class Train extends DBObject {
       return self.map.getObjectById(id);
     });
     // console.log('len', this.path.length);
-    if(this.path.len === 0) this.destStation = null;
+    if(this.path.length === 0) this.destStation = null;
   }
 
   objToSave() {
@@ -134,16 +166,13 @@ export class Train extends DBObject {
       // game_id: this.map._id,
       pos: this.pos,
       progress: this.progress,
+      running: this.running,
       fromStation: this.fromStation ? this.fromStation._id : null,
       destStation: this.destStation ? this.destStation._id : null,
-      /*
-            path: _.compact(_.map(self.path, function(s) {
-              if(s) {
-                console.log('mapping', s._id);
-                return s._id;
-              }
-            }))
-      */
+      nextStation: this.nextStation ? this.nextStation._id : null,
+      path: _.compact(_.map(self.path, function(s) {
+        if(s && s._id) return s._id;
+      }))
     };
   }
 
@@ -155,10 +184,12 @@ export class Train extends DBObject {
       if(doc.pos) this.pos = doc.pos;
       this.hasMoved = true;
     }
-    if(typeof (doc.progress) !== "undefined") this.progress = doc.progress;
+    if(typeof(doc.progress) !== "undefined") this.progress = doc.progress;
+    if(typeof(doc.running) !== "undefined") this.running = doc.running;
     if(doc.fromStation) this.fromStation = this.map.getObjectById(doc.fromStation);
     if(doc.destStation) this.destStation = this.map.getObjectById(doc.destStation);
-    if(doc.path) this.path = _.compact(_.map(this.path, function(id) {return self.map.getObjectById(id);}));
+    if(doc.nextStation) this.nextStation = this.map.getObjectById(doc.nextStation);
+    if(doc.path) this.path = _.compact(_.map(doc.path, function(id) {return self.map.getObjectById(id);}));
     // console.log('Train#updateFromDB', doc, "\n", 'this', this);
   }
 
