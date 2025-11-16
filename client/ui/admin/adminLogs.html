@@ -9,6 +9,10 @@
 
   {{#if Template.subscriptionsReady}}
     {{#if logsCount}}
+      <button class="ui negative button clear-all-logs-btn" style="margin-bottom: 1em;">
+        <i class="trash icon"></i>
+        Clear All Logs
+      </button>
       <div class="ui relaxed divided list">
         {{#each logs}}
           <div class="item">
@@ -33,4 +37,26 @@
   {{else}}
     <div class="ui active centered inline loader"></div>
   {{/if}}
+
+  <!-- Clear All Logs Confirmation Modal -->
+  <div class="ui small modal clear-all-logs-modal">
+    <div class="header">
+      <i class="trash icon"></i>
+      Clear All Admin Logs
+    </div>
+    <div class="content">
+      <p>Are you sure you want to delete <strong>all admin logs</strong>?</p>
+      <p>This action cannot be undone.</p>
+    </div>
+    <div class="actions">
+      <div class="ui cancel button">
+        <i class="remove icon"></i>
+        Cancel
+      </div>
+      <button class="ui negative approve button confirm-clear-logs-btn">
+        <i class="checkmark icon"></i>
+        Yes, Clear All
+      </button>
+    </div>
+  </div>
 </template>

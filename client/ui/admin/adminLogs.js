@@ -7,6 +7,16 @@ Template.adminLogs.onCreated(function() {
   this.subscribe('admin_logs', 50);
 });
 
+Template.adminLogs.onRendered(function() {
+  // Initialize modal with detachable: false for Blaze event handling
+  $('.ui.modal.clear-all-logs-modal').modal({
+    detachable: false,
+    onApprove: function() {
+      return false; // Prevent auto-close, we'll handle it manually
+    }
+  });
+});
+
 Template.adminLogs.helpers({
   logs: function() {
     return AdminLogs.find({}, { sort: { timestamp: -1 } });
@@ -38,8 +48,28 @@ Template.adminLogs.helpers({
         return `Chat message from "${log.chatUser.name}" was deleted: "${log.chatMsg}"`;
       case 'auto_admin_assignment':
         return log.details || `Admin role automatically assigned to first user: ${log.username}`;
+      case 'clear_all_logs':
+        return log.details || 'All admin logs were cleared';
       default:
         return log.details || 'No details available';
+    }
+  }
+});
+
+Template.adminLogs.events({
+  'click .clear-all-logs-btn': function(e, template) {
+    e.preventDefault();
+    $('.ui.modal.clear-all-logs-modal').modal('show');
+  },
+
+  'click .confirm-clear-logs-btn': async function(e, template) {
+    e.preventDefault();
+
+    try {
+      await Meteor.callAsync('adminClearAllLogs');
+      $('.ui.modal.clear-all-logs-modal').modal('hide');
+    } catch (err) {
+      alert('Error clearing logs: ' + err.message);
     }
   }
 });
