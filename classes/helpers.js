@@ -153,17 +153,32 @@ export class Helpers {
         else console.error('Do not know this type', id, doc);
       },
       changed: async function(id, doc) {
-        const obj = await MapObjects.findOneAsync(id, {fields: {type: 1}});
-        if(!obj) {
-          console.error('map_object changed: no object found', id, doc);
+        // Check if object exists locally first (most common case - fast path)
+        const localObj = params.map.getObjectById(id);
+        if(localObj) {
+          // Object exists locally, update it directly
+          params.map.updateObject(id, doc);
+          return;
+        }
+
+        // Object not found locally - this is a race condition
+        // The 'changed' event arrived before 'added', or the object was just deleted
+        // Fetch the full object from DB to determine what to do
+        const fullDoc = await MapObjects.findOneAsync(id);
+        if(!fullDoc) {
+          // Object was deleted from DB (e.g., train ate a passenger)
+          // Silently remove from local map if it somehow exists there
           params.map.removeObjectById(id);
           return;
         }
-        // console.log('map_object changed', obj, doc);
-        if(obj.type === 'train') params.map.updateObject(id, doc);
-        else if(obj.type === 'station') params.map.updateObject(id, doc);
-        else if(obj.type === 'person') params.map.updateObject(id, doc);
-        else console.error('Do not know this type', id, obj, doc);
+
+        // Object exists in DB but not locally - add it first, then the change will be applied
+        console.info('Race condition: received "changed" before "added" for', fullDoc.type, id);
+
+        if(fullDoc.type === 'train') params.map.addTrain(_.extend({_id: id, map: params.map}, fullDoc));
+        else if(fullDoc.type === 'station') params.map.addStation(_.extend({_id: id, map: params.map}, fullDoc));
+        else if(fullDoc.type === 'person') params.map.addPerson(_.extend({_id: id, map: params.map}, fullDoc));
+        else console.error('Unknown object type', id, fullDoc.type);
       },
       removed: function(id) {
         // console.log('map_object removed', id);

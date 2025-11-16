@@ -30,7 +30,8 @@ Template.game.onRendered(function() {
   $('.dropdown').dropdown('restore default text');
 
   radio = new Radio();
-  if(!radio.playing()) radio.play(2000);
+  // Do not autoplay - user must click play button
+  // Previously selected station is restored via localStorage
 
   // Update radio station info reactively
   const updateRadioInfo = () => {
@@ -190,8 +191,8 @@ Template.game.helpers({
 
 Template.game.events({
 
-  'click .js-reset': function() {
-    map.resetMap();
+  'click .js-reset': async function() {
+    await map.resetMap();
   },
 
   // 'click .start': function() {
