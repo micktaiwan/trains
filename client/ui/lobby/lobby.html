@@ -30,12 +30,19 @@
 
         <div class="ui blue ribbon label">New game</div>
 
-        <form class="ui form newgame">
-          <div class="inline field">
-            <label>Game name</label>
-            <input type="text" id="gameName" placeholder="Enter game name...">
+        {{#if currentUser}}
+          <form class="ui form newgame">
+            <div class="inline field">
+              <label>Game name</label>
+              <input type="text" id="gameName" placeholder="Enter game name...">
+            </div>
+          </form>
+        {{else}}
+          <div class="ui warning message">
+            <i class="lock icon"></i>
+            Please log in to create a game
           </div>
-        </form>
+        {{/if}}
       </div>
     </div>
 

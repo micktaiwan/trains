@@ -10,6 +10,10 @@ Template.lobby.helpers({
     return Meteor.status().connected;
   },
 
+  currentUser: function() {
+    return Meteor.user();
+  },
+
   isAdmin: function() {
     const user = Meteor.user();
     return user && user.roles && user.roles.includes('admin');
@@ -59,14 +63,29 @@ Template.gameItem.helpers({});
 
 Template.lobby.events({
 
-  'submit .newgame': async function(e) { //FIXME P0: check if loggued
+  'submit .newgame': async function(e) {
     e.preventDefault();
+
+    // Check if user is logged in
+    if (!Meteor.userId()) {
+      alert('You must be logged in to create a game. Please log in or register.');
+      return;
+    }
+
     const name = $('#gameName').val();
+
+    // Validate game name
+    if (!name || name.trim() === '') {
+      alert('Please enter a game name.');
+      return;
+    }
+
     try {
       const gameId = await Meteor.callAsync('gameCreate', name);
       Router.go('/game/' + gameId);
     } catch(err) {
       console.error('Error creating game:', err);
+      alert('Error creating game: ' + err.message);
     }
   },
 
