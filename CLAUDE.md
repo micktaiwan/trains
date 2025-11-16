@@ -74,6 +74,65 @@
 - Meteor's differential sync (sends only deltas)
 - Separate subscriptions for map objects, teams, global data
 
+### 7. Semantic UI + Blaze Integration
+
+**Critical Pattern**: When using Semantic UI modals with Blaze templates, always use `detachable: false`.
+
+#### Why it's necessary
+
+By default, Semantic UI moves modal elements outside of the Blaze template's DOM (into `body > .dimmer`) during initialization. This breaks Blaze's event system because modal buttons are no longer within the template's scope, causing event handlers to stop working.
+
+#### Solution
+
+Always initialize modals with `detachable: false`:
+
+```javascript
+Template.myTemplate.onRendered(function() {
+  $('.ui.modal.my-modal').modal({
+    detachable: false,  // ← REQUIRED for Blaze Template.events() to work
+    onApprove: function() {
+      return false; // Prevent auto-close if needed
+    }
+  });
+});
+
+Template.myTemplate.events({
+  'click .modal-button': async function(e, template) {
+    e.preventDefault();
+
+    try {
+      await Meteor.callAsync('myMethod', someData);
+      $('.ui.modal.my-modal').modal('hide');
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  }
+});
+```
+
+#### Files using this pattern
+
+- `client/ui/components/login.js` - Reference implementation
+- `client/ui/admin/adminGames.js` - Edit/delete game modals
+- `client/ui/admin/adminUsers.js` - Password reset/delete user modals
+- `client/ui/admin/adminChat.js` - Delete chat message modal
+
+#### Common pitfalls
+
+❌ **DON'T**: Use jQuery global delegation
+```javascript
+// BAD - Creates memory leaks, bypasses Blaze
+$(document).on('click', '.modal-button', function() { ... });
+```
+
+✅ **DO**: Use `detachable: false` + Blaze Template.events()
+```javascript
+// GOOD - Clean, proper Blaze integration
+Template.myTemplate.events({
+  'click .modal-button': function(e, template) { ... }
+});
+```
+
 ## 🔑 Key Files
 
 | File | Purpose |
@@ -119,6 +178,11 @@
 - ❌ **DO NOT** start the Meteor application automatically (`meteor run`)
 - ✅ **DO** let the user control the application lifecycle
 - ✅ **DO** provide commands as suggestions
+
+**CODE LANGUAGE:**
+- ⚠️ **ALL code, comments, variables, and documentation MUST be in ENGLISH ONLY**
+- ❌ **NEVER** write French (or any other language) in code/comments
+- ✅ Use English for: variable names, function names, comments, console.log messages, error messages
 
 **STYLING:**
 - ⚠️ **ALWAYS use LESS, NEVER CSS**
