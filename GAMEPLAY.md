@@ -2,27 +2,170 @@
 
 ## Overview
 
-**Trains** is a cooperative multiplayer railway management simulation where teams build and maintain railway networks to transport passengers efficiently. Players start with limited resources and must strategically expand their infrastructure to handle growing passenger demand.
+**Trains** is a cooperative multiplayer railway management simulation where teams build and maintain railway networks to transport passengers between cities. Players must strategically place stations near cities, connect them with rails, and deploy trains to handle growing passenger demand efficiently.
+
+---
+
+## 🎯 Core Concept: Cities as Foundation
+
+### The Fundamental Problem Solved
+
+**Previous Issue**: Without fixed points of interest, station placement was arbitrary and passenger destinations were ambiguous.
+
+**Solution**: **Cities are fixed spawn/destination points** that give structure and purpose to the railway network.
+
+```
+CITIES (fixed on map)
+  ↓ spawn passengers near
+PASSENGERS (walk to nearest station, want to reach destination city)
+  ↓ board at
+STATIONS (placed by players near cities)
+  ↓ transported by
+TRAINS (follow rail network)
+  ↓ disembark at
+STATIONS (near destination city)
+  ↓ walk to
+CITIES (destination reached, revenue generated)
+```
+
+### Why Cities Matter
+
+1. **Strategic Station Placement**: Stations must be within 300m of a city to be useful
+2. **Clear Passenger Flow**: Passengers spawn near origin city, travel to destination city
+3. **Network Design Decisions**: Connect high-traffic cities vs. serve remote locations
+4. **Replayability**: Different city layouts create different optimal strategies
 
 ---
 
 ## Core Game Loop
 
 ```
-Build Stations → Connect Rails → Passengers Spawn → Trains Transport → Earn Revenue → Expand Network
-                                                          ↓
-                                              Team Treasury Growth
+Select Map → Build Stations Near Cities → Connect Rails → Passengers Spawn →
+Trains Transport → Earn Revenue → Expand Network
+                        ↓
+            Team Treasury Growth
 ```
 
 ### Game Flow
 
-1. **Initialization**: Team starts with initial capital
-2. **Build Infrastructure**: Players spend money to place stations and rails
-3. **Deploy Trains**: Purchase trains with different capacities and speeds
-4. **Transport Passengers**: Trains pick up and drop off passengers
-5. **Generate Revenue**: Each passenger transported adds money to team treasury
-6. **Scale Up**: Use profits to build more stations, rails, and trains
-7. **Handle Growth**: As passenger spawn rate increases, players must optimize their network
+1. **Map Selection**: Choose a map with predefined cities (3-30 cities depending on size)
+2. **Initialization**: Team starts with $12,000 capital
+3. **Build Infrastructure**: Place stations near cities (max 300m distance), connect with rails
+4. **Deploy Trains**: Purchase trains with different capacities and speeds
+5. **Transport Passengers**: Trains pick up passengers at origin cities, deliver to destination cities
+6. **Generate Revenue**: Each passenger transported adds money to team treasury
+7. **Scale Up**: Use profits to build more stations, rails, and trains
+8. **Handle Growth**: As passenger spawn rate increases, optimize network to avoid bottlenecks
+
+---
+
+## 🏙️ City System
+
+### City Properties
+
+Cities are **fixed, non-modifiable** points on the map defined when a game is created.
+
+```javascript
+{
+  type: 'city',
+  name: 'Paris',
+  pos: {x: 1000, y: 500},
+  population: 5000,      // Affects passenger spawn rate
+  radius: 150,           // Visual size and spawn area
+  color: '#FF6B6B',      // Distinctive color per city
+  fixed: true            // Cannot be moved/deleted by players
+}
+```
+
+### Map Templates
+
+Games use predefined map templates with different city configurations:
+
+#### Starter Map: "Triangle Region" (3 cities)
+```
+     Paris (pop: 5000)
+       /           \
+      /             \
+Lyon (3000)    Marseille (4000)
+```
+- **Ideal for**: Learning mechanics
+- **Challenge**: Simple hub-and-spoke or ring network
+
+#### Medium Map: "Central Europe" (8-10 cities)
+- Mix of large hubs (pop: 5000-7000) and small towns (pop: 1500-3000)
+- **Challenge**: Prioritize high-traffic routes vs. comprehensive coverage
+
+#### Large Map: "Continental" (20-30 cities)
+- Complex network with multiple regional clusters
+- **Challenge**: Multi-hub architecture, express vs. local train strategies
+
+### Passenger Spawn Logic
+
+```javascript
+// When spawning a passenger:
+function spawnPassenger(game_id) {
+  const cities = Cities.find({game_id}).fetch();
+
+  // 1. Pick origin city (weighted by population)
+  const originCity = weightedRandom(cities, city => city.population);
+
+  // 2. Pick destination city (prefer distant cities)
+  const destinationCity = pickDestination(originCity, cities);
+
+  // 3. Spawn passenger near origin city (within radius)
+  const spawnPos = randomPositionNear(originCity.pos, radius: 150);
+
+  return new Person({
+    game_id,
+    cityOrigin_id: originCity._id,
+    cityDestination_id: destinationCity._id,
+    pos: spawnPos,
+    state: 'walking_to_station'
+  });
+}
+
+function pickDestination(origin, allCities) {
+  const candidates = allCities.filter(c => c._id !== origin._id);
+
+  // Weight by distance (favor longer trips for gameplay challenge)
+  const weights = candidates.map(city => {
+    const dist = distance(origin.pos, city.pos);
+    return {
+      city,
+      weight: Math.pow(dist / 1000, 0.5) // Square root to balance
+    };
+  });
+
+  return weightedRandom(weights);
+}
+```
+
+### Station Placement Validation
+
+**Rule**: Stations must be within 300m of a city to serve passengers.
+
+```javascript
+// When player attempts to place station:
+function canPlaceStation(pos, team_id, game_id) {
+  const nearestCity = findNearestCity(pos, game_id);
+  const distance = getDistance(pos, nearestCity.pos);
+
+  if (distance > 300) {
+    return {
+      success: false,
+      error: "Station must be within 300m of a city"
+    };
+  }
+
+  // Players can place multiple stations per city (for capacity)
+  return {success: true};
+}
+```
+
+**UI Feedback**:
+- When in "Place Station" mode, show 300m radius circles around each city
+- Highlight nearest city when hovering placement position
+- Display "Too far from any city" error on invalid placement
 
 ---
 
@@ -30,34 +173,53 @@ Build Stations → Connect Rails → Passengers Spawn → Trains Transport → E
 
 ### Team Treasury
 - **Shared Resource**: All team members draw from and contribute to a common fund
-- **Starting Capital**: Teams begin with **$10,000** (configurable)
+- **Starting Capital**: Teams begin with **$12,000** (increased from original to allow for mistakes)
 - **Transparency**: All team members can see current balance in real-time
 
 ### Construction Costs
 
 | Item | Base Cost | Notes |
 |------|-----------|-------|
-| **Station** | $500 | One-time placement cost |
+| **Station** | $500 | One-time placement cost, must be within 300m of a city |
 | **Rail Connection** | $2 per meter | Cost scales with distance between stations |
-| **Basic Train** | $1,000 | Low capacity (10 passengers), normal speed (60 km/h) |
-| **Express Train** | $2,500 | Medium capacity (6 passengers), high speed (120 km/h) |
-| **Freight Train** | $1,500 | High capacity (20 passengers), slow speed (40 km/h) |
+| **Basic Train** | $1,000 | Balanced option (10 passengers, 60 km/h) |
+| **Express Train** | $1,800 | Speed specialist (8 passengers, 120 km/h) |
+| **Freight Train** | $1,500 | Capacity specialist (20 passengers, 40 km/h) |
 | **Wagon** | $300 | Adds +5 passenger capacity to any train |
+
+**Balance Changes from Original**:
+- Express Train reduced from $2,500 → $1,800 (better value)
+- Express capacity increased from 6 → 8 passengers (more viable)
+- Starting capital increased from $10,000 → $12,000 (more forgiving)
 
 ### Revenue Model
 
-- **Base Fare**: $10 per passenger transported
-- **Distance Bonus**: +$0.50 per 100 meters traveled (encourages long-distance routes)
+**Base Revenue**: $10 per passenger successfully transported to their destination city
+
+**Bonuses**:
 - **Efficiency Bonus**: +$5 if train is at >80% capacity (encourages full trains)
+
+**Removed**: Distance bonus (encouraged inefficient routing)
 
 **Example Revenue Calculation:**
 ```
-Passenger transported 500m on a full train (10/10 passengers):
+Passenger transported from Paris to Lyon on a full train (10/10):
 Base: $10
-Distance: $2.50 (500m = 5 × $0.50)
-Efficiency: $5
-Total: $17.50 per passenger × 10 = $175
+Efficiency: $5 (train at 100% capacity)
+Total: $15 per passenger × 10 = $150
 ```
+
+### Demolition & Recovery
+
+**Critical Feature**: Players can demolish infrastructure for partial refund.
+
+| Item | Refund |
+|------|--------|
+| Station | $250 (50%) |
+| Rail | $1 per meter (50%) |
+| Train | Cannot demolish (operational asset) |
+
+**Purpose**: Allows teams to recover from poor early decisions without bankruptcy.
 
 ### Player Expense Tracking
 
@@ -75,20 +237,74 @@ This creates visibility into contributions without creating competition (economy
 
 ### Passenger Lifecycle
 
-1. **Spawn**: Passengers appear at random positions near cities/stations
-2. **Wait**: NPCs walk toward nearest station (existing behavior)
-3. **Board**: When train arrives and has capacity, passengers embark
-4. **Travel**: Train transports passengers toward their destination
-5. **Disembark**: Passengers exit at closest station to their goal
-6. **Despawn**: Passengers disappear after disembarking (revenue generated)
+1. **Spawn**: Appear within 150m radius of origin city
+2. **Walk to Station**: Move toward nearest station (within 300m of origin city)
+3. **Wait**: Stand at station until train with capacity arrives
+4. **Board**: Enter train when it stops at station
+5. **Travel**: Remain on train (invisible, stored as train property)
+6. **Disembark**: Exit at station closest to destination city
+7. **Walk to City**: Move from station to destination city center
+8. **Despawn**: Disappear upon reaching destination (revenue generated)
 
 ### Passenger Properties
 
 ```javascript
 {
-  destination: {x: number, y: number}, // Target location
-  boardedTrain: trainId | null,        // Currently on train
-  state: 'waiting' | 'boarding' | 'traveling' | 'disembarking'
+  type: 'person',
+  game_id: String,
+  pos: {x: Number, y: Number},
+  cityOrigin_id: String,           // NEW: City where spawned
+  cityDestination_id: String,      // NEW: City they want to reach
+  state: String,                   // 'walking_to_station' | 'waiting' | 'traveling' | 'walking_to_destination' | 'arrived'
+  waitingAt: String | null,        // Station _id if waiting
+  boardedTrain: String | null,     // Train _id if traveling
+  spawnTime: Date,                 // For timeout mechanics
+}
+```
+
+### Passenger Behavior States
+
+#### State 1: Walking to Station
+```javascript
+// Find nearest station to origin city (not just nearest station)
+const originCity = Cities.findOne(this.cityOrigin_id);
+const stationsNearOrigin = Stations.find({
+  game_id: this.game_id,
+  // Within service range of origin city
+}).fetch().filter(station =>
+  distance(station.pos, originCity.pos) <= 300
+);
+
+const nearestStation = findNearest(this.pos, stationsNearOrigin);
+this.walkTowards(nearestStation.pos);
+```
+
+#### State 2: Waiting at Station
+```javascript
+// Remain at station, visible to trains
+// Timeout after 5 minutes → despawn with penalty
+if (Date.now() - this.spawnTime > 5 * 60 * 1000) {
+  this.despawn();
+  team.treasury -= 5; // Opportunity cost penalty
+}
+```
+
+#### State 3: Traveling on Train
+```javascript
+// Passenger is stored in train's passengers array
+// Not rendered on map (hidden inside train)
+```
+
+#### State 4: Walking to Destination
+```javascript
+// After disembarking at station near destination city
+const destCity = Cities.findOne(this.cityDestination_id);
+this.walkTowards(destCity.pos);
+
+if (distance(this.pos, destCity.pos) < 50) {
+  this.state = 'arrived';
+  this.generateRevenue();
+  this.despawn();
 }
 ```
 
@@ -97,14 +313,14 @@ This creates visibility into contributions without creating competition (economy
 | Time Elapsed | Passengers/Minute | Max Active Passengers |
 |--------------|-------------------|----------------------|
 | 0-5 min | 1 | 10 |
-| 5-10 min | 2 | 25 |
-| 10-20 min | 4 | 50 |
-| 20-30 min | 8 | 100 |
-| 30+ min | 12 | 150 |
+| 5-10 min | 3 | 25 |
+| 10-20 min | 6 | 50 |
+| 20-30 min | 10 | 100 |
+| 30+ min | 15 | 150 |
 
 **Key Design Principles:**
 - **Gradual Introduction**: Start with 1 passenger to teach mechanics
-- **Manageable Growth**: Give players time to build infrastructure before overwhelming them
+- **Accelerated Mid-Game**: Faster ramp-up (3/min instead of 2/min)
 - **Capacity Cap**: Prevent performance issues with passenger limits
 
 ---
@@ -115,39 +331,39 @@ This creates visibility into contributions without creating competition (economy
 
 #### 1. Basic Train (Starter Train)
 - **Cost**: $1,000
-- **Speed**: 60 km/h (current default)
+- **Speed**: 60 km/h (default)
 - **Base Capacity**: 10 passengers
-- **Use Case**: Balanced option for early game
+- **Use Case**: Balanced option for early game and medium routes
 
 #### 2. Express Train (Speed Specialist)
-- **Cost**: $2,500
+- **Cost**: $1,800 (reduced from $2,500)
 - **Speed**: 120 km/h (2× default)
-- **Base Capacity**: 6 passengers
-- **Use Case**: Long-distance routes, time-sensitive passengers
+- **Base Capacity**: 8 passengers (increased from 6)
+- **Use Case**: Long-distance routes between distant cities
 
 #### 3. Freight Train (Capacity Specialist)
 - **Cost**: $1,500
 - **Speed**: 40 km/h (0.66× default)
 - **Base Capacity**: 20 passengers
-- **Use Case**: High-traffic short routes, commuter lines
+- **Use Case**: High-traffic short routes, commuter lines between nearby cities
 
 ### Wagon System
 
 - **Cost**: $300 per wagon
 - **Capacity Bonus**: +5 passengers
 - **Max Wagons**: 5 per train
-- **Speed Penalty**: -5% speed per wagon added (realistic weight simulation)
+- **Speed Penalty**: -3% speed per wagon (reduced from -5% to avoid trap)
 
 **Example Train Configurations:**
 ```
 Basic Train + 2 Wagons
 - Total Capacity: 20 passengers (10 + 2×5)
-- Effective Speed: 54 km/h (60 × 0.9)
+- Effective Speed: 56.4 km/h (60 × 0.94)
 - Total Cost: $1,600 ($1,000 + 2×$300)
 
 Freight Train + 4 Wagons
 - Total Capacity: 40 passengers (20 + 4×5)
-- Effective Speed: 32 km/h (40 × 0.8)
+- Effective Speed: 35.2 km/h (40 × 0.88)
 - Total Cost: $2,700 ($1,500 + 4×$300)
 ```
 
@@ -156,36 +372,116 @@ Freight Train + 4 Wagons
 #### Boarding Process
 ```javascript
 // At each station stop:
-1. Check train current capacity (passengers + available slots)
-2. Find waiting passengers within getPassengersRadius
-3. Board passengers up to available capacity (first-come-first-served)
-4. Update passenger state to 'traveling'
-5. Recalculate train route if destination stations are different
+function boardPassengers(train, station) {
+  const availableCapacity = train.capacity - train.passengers.length;
+  if (availableCapacity <= 0) return; // Train full
+
+  // Find passengers waiting at this station
+  const waitingPassengers = Persons.find({
+    game_id: train.game_id,
+    state: 'waiting',
+    waitingAt: station._id
+  }).fetch();
+
+  // Board up to capacity (first-come-first-served)
+  const toBoard = waitingPassengers.slice(0, availableCapacity);
+
+  toBoard.forEach(passenger => {
+    train.passengers.push(passenger._id);
+    passenger.state = 'traveling';
+    passenger.boardedTrain = train._id;
+    passenger.waitingAt = null;
+  });
+
+  // Recalculate train destination based on new passengers
+  train.findDestination();
+}
 ```
 
 #### Disembarking Process
 ```javascript
 // At each station stop:
-1. Check passengers onboard
-2. For each passenger, calculate distance to their destination
-3. If current station is closest to destination:
-   - Remove passenger from train
-   - Generate revenue
-   - Despawn passenger
-4. Continue to next station with remaining passengers
+function disembarkPassengers(train, station) {
+  const passengersOnBoard = Persons.find({
+    _id: {$in: train.passengers}
+  }).fetch();
+
+  passengersOnBoard.forEach(passenger => {
+    const destCity = Cities.findOne(passenger.cityDestination_id);
+    const distToDestination = distance(station.pos, destCity.pos);
+
+    // Disembark if this is the closest station to destination
+    if (isClosestStationToCity(station, destCity)) {
+      // Remove from train
+      train.passengers = train.passengers.filter(id => id !== passenger._id);
+
+      // Update passenger state
+      passenger.state = 'walking_to_destination';
+      passenger.boardedTrain = null;
+      passenger.pos = station.pos; // Appear at station
+    }
+  });
+}
+
+function isClosestStationToCity(station, city) {
+  const allStations = Stations.find({game_id: station.game_id}).fetch();
+  const distances = allStations.map(s => distance(s.pos, city.pos));
+  const minDistance = Math.min(...distances);
+  return distance(station.pos, city.pos) === minDistance;
+}
 ```
 
-### Pathfinding Enhancement
-
-Current A* implementation chooses destination based on most waiting passengers. With capacity constraints:
-
+#### Pathfinding Enhancement
 ```javascript
+// Train destination logic
 findDestination() {
-  // Consider:
-  // 1. Stations with waiting passengers
-  // 2. Current train capacity (don't go to station if already full)
-  // 3. Destinations of already-boarded passengers
-  // Priority: Deliver current passengers first, then find new pickup point
+  if (this.passengers.length > 0) {
+    // PRIORITY 1: Deliver passengers onboard
+    const destinationCities = this.passengers.map(passengerId => {
+      const p = Persons.findOne(passengerId);
+      return Cities.findOne(p.cityDestination_id);
+    });
+
+    // Find station closest to these destination cities
+    return this.findStationNearestToCities(destinationCities);
+  } else {
+    // PRIORITY 2: Go pick up waiting passengers
+    const citiesWithWaiting = this.getCitiesWithWaitingPassengers();
+
+    if (citiesWithWaiting.length === 0) {
+      // No passengers anywhere, go to highest population city
+      return this.findStationNearCity(this.getHighestPopulationCity());
+    }
+
+    // Go to city with most waiting passengers
+    const targetCity = citiesWithWaiting.sort(
+      (a, b) => b.waitingCount - a.waitingCount
+    )[0];
+
+    return this.findStationNearCity(targetCity);
+  }
+}
+
+getCitiesWithWaitingPassengers() {
+  const waiting = Persons.find({
+    game_id: this.game_id,
+    state: 'waiting'
+  }).fetch();
+
+  // Group by origin city
+  const cityGroups = {};
+  waiting.forEach(p => {
+    const cityId = p.cityOrigin_id;
+    if (!cityGroups[cityId]) {
+      cityGroups[cityId] = {
+        city: Cities.findOne(cityId),
+        waitingCount: 0
+      };
+    }
+    cityGroups[cityId].waitingCount++;
+  });
+
+  return Object.values(cityGroups);
 }
 ```
 
@@ -196,23 +492,28 @@ findDestination() {
 ### Early Game (0-5 minutes)
 - **Passenger Rate**: 1 per minute
 - **Challenge**: Learn mechanics with forgiving pace
-- **Strategy**: Build a basic loop with 3-4 stations
+- **Strategy**: Connect 3-4 major cities in a simple network
 
 ### Mid Game (5-20 minutes)
-- **Passenger Rate**: 2-8 per minute
+- **Passenger Rate**: 3-10 per minute
 - **Challenge**: Capacity becomes a bottleneck
-- **Strategy**: Add more trains, optimize routes, consider train types
+- **Strategy**: Add more trains, consider train types for different routes
 
 ### Late Game (20+ minutes)
-- **Passenger Rate**: 12+ per minute
+- **Passenger Rate**: 15+ per minute
 - **Challenge**: Network optimization and capacity management
-- **Strategy**: Specialized trains for different routes, wagon investments, complex rail networks
+- **Strategy**: Specialized trains, wagon investments, hub-and-spoke networks
 
 ### Bottleneck Design
 As passenger spawn rate increases faster than initial infrastructure can handle:
 - Waiting passengers accumulate at stations
-- Players must decide: Build more stations? Buy more trains? Add wagons?
+- Players must decide: Build more stations near cities? Buy more trains? Add wagons?
 - Economic pressure: Revenue must outpace expansion costs
+
+### Passenger Timeout Penalty
+- Passengers waiting >5 minutes despawn
+- Team loses $5 per timed-out passenger (opportunity cost)
+- Creates urgency to improve service
 
 ---
 
@@ -226,13 +527,42 @@ Display in a team dashboard accessible by all members:
 │ Team Treasury: $12,450              │
 ├─────────────────────────────────────┤
 │ Total Passengers Transported: 243   │
-│ Total Revenue: $4,860               │
+│ Total Revenue: $3,645               │
 │ Stations: 12                        │
 │ Total Rail Length: 5,240m           │
 │ Active Trains: 8                    │
 │                                     │
 │ Passengers Waiting: 15              │
-│ Current Spawn Rate: 4/min           │
+│ Passengers Timed Out: 3 ⚠️          │
+│ Current Spawn Rate: 6/min           │
+└─────────────────────────────────────┘
+```
+
+### City Statistics Panel (NEW)
+Show real-time city service levels:
+
+```
+┌─────────────────────────────────────┐
+│ City Overview                       │
+├─────────────────────────────────────┤
+│ 🔴 Paris (pop: 5000)                │
+│   👤 Waiting: 12                    │
+│   🚉 Stations: 3                    │
+│   🚂 Trains serving: 5              │
+│                                     │
+│ 🔵 Lyon (pop: 3000)                 │
+│   👤 Waiting: 5                     │
+│   🚉 Stations: 1  ⚠️ Underserved   │
+│   🚂 Trains serving: 2              │
+│                                     │
+│ 🟢 Marseille (pop: 4000)            │
+│   👤 Waiting: 3                     │
+│   🚉 Stations: 2                    │
+│   🚂 Trains serving: 4              │
+│                                     │
+│ Popular Routes:                     │
+│   Paris → Lyon (45 trips)           │
+│   Marseille → Paris (32 trips)      │
 └─────────────────────────────────────┘
 ```
 
@@ -264,13 +594,20 @@ Top Bar:
 [Team Treasury: $12,450] [Waiting Passengers: 15] [Trains: 8]
 
 Construction Mode Tooltip:
-"Station - $500" | "Rail - $2/meter (est: $340)"
+"Station - $500 (must be near a city)" | "Rail - $2/meter (est: $340)"
+
+City Hover Info:
+"Paris
+Population: 5,000
+Passengers waiting: 12
+Nearby stations: 3"
 
 Train Hover Info:
 "Express Train #3
-Capacity: 6/11 (base 6 + 1 wagon)
-Speed: 114 km/h
-Current Route: Station A → Station D"
+Type: Express
+Capacity: 8/14 (base 8 + 2 wagons)
+Speed: 113 km/h
+Current Route: Paris → Lyon"
 ```
 
 ---
@@ -282,22 +619,22 @@ Since the game is cooperative, replace competitive wins with **team milestones**
 
 #### Bronze Achievement
 - Transport 100 passengers
-- Maintain 10+ stations
-- Treasury never goes below $0
+- Serve 5+ cities
+- Treasury never goes below -$500
 
 #### Silver Achievement
 - Transport 500 passengers
-- Maintain 20+ stations
+- Serve all cities on the map
 - Average train capacity utilization >60%
 
 #### Gold Achievement
 - Transport 1,000 passengers
-- Maintain 30+ stations
 - Network spans >10km of rails
+- Maintain <10 timed-out passengers
 - Survive 30 minutes of operation
 
 ### Failure Condition
-- **Bankruptcy**: Team treasury falls below -$1,000 (small buffer for recovery)
+- **Bankruptcy**: Team treasury falls below -$2,000 (increased buffer for recovery)
 - **Abandonment**: All players disconnect for >5 minutes
 
 ### Pride Metrics (Display at End)
@@ -306,15 +643,17 @@ Show team accomplishments to create satisfaction:
 ┌────────────────────────────────────────┐
 │ Game Summary - Well Done!              │
 ├────────────────────────────────────────┤
+│ Map: Central Europe                    │
 │ Duration: 42 minutes                   │
 │ Passengers Transported: 1,247          │
+│ Passengers Timed Out: 23 (1.8%)       │
 │ Peak Capacity Efficiency: 87%          │
-│ Longest Rail: Station A → Station M   │
-│   (1,240m)                             │
-│ Revenue Per Passenger: $14.50 avg     │
+│ Busiest Route: Paris → Berlin (142)   │
+│ Longest Rail: Hamburg → Rome (2,340m) │
+│ Average Revenue/Passenger: $14.20      │
 │                                        │
 │ Your Network Served 1,247 People!     │
-│ Achievement: Gold Tier                 │
+│ Achievement: Gold Tier 🏆              │
 └────────────────────────────────────────┘
 ```
 
@@ -334,8 +673,8 @@ Show team accomplishments to create satisfaction:
 - **Visual Indicators**: Show which player is currently building (cursor labeling)
 - **Transaction Log**: Recent purchases appear in sidebar:
   ```
-  JohnDoe built Station #12 (-$500)
-  JaneSmith purchased Express Train (-$2,500)
+  JohnDoe built Station #12 near Paris (-$500)
+  JaneSmith purchased Express Train (-$1,800)
   JohnDoe added Wagon to Train #3 (-$300)
   ```
 
@@ -355,48 +694,91 @@ The game is already designed for solo mode:
 
 ## Implementation Phases
 
-### Phase 1: Core Economy (Minimum Viable Gameplay)
+### Phase 0: City System (FOUNDATION - MUST BE FIRST)
+1. Create `Cities` collection
+2. Create `City` class with rendering logic
+3. Define 3 map templates (starter, medium, large)
+4. Add map selection UI to game creation
+5. Render cities on canvas (circles with names and radii)
+6. Implement station placement validation (max 300m from city)
+7. Add visual feedback (show 300m circles when placing stations)
+
+**Critical**: This phase establishes the spatial logic that all other systems depend on.
+
+### Phase 1: Passenger City Integration
+1. Modify `Person` class to use `cityOrigin_id` and `cityDestination_id`
+2. Update passenger spawn logic (near origin city)
+3. Implement city-based destination selection algorithm
+4. Update passenger movement states (walking_to_station, walking_to_destination)
+5. Update pathfinding to prioritize stations near relevant cities
+
+### Phase 2: Core Economy
 1. Add `treasury` field to Teams collection
 2. Implement construction costs for stations and rails
 3. Add "insufficient funds" validation to map building methods
 4. Display treasury in UI
+5. Implement demolition system with 50% refund
 
-### Phase 2: Passenger Transport
-1. Add `destination`, `boardedTrain`, `state` to Person class
-2. Implement boarding logic in Train.getPassengers()
-3. Implement disembarking logic at stations
+### Phase 3: Passenger Transport
+1. Add `boardedTrain`, `state`, `waitingAt` to Person class
+2. Implement boarding logic in Train.boardPassengers()
+3. Implement disembarking logic (closest station to destination city)
 4. Generate revenue on successful transport
+5. Implement passenger timeout (5 min) with penalty
 
-### Phase 3: Train Variety
+### Phase 4: Train Variety
 1. Create train type enum (`basic`, `express`, `freight`)
 2. Add train selection UI when purchasing
 3. Implement speed/capacity variations in Train class
 4. Update rendering to show different train types
+5. Rebalance costs (Express: $1,800, capacity: 8)
 
-### Phase 4: Wagon System
-1. Add `wagons` array to Train class
+### Phase 5: Wagon System
+1. Add `wagons` field to Train class
 2. Create "Add Wagon" UI button on train hover
-3. Implement capacity increase and speed penalty
+3. Implement capacity increase and speed penalty (-3%)
 4. Track wagon purchases in player statistics
 
-### Phase 5: Progression & Difficulty
-1. Implement passenger spawn rate escalation
+### Phase 6: Progression & Difficulty
+1. Implement passenger spawn rate escalation (updated schedule)
 2. Add timer-based difficulty phases
 3. Create max passenger cap system
-4. Balance starting capital and costs through playtesting
+4. Balance starting capital ($12,000) and costs through playtesting
 
-### Phase 6: Statistics & Polish
+### Phase 7: Statistics & Polish
 1. Create statistics tracking collections
 2. Build team dashboard UI
-3. Build individual player statistics panel
-4. Create end-game summary screen
-5. Add achievement milestone checks
+3. Build city statistics panel (NEW)
+4. Build individual player statistics panel
+5. Create end-game summary screen
+6. Add achievement milestone checks
 
 ---
 
 ## Technical Considerations
 
 ### Database Schema Changes
+
+#### Cities Collection (NEW)
+```javascript
+Cities = new Mongo.Collection('cities');
+
+{
+  _id: String,
+  game_id: String,
+  name: String,
+  pos: {x: Number, y: Number},
+  population: Number,           // Affects spawn rate weighting
+  radius: Number,               // Visual size (default 150)
+  color: String,                // Display color
+
+  // Real-time stats (calculated, not stored)
+  currentWaitingPassengers: Number,  // Computed on-the-fly
+  nearbyStations: [String],          // Station _ids within 300m
+  totalPassengersSpawned: Number,    // Historical
+  totalPassengersArrived: Number,    // Historical
+}
+```
 
 #### Teams Collection
 ```javascript
@@ -408,6 +790,7 @@ The game is already designed for solo mode:
   treasury: Number,              // NEW: Shared team money
   totalPassengersTransported: Number, // NEW: Team milestone tracking
   totalRevenue: Number,          // NEW: Historical earnings
+  totalPassengersTimedOut: Number,    // NEW: Penalty tracking
 }
 ```
 
@@ -434,9 +817,12 @@ The game is already designed for solo mode:
   type: 'person',
   game_id: String,
   pos: {x: Number, y: Number},
-  destination: {x: Number, y: Number}, // NEW: Where they want to go
-  boardedTrain: String | null,         // NEW: Train _id if traveling
-  state: String,                       // NEW: 'waiting' | 'traveling' | 'disembarking'
+  cityOrigin_id: String,         // NEW: City where spawned (replaces random spawn)
+  cityDestination_id: String,    // NEW: City they want to reach (replaces {x,y} destination)
+  boardedTrain: String | null,   // NEW: Train _id if traveling
+  state: String,                 // NEW: 'walking_to_station' | 'waiting' | 'traveling' | 'walking_to_destination' | 'arrived'
+  waitingAt: String | null,      // NEW: Station _id if waiting
+  spawnTime: Date,               // NEW: For timeout mechanics
   // ... existing fields (birthAt, birthDate, etc.)
 }
 ```
@@ -468,24 +854,26 @@ The game is already designed for solo mode:
 ### Performance Optimizations
 
 #### Server Loop Adjustments
-Current loop processes all objects every tick (500ms). With capacity mechanics:
+Current loop processes all objects every tick (~5000ms). With capacity mechanics:
 - **Limit Passenger Processing**: Only update passengers near stations or on trains
 - **Batch Database Updates**: Use MongoDB bulk operations for passenger state changes
 - **Cache Calculations**: Store train capacity/speed calculations instead of recalculating
+- **City Query Optimization**: Index city positions for fast nearest-city lookups
 
 #### Client Rendering
-Current canvas draws all objects. With more passengers:
+Current canvas draws all objects. With cities and more passengers:
 - **Culling**: Only draw objects within viewport
 - **LOD (Level of Detail)**: Simplify passenger rendering at low zoom levels
-- **Throttle Redraws**: Already implemented at 60 FPS, but ensure passenger draw calls are efficient
+- **City Rendering**: Pre-render city circles to bitmap for faster drawing
+- **Throttle Redraws**: Already implemented at 60 FPS, but ensure efficient draw calls
 
 ---
 
 ## Balance Guidelines
 
 ### Starting Values
-- **Starting Capital**: $10,000 (allows ~4 stations, 6 basic trains, or mix)
-- **First Passenger**: Spawns at 30 seconds (gives time to build)
+- **Starting Capital**: $12,000 (increased from $10k, allows 4-5 stations + 2-3 trains)
+- **First Passenger**: Spawns at 30 seconds (gives time to build initial network)
 - **Safe Zone**: First 5 minutes are forgiving (low spawn rate)
 
 ### Economic Balance Goals
@@ -496,8 +884,63 @@ Current canvas draws all objects. With more passengers:
 ### Target Metrics
 - **Break-even Time**: Players should profit within first 2-3 minutes
 - **Capacity Crisis**: Should hit capacity bottleneck around 10 minutes
-- **Bankruptcy Risk**: Rare but possible with extremely poor planning
+- **Bankruptcy Risk**: Rare but possible with extremely poor planning (demolition provides recovery)
 - **Average Game Duration**: 30-45 minutes to reach Gold achievement
+
+### Balanced Train Types
+After rebalancing, train values are more equitable:
+
+| Train | Cost | $/Capacity | $/Speed | Best For |
+|-------|------|------------|---------|----------|
+| Basic | $1,000 | $100/pax | $16.67/kph | General purpose |
+| Freight | $1,500 | $75/pax | $37.50/kph | High-traffic short routes |
+| Express | $1,800 | $225/pax | $15/kph | Long-distance express |
+
+All three types now have valid use cases.
+
+---
+
+## Network Strategy Patterns
+
+With cities as fixed points, different network patterns emerge:
+
+### Hub-and-Spoke (Star Pattern)
+```
+    Small City
+         |
+    Large City (hub) ←→ Small City
+         |
+    Small City
+```
+- **When**: One dominant high-population city
+- **Strategy**: Central station at hub, express trains radiating outward
+
+### Linear (Chain)
+```
+City A ←→ City B ←→ City C ←→ City D
+```
+- **When**: Cities aligned geographically
+- **Strategy**: Simple rail line, basic trains with good coverage
+
+### Ring (Circuit)
+```
+     A
+    / \
+   D   B
+    \ /
+     C
+```
+- **When**: Cities form natural loop
+- **Strategy**: Trains circulate continuously, balanced capacity
+
+### Multi-Hub (Regional)
+```
+Region 1: A ←→ B ←→ C
+             |
+Region 2: D ←→ E ←→ F
+```
+- **When**: Large maps with city clusters
+- **Strategy**: Regional networks with occasional inter-regional express trains
 
 ---
 
@@ -508,10 +951,15 @@ Current canvas draws all objects. With more passengers:
 - Older stations/rails cost more to maintain
 - Adds strategic depth: quality vs quantity
 
-### Cities & Demand Modeling
-- Cities as passenger spawn points with demand levels
-- Rush hour mechanics (time-based demand spikes)
-- Reputation system (reliable service = more passengers)
+### Advanced City Features
+- Rush hour mechanics (time-based demand spikes at cities)
+- City growth (population increases based on service quality)
+- Special events ("Concert in Paris" = temporary spike)
+
+### Weather & Events
+- Snow delays (trains move 50% slower)
+- Track maintenance (sections temporarily unavailable)
+- VIP passengers (pay 3× but require fast service)
 
 ### Advanced Train Features
 - Fuel costs (variable operational expenses)
@@ -521,24 +969,33 @@ Current canvas draws all objects. With more passengers:
 ### Competitive Modes
 - Team vs Team races to milestones
 - Separate economies per team with territorial control
-- Passenger bidding wars
+- City bidding wars (exclusive service contracts)
 
-### Map Persistence
-- Save/load game states
-- Persistent worlds that run even when players offline
-- Leaderboards for longest-running networks
+### Map Editor
+- Players create custom city layouts
+- Share maps with community
+- Leaderboards per map template
+
+### Procedural Map Generation
+- Algorithm generates random city distributions
+- Poisson Disk Sampling for minimum spacing
+- Infinite replayability
 
 ---
 
 ## Conclusion
 
-This gameplay design transforms **Trains** from a visual sandbox into a **cooperative strategy game** with:
+This gameplay design transforms **Trains** from a visual sandbox into a **cooperative strategy game with spatial logic** through:
 
-✅ **Clear objectives**: Transport passengers efficiently
-✅ **Economic tension**: Balance costs vs revenue
-✅ **Strategic depth**: Train types, wagon tradeoffs, route optimization
+✅ **Clear spatial structure**: Cities define where and why players build
+✅ **Meaningful decisions**: Station placement, train types, route prioritization
+✅ **Economic tension**: Balance costs vs revenue with recovery mechanisms
+✅ **Strategic depth**: Different maps favor different network patterns
 ✅ **Progression curve**: Escalating difficulty requires adaptation
 ✅ **Team cooperation**: Shared resources with individual contributions tracked
+✅ **Replayability**: Different city layouts create different optimal strategies
 ✅ **Pride in achievement**: Milestones and statistics celebrate collective success
 
-The design respects existing architecture (Meteor reactivity, DDP sync, A* pathfinding, team system) while adding core gameplay systems. All features are implementable with the current tech stack.
+The design respects existing architecture (Meteor reactivity, DDP sync, A* pathfinding, team system) while adding the **foundational city system** that resolves gameplay ambiguity. All features are implementable with the current tech stack.
+
+**Critical Path**: Phase 0 (cities) must be implemented first, as it establishes the spatial logic that all other systems depend on.
