@@ -95,6 +95,21 @@ export class GameMap {
     return _.filter(this.objects, function(o) {return o.type === 'person';});
   }
 
+  // Count number of people waiting near a station
+  countPeopleNearStation(station, radius = null) {
+    if(!radius) radius = Helpers.getPassengersRadius || 50;
+    let count = 0;
+
+    for(const obj of this.objects) {
+      if(obj.type !== 'person') continue;
+      if(Geometry.dist(station.pos, obj.pos) < radius) {
+        count++;
+      }
+    }
+
+    return count;
+  }
+
   getTrainByPos(pos) {
     for(let i = 0; i < this.objects.length; i++) {
       if(this.objects[i].type !== 'train') continue;
