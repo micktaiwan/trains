@@ -113,6 +113,18 @@ export class Geometry {
     return vector.origin().plus((vector.scal(progress))).norm();
   }
 
+  // Generate a random position within a circle
+  // Uses uniform distribution (not just random x,y which would give a square)
+  static randomPosInCircle(center, radius) {
+    // Use sqrt for uniform distribution in a disk
+    const distance = Math.sqrt(Math.random()) * radius;
+    const angle = Math.random() * 2 * Math.PI;
+    return {
+      x: Math.round(center.x + distance * Math.cos(angle)),
+      y: Math.round(center.y + distance * Math.sin(angle))
+    };
+  }
+
 }
 
 // Note that object must be an object or array,

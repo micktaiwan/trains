@@ -1,6 +1,6 @@
 // Base class for GameGui and GameServer
 import {DBObject} from "./dbobject";
-import {Helpers} from "./helpers";
+import {Helpers, Geometry} from "./helpers";
 import {Person} from "./person.js";
 
 export class Game extends DBObject {
@@ -27,14 +27,41 @@ export class Game extends DBObject {
 
   // add a person to the map
   async addPerson() {
+    // Get existing cities
+    let cities = this.map.getCities();
+
+    // If no cities exist, create a default city at center of map
+    if(cities.length === 0) {
+      await Meteor.callAsync('mapInsert', {
+        type: 'city',
+        game_id: this.map._id,
+        name: 'Default City',
+        pos: {x: 500, y: 500},
+        population: 3000,
+        radius: 150,
+        size: 10,
+        color: '#fa0'
+      });
+      // Wait a bit for the city to be added to the local map
+      await new Promise(resolve => Meteor.setTimeout(resolve, 100));
+      cities = this.map.getCities();
+    }
+
+    // Spawn persons near cities
     for(let i = 0; i < 10; i++) {
+      // Pick a random city (uniform distribution)
+      const city = cities[_.random(0, cities.length - 1)];
+
+      // Generate random position within city radius
+      const spawnPos = Geometry.randomPosInCircle(city.pos, city.radius);
+
       const person = new Person({
         map: this.map,
         game_id: this.map._id
       });
-      person.birthAt = {x: _.random(0, 1000), y: _.random(0, 1000)};
-      person.birthDate = new Date(); // L'age pourrait jouer sur les compétences...
-      person.name = 'John Doe'; // à randomizer
+      person.birthAt = spawnPos;
+      person.birthDate = new Date(); // Age could affect skills...
+      person.name = 'John Doe'; // to be randomized
       person.to = {x: _.random(0, 1000), y: _.random(0, 1000)};
       person.pos = person.birthAt;
       await person.saveToDB();
