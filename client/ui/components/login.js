@@ -65,7 +65,7 @@ Template.loginModal.events({
     console.log('New state:', isSignUpVar.get());
   },
 
-  'submit .login-form': async function(e) {
+  'submit .login-form': function(e) {
     e.preventDefault();
 
     const username = e.target.username.value.trim();
@@ -74,44 +74,57 @@ Template.loginModal.events({
 
     errorMessageVar.set(null);
 
-    try {
-      if (isSignUp) {
-        // Sign up
-        const email = e.target.email.value.trim();
+    if (isSignUp) {
+      // Sign up
+      const email = e.target.email.value.trim();
 
-        await Accounts.createUserAsync({
-          username: username,
-          email: email,
-          password: password
-        });
+      Accounts.createUser({
+        username: username,
+        email: email,
+        password: password
+      }, (err) => {
+        if (err) {
+          console.error('Auth error:', err);
 
-        // User is automatically logged in after successful signup
-        $('.ui.modal.login-modal').modal('hide');
-        e.target.reset();
-      } else {
-        // Login
-        await Meteor.loginWithPasswordAsync(username, password);
+          // Display user-friendly error messages
+          let message = 'An error occurred. Please try again.';
 
-        $('.ui.modal.login-modal').modal('hide');
-        e.target.reset();
-      }
-    } catch(err) {
-      console.error('Auth error:', err);
+          if (err.error === 'username-already-exists') {
+            message = 'Username already exists.';
+          } else if (err.error === 'email-already-exists') {
+            message = 'Email already exists.';
+          } else if (err.reason) {
+            message = err.reason;
+          }
 
-      // Display user-friendly error messages
-      let message = 'An error occurred. Please try again.';
+          errorMessageVar.set(message);
+        } else {
+          // User is automatically logged in after successful signup
+          $('.ui.modal.login-modal').modal('hide');
+          e.target.reset();
+        }
+      });
+    } else {
+      // Login
+      Meteor.loginWithPassword(username, password, (err) => {
+        if (err) {
+          console.error('Auth error:', err);
 
-      if (err.error === 403) {
-        message = 'Incorrect username or password.';
-      } else if (err.error === 'username-already-exists') {
-        message = 'Username already exists.';
-      } else if (err.error === 'email-already-exists') {
-        message = 'Email already exists.';
-      } else if (err.reason) {
-        message = err.reason;
-      }
+          // Display user-friendly error messages
+          let message = 'An error occurred. Please try again.';
 
-      errorMessageVar.set(message);
+          if (err.error === 403) {
+            message = 'Incorrect username or password.';
+          } else if (err.reason) {
+            message = err.reason;
+          }
+
+          errorMessageVar.set(message);
+        } else {
+          $('.ui.modal.login-modal').modal('hide');
+          e.target.reset();
+        }
+      });
     }
   }
 });
