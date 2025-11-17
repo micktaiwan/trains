@@ -82,27 +82,57 @@ export class GameMapGui extends GameMap {
     const parent = this.getStationByPos(rel.p1).station;
     const child = this.getStationByPos(rel.p2).station;
     const q = new StationGui({map: this, pos: rel.projection, children: [], parents: []});
-    this.addObject(q);
+
+    // Station cost will be automatically charged by mapInsert when calling saveToDB
+    try {
+      await q.saveToDB();
+    } catch(err) {
+      this.setMessage(err.reason || err.message);
+      throw err; // Cancel operation
+    }
+
+    // DO NOT add locally - let the observer add it to prevent duplicates
+    // this.addObject(q); // REMOVED: observer will add it via 'added' event
+
+    // Wait for the observer to add the station (with timeout)
+    const stationId = q._id;
+    const maxWaitMs = 2000;
+    const startTime = Date.now();
+    console.log('insertProjection: waiting for observer to add station', stationId);
+
+    while(!this.getObjectById(stationId)) {
+      if(Date.now() - startTime > maxWaitMs) {
+        console.error('insertProjection: timeout waiting for station', stationId);
+        // Fallback: add it manually if observer failed
+        this.addObject(q);
+        break;
+      }
+      // Wait 10ms before checking again
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+
+    console.log('insertProjection: station added by observer', stationId);
+
+    // Get the station that was added by the observer (not our local object)
+    const addedStation = this.getObjectById(stationId);
+
     parent.removeChild(child); // will remove child's parent ('parent')
     child.removeChild(parent); // will remove parent's parent ('child')
-    parent.addBiChild(q);
-    child.addBiChild(q);
-    // console.log('parent:', parent);
-    // console.log('q', q);
-    await q.saveToDB();
+    parent.addBiChild(addedStation);
+    child.addBiChild(addedStation);
     await parent.updateDB();
     await child.updateDB();
-    return q;
+    return addedStation;
   }
 
-  // Validate if a station can be placed at given position (must be within 300m of a city)
+  // Validate if a station can be placed at given position (must be within cityStationPlacementRadius of a city)
   validateStationPlacement(pos) {
     const nearestCityInfo = this.findNearestCity(pos);
     if(!nearestCityInfo) {
       return {valid: false, error: 'No cities found on map'};
     }
 
-    const maxDistance = 300; // meters
+    const maxDistance = Helpers.cityStationPlacementRadius;
     if(nearestCityInfo.dist > maxDistance) {
       return {
         valid: false,
@@ -136,10 +166,10 @@ export class GameMapGui extends GameMap {
     this.dragStation = await this.insertProjection(this.nearestObj.rel);
   }
 
-  // Draw 300m radius circles around cities to show placement zones
+  // Draw radius circles around cities to show placement zones
   drawCityPlacementZones() {
     const cities = this.getCities();
-    const maxDistance = 300; // meters
+    const maxDistance = Helpers.cityStationPlacementRadius;
 
     this.ctx.strokeStyle = 'rgba(100, 200, 255, 0.3)';
     this.ctx.lineWidth = 2;
@@ -165,6 +195,7 @@ export class GameMapGui extends GameMap {
   drawCurrentLinkFromEvent(e) {
     if(!this.currentStation) return;
     const c = this.snappedMouseCoords(e);
+    const cRel = this.relMouseCoords(e);
     this.ctx.lineWidth = this.dispo.zoom * this.dispo.linkSize;
     const cpos = this.relToRealCoords(this.currentStation.pos);
     this.ctx.strokeStyle = '#666';
@@ -174,6 +205,34 @@ export class GameMapGui extends GameMap {
 
     // Draw city placement zones when placing stations
     this.drawCityPlacementZones();
+
+    // Highlight merge target station if mouse is close to an existing station
+    const mergeRadius = (this.dispo.stationSize * 2) / this.dispo.zoom;
+    const nearbyStations = this.getNearestStations(cRel, mergeRadius);
+
+    // Check if we're starting from an existing station or creating new one
+    const startOverlaps = this.getNearestStations(this.currentStation.pos, mergeRadius);
+    const isStartExisting = startOverlaps.length > 0;
+
+    if(nearbyStations.length > 0) {
+      const targetStation = nearbyStations[0].station;
+
+      // Don't highlight if it's the same station we started from (can't connect to itself)
+      if(!isStartExisting || targetStation._id !== startOverlaps[0].station._id) {
+        const targetPos = this.relToRealCoords(targetStation.pos);
+
+        // Draw glowing highlight around target station
+        this.ctx.strokeStyle = 'rgba(100, 255, 100, 0.8)';
+        this.ctx.lineWidth = 4;
+        const highlightRadius = this.dispo.zoom * this.dispo.stationSize * 1.5;
+        Drawing.drawCircle(this.ctx, targetPos, highlightRadius);
+
+        // Draw smaller inner circle
+        this.ctx.strokeStyle = 'rgba(150, 255, 150, 0.6)';
+        this.ctx.lineWidth = 2;
+        Drawing.drawCircle(this.ctx, targetPos, highlightRadius * 0.7);
+      }
+    }
   }
 
   async endLinkFromEvent(e) {
@@ -195,10 +254,101 @@ export class GameMapGui extends GameMap {
     }
 
     this.game.sound('station');
-    const endStation = new StationGui({map: this, pos: c});
-    this.currentStation.addBiChild(endStation);
-    await this.currentStation.saveToDB();
-    await endStation.saveToDB();
+
+    // Check for existing stations to merge with
+    // Convert screen pixels to world coordinates (account for zoom)
+    const mergeRadius = (this.dispo.stationSize * 2) / this.dispo.zoom;
+    const startOverlaps = this.getNearestStations(this.currentStation.pos, mergeRadius);
+    const endOverlaps = this.getNearestStations(c, mergeRadius);
+
+    // Use existing stations if we're merging, otherwise create new ones
+    let fromStation = this.currentStation;
+    let toStation = new StationGui({map: this, pos: c});
+    let fromIsNew = true;
+    let toIsNew = true;
+
+    if(startOverlaps.length > 0) {
+      fromStation = startOverlaps[0].station;
+      fromIsNew = false;
+    }
+
+    if(endOverlaps.length > 0) {
+      toStation = endOverlaps[0].station;
+      toIsNew = false;
+    }
+
+    // Don't allow connecting a station to itself
+    if(fromStation._id === toStation._id) {
+      this.setMessage('Cannot connect a station to itself');
+      this.currentStation = null;
+      this.draw();
+      return;
+    }
+
+    // Calculate costs
+    const railDistance = Geometry.dist(fromStation.pos, toStation.pos);
+    const railCost = Math.round(railDistance * Helpers.railCostPerMeter);
+    const newStationCount = (fromIsNew ? 1 : 0) + (toIsNew ? 1 : 0);
+    const mergeRefundCount = 2 - newStationCount;
+
+    // Deduct costs
+    try {
+      console.log(`Attempting to deduct rail cost: $${railCost} for ${Math.round(railDistance)}m, ${newStationCount} new stations`);
+      // Deduct rail cost
+      await Meteor.callAsync('teamDeductCost', this._id, railCost,
+        `Rail (${Math.round(railDistance)}m, ${newStationCount} stations)`);
+      console.log('Rail cost deducted successfully');
+    } catch(err) {
+      console.error('Failed to deduct rail cost:', err);
+      this.setMessage(err.reason || err.message);
+      this.currentStation = null;
+      this.draw();
+      return;
+    }
+
+    // Create link
+    fromStation.addBiChild(toStation);
+
+    // Save new stations (this will charge station costs via mapInsert)
+    try {
+      console.log(`Saving stations: fromIsNew=${fromIsNew}, toIsNew=${toIsNew}`);
+      if(fromIsNew) {
+        console.log('Saving fromStation...');
+        await fromStation.saveToDB();
+        console.log('fromStation saved successfully');
+      }
+      if(toIsNew) {
+        console.log('Saving toStation...');
+        await toStation.saveToDB();
+        console.log('toStation saved successfully');
+      }
+
+      // Update existing stations
+      if(!fromIsNew) {
+        console.log('Updating fromStation...');
+        await fromStation.updateDB();
+      }
+      if(!toIsNew) {
+        console.log('Updating toStation...');
+        await toStation.updateDB();
+      }
+
+      // Credit back for merged stations
+      if(mergeRefundCount > 0) {
+        console.log(`Crediting back $${mergeRefundCount * Helpers.stationCost} for ${mergeRefundCount} merged stations`);
+        await Meteor.callAsync('teamAddRevenue', this._id,
+          mergeRefundCount * Helpers.stationCost, 0);
+      }
+
+      console.log('Rail creation completed successfully');
+    } catch(err) {
+      console.error('Failed to save stations:', err);
+      this.setMessage(err.reason || err.message);
+      this.currentStation = null;
+      this.draw();
+      return;
+    }
+
     this.currentStation = null;
     this.draw();
   }
@@ -206,12 +356,71 @@ export class GameMapGui extends GameMap {
   async resetMap() {
     this.game.sound('success', {stereo: 0});
     await super.resetMap();
-    this.resetPosition();
+
+    // Wait for new objects to be loaded, then auto-fit
+    const self = this;
+    let computation;
+    computation = Tracker.autorun(() => {
+      // Wait until objects are loaded
+      if(self.objects.length > 0) {
+        // Defer to next tick to ensure all objects are fully added
+        Meteor.defer(() => {
+          self.fitMapToView();
+        });
+        // Stop tracking after first fit
+        if(computation) computation.stop();
+      }
+    });
   }
 
   resetPosition() {
     this.dispo.zoom = Helpers.defaultZoom;
     this.pan = {x: 0, y: 0};
+    this.draw();
+  }
+
+  // Fit map to view: auto-zoom and pan to show all objects
+  fitMapToView() {
+    if(this.objects.length === 0) return;
+
+    // Calculate bounding box of all objects
+    let minX = Infinity, minY = Infinity;
+    let maxX = -Infinity, maxY = -Infinity;
+
+    for(const obj of this.objects) {
+      if(!obj.pos) continue;
+
+      // Add some padding based on object type
+      let padding = 50;
+      if(obj.type === 'city') padding = obj.radius || 150;
+
+      minX = Math.min(minX, obj.pos.x - padding);
+      minY = Math.min(minY, obj.pos.y - padding);
+      maxX = Math.max(maxX, obj.pos.x + padding);
+      maxY = Math.max(maxY, obj.pos.y + padding);
+    }
+
+    // Calculate required dimensions
+    const mapWidth = maxX - minX;
+    const mapHeight = maxY - minY;
+
+    // Calculate zoom to fit (with 10% margin)
+    const zoomX = (this.canvas.width * 0.9) / mapWidth;
+    const zoomY = (this.canvas.height * 0.9) / mapHeight;
+    this.dispo.zoom = Math.min(zoomX, zoomY);
+
+    // Clamp zoom to reasonable values
+    if(this.dispo.zoom < 0.05) this.dispo.zoom = 0.05;
+    if(this.dispo.zoom > 6) this.dispo.zoom = 6;
+
+    // Calculate center of bounding box
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    // Center the view on the bounding box center
+    this.pan.x = (this.canvas.width / 2) - (centerX * this.dispo.zoom);
+    this.pan.y = (this.canvas.height / 2) - (centerY * this.dispo.zoom);
+
     this.draw();
   }
 
@@ -447,7 +656,11 @@ export class GameMapGui extends GameMap {
     if(!e.ctrlKey) { // Ctrl is for panning
       switch(e.which) {
         case 1: // left button
-          if(!this.nearestObj) // creating a new link
+          // Cmd+Click on Mac = delete (in addition to right-click)
+          if(e.metaKey) {
+            await this.removePointFromEvent(e);
+          }
+          else if(!this.nearestObj) // creating a new link
             this.startLinkFromEvent(e);
           else { // on a path or station
             if(!this.nearestObj.rel) { // a station
@@ -485,11 +698,49 @@ export class GameMapGui extends GameMap {
       if(stations.length > 1) {
         const self = this;
         stations = _.reject(stations, function(s) {return s.station._id === self.dragStation._id;});
+
+        // Safety check: ensure we still have stations to merge with after filtering
+        if(stations.length === 0) {
+          console.log('No stations to merge with after filtering, treating as simple move');
+          try {
+            await Meteor.callAsync('teamDeductCost', this._id,
+              Helpers.stationMoveCost, 'Station move');
+            await this.dragStation.updateDB();
+          } catch(err) {
+            this.setMessage(err.reason || err.message);
+          }
+          this.dragStation = null;
+          return;
+        }
+
+        // Charge move cost first
+        try {
+          await Meteor.callAsync('teamDeductCost', this._id,
+            Helpers.stationMoveCost, 'Station move');
+        } catch(err) {
+          this.setMessage(err.reason || err.message);
+          this.dragStation = null;
+          return;
+        }
+
         this.game.sound('merge');
         await this.dragStation.mergeStation(stations[0].station);
+
+        // Credit station refund (net = move cost - station refund = $100 - $500 = -$400)
+        await Meteor.callAsync('teamAddRevenue', this._id,
+          Helpers.stationCost, 0);
       }
-      else
-        await this.dragStation.updateDB();
+      else {
+        // Simple move (no merge)
+        try {
+          await Meteor.callAsync('teamDeductCost', this._id,
+            Helpers.stationMoveCost, 'Station move');
+          await this.dragStation.updateDB();
+        } catch(err) {
+          this.setMessage(err.reason || err.message);
+          // TODO: Rollback position to original (would need to store original position)
+        }
+      }
       this.dragStation = null;
     }
     document.body.style.cursor = 'default';
@@ -497,7 +748,8 @@ export class GameMapGui extends GameMap {
 
   // return all stations under the mouse
   overlappingStations() {
-    return this.getNearestStations(this.mouseRelPos, this.dispo.stationSize * 1.5, 1);
+    const mergeRadius = (this.dispo.stationSize * 2) / this.dispo.zoom;
+    return this.getNearestStations(this.mouseRelPos, mergeRadius);
   }
 
   doDragPoint(e) {
@@ -506,8 +758,60 @@ export class GameMapGui extends GameMap {
     if(stations.length > 1) { // if yes, snap pos
       this.game.sound('clip', {onlyIfNotPlaying: true, stopAllOthers: true});
       this.dragStation.pos = stations[1].station.pos;
+
+      // Highlight merge target station
+      const targetStation = stations[1].station;
+      const targetPos = this.relToRealCoords(targetStation.pos);
+
+      this.ctx.strokeStyle = 'rgba(100, 255, 100, 0.8)';
+      this.ctx.lineWidth = 4;
+      const highlightRadius = this.dispo.zoom * this.dispo.stationSize * 1.5;
+      Drawing.drawCircle(this.ctx, targetPos, highlightRadius);
+
+      this.ctx.strokeStyle = 'rgba(150, 255, 150, 0.6)';
+      this.ctx.lineWidth = 2;
+      Drawing.drawCircle(this.ctx, targetPos, highlightRadius * 0.7);
     }
     else this.dragStation.pos = this.mouseRelPos;
+  }
+
+  // Calculate refund for removing a station (station cost + all connected rails)
+  calculateStationRefund(station) {
+    let totalRefund = Helpers.stationCost; // $500 for the station
+
+    // Calculate rail refunds (only count children to avoid double-counting bidirectional rails)
+    for(const child of station.children) {
+      const railDistance = Geometry.dist(station.pos, child.pos);
+      const railRefund = Math.round(railDistance * Helpers.railCostPerMeter);
+      totalRefund += railRefund;
+    }
+
+    return totalRefund;
+  }
+
+  // Override parent's removeIsolatedStations to add refunds
+  async removeIsolatedStations() {
+    const isolatedStations = [];
+
+    // Find isolated stations
+    for(const station of this.objects) {
+      if(station.type !== 'station') continue;
+      if(station.children.length === 0 && station.parents.length === 0) {
+        isolatedStations.push(station);
+      }
+    }
+
+    // Remove isolated stations
+    for(const station of isolatedStations) {
+      await this.removeObjectFromDb(station._id);
+    }
+
+    // Credit refund for isolated stations
+    if(isolatedStations.length > 0) {
+      const refund = isolatedStations.length * Helpers.stationCost;
+      await Meteor.callAsync('teamAddRevenue', this._id, refund, 0);
+      console.log(`Isolated stations removed: refunding $${refund} (${isolatedStations.length} stations)`);
+    }
   }
 
   async removePointFromEvent(e) {
@@ -516,8 +820,18 @@ export class GameMapGui extends GameMap {
     if(this.nearestObj) {
       this.game.sound('remove');
       const station = this.nearestObj;
+
+      // Calculate refund before removing
+      const refund = this.calculateStationRefund(station);
+      console.log(`Station removal: refunding $${refund} (station + ${station.children.length} rails)`);
+
       await this.removeStation(station);
       await this.removeIsolatedStations(); // FIXME P1: should be automatic
+
+      // Credit refund
+      if(refund > 0) {
+        await Meteor.callAsync('teamAddRevenue', this._id, refund, 0);
+      }
     }
     /*
         else {
@@ -582,38 +896,58 @@ export class GameMapGui extends GameMap {
 
   // coming from db
   addStation(doc) {
-    // console.log("GameMapGui#addStation", doc);
-    if(this.getObjectById(doc._id)) return; // the client could have added it before saving it to the db
+    console.log("GameMapGui#addStation", doc._id, 'existing?', !!this.getObjectById(doc._id));
+
+    // Prevent duplicate adds (critical for split operations)
+    const existing = this.getObjectById(doc._id);
+    if(existing) {
+      console.log('GameMapGui#addStation: station already exists locally, skipping', doc._id);
+      return;
+    }
+
     const s = new StationGui(doc);
     super.addObject(s); // not addStation
     this.updateStationsLinks();
     // for each game change, also set game status
     if(this.game) this.game.setStatus();
     this.draw();
-    // console.log('added', s);
+    console.log('GameMapGui#addStation: added station', s._id, 'total stations:', this.getStations().length);
   }
 
   // coming from db
   addTrain(doc) {
     // Check by ID, not by position (position can change)
     const existing = this.getObjectById(doc._id);
-    console.log('addTrain', doc._id, doc, 'found', existing);
-    if(existing) return; // if the client already has it
+    console.log('GameMapGui#addTrain', doc._id, 'existing?', !!existing);
+    if(existing) {
+      console.log('GameMapGui#addTrain: train already exists locally, skipping', doc._id);
+      return;
+    }
     super.addObject(new TrainGui(doc));
+    console.log('GameMapGui#addTrain: added train', doc._id);
   }
 
   // coming from db
   addCity(doc) {
-    if(this.getObjectById(doc._id)) return; // the client could have added it before saving it to the db
+    const existing = this.getObjectById(doc._id);
+    console.log('GameMapGui#addCity', doc._id, 'existing?', !!existing);
+    if(existing) {
+      console.log('GameMapGui#addCity: city already exists locally, skipping', doc._id);
+      return;
+    }
     const c = new CityGui(doc);
     super.addObject(c);
     this.draw();
+    console.log('GameMapGui#addCity: added city', c._id);
   }
 
   // coming from db
   addPerson(doc) {
-    if(this.getObjectById(doc._id)) return; // the client could have added it before saving it to the db
-    // console.log("GameMapGui#addPerson", doc);
+    const existing = this.getObjectById(doc._id);
+    if(existing) {
+      // Person additions are very frequent, don't spam console
+      return;
+    }
     const p = new PersonGui(doc);
     super.addObject(p);
     this.draw();
