@@ -43,6 +43,7 @@ export class GameMap {
   }
 
   async resetMap() {
+    // Clear all objects locally - server will recreate cities and observer will sync them back
     this.objects.length = 0;
     await Meteor.callAsync('mapReset', this._id);
   }
