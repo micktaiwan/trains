@@ -110,6 +110,22 @@ Template.myTemplate.events({
 });
 ```
 
+**Important Note on Client-Side Authentication:**
+Client-side authentication methods (`Meteor.loginWithPassword`, `Accounts.createUser`) use **callbacks, not async/await**. The async variants (`loginWithPasswordAsync`, `createUserAsync`) are not part of Meteor's standard client API. For authentication specifically, use callbacks:
+
+```javascript
+// For login/signup forms - use callbacks
+Meteor.loginWithPassword(username, password, (err) => {
+  if (err) {
+    errorMessageVar.set(err.reason);
+  } else {
+    $('.ui.modal.login-modal').modal('hide');
+  }
+});
+```
+
+For other Meteor methods (game logic, data operations), `await Meteor.callAsync()` works fine on the client.
+
 #### Files using this pattern
 
 - `client/ui/components/login.js` - Reference implementation
