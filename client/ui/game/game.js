@@ -13,6 +13,10 @@ Template.game.onCreated(function() {
 
   // console.log('Template.game.onCreated data', this.data);
   if(!this.data) return console.error("game.onCreated: this game does not exists");
+
+  // Subscribe to teams for this game
+  this.subscribe('teams', this.data._id);
+
   map = new GameMapGui(this.data._id);
   game = new GameGui({_id: this.data._id, map: map});
 
@@ -106,6 +110,22 @@ Template.game.onRendered(function() {
     handleMapObjects = handle;
   });
 
+  // Auto-fit map to view when objects are loaded
+  let hasAutoFitted = false;
+  Tracker.autorun(() => {
+    // Trigger reactivity on object count change
+    const objectCount = MapObjects.find({game_id: this.data._id}).count();
+
+    // Only fit once after initial load (when we have objects)
+    if(!hasAutoFitted && objectCount > 0 && map.objects.length > 0) {
+      hasAutoFitted = true;
+      // Defer to next tick to ensure all objects are added to map
+      Meteor.defer(() => {
+        map.fitMapToView();
+      });
+    }
+  });
+
 });
 
 Template.game.onDestroyed(function() {
@@ -185,6 +205,13 @@ Template.game.helpers({
 
   radioStation: function() {
     return radioStationInfo.get();
+  },
+
+  teamTreasury: function() {
+    const team = Teams.findOne({game_id: this._id});
+    if(!team || typeof team.treasury === 'undefined') return '$0';
+    // Format with thousands separator
+    return '$' + team.treasury.toLocaleString('en-US');
   }
 
 });
@@ -200,7 +227,7 @@ Template.game.events({
   // },
 
   'click .center': function() {
-    map.resetPosition();
+    map.fitMapToView();
   },
 
   'click .open-join-modal': function() {

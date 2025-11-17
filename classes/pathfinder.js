@@ -9,6 +9,16 @@ export class PathFinder {
   }
 
   static search(start, goal) {
+    // Input validation (legitimate check - prevent crashes from bad callers)
+    if(!start || !goal) {
+      console.error('PathFinder.search: BUG - called with null parameters (start:', !!start, 'goal:', !!goal, ')');
+      return {found: false, inverse_path: {}, cost_so_far: {}};
+    }
+    if(!start._id || !goal._id) {
+      console.error('PathFinder.search: BUG - stations missing IDs (start._id:', !!start._id, 'goal._id:', !!goal._id, ')');
+      return {found: false, inverse_path: {}, cost_so_far: {}};
+    }
+
     const frontier = new TinyQueue([], function(a, b) {return a.priority - b.priority;});
     frontier.push({value: start, priority: 0});
     const inverse_map = {};

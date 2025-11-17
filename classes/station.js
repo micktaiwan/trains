@@ -116,9 +116,99 @@ export class Station extends DBObject {
     this.map.updateStationsLinks();
   }
 
+  // Update all trains that reference this station to point to the destination station instead
+  async updateTrainsAfterMerge(dest) {
+    console.log('Station#updateTrainsAfterMerge: redirecting trains from', this._id, 'to', dest._id);
+    const trains = this.map.getTrains();
+    let updatedCount = 0;
+
+    for(const train of trains) {
+      let needsUpdate = false;
+      let needsPathRecalc = false;
+
+      // Update fromStation reference
+      if(train.fromStation && train.fromStation._id === this._id) {
+        console.log('  Train', train._id, ': updating fromStation');
+        train.fromStation = dest;
+        train.pos = dest.pos; // Move train to destination station
+        needsUpdate = true;
+        needsPathRecalc = true; // Need to recalculate path from new position
+      }
+
+      // Update destStation reference
+      if(train.destStation && train.destStation._id === this._id) {
+        console.log('  Train', train._id, ': updating destStation');
+        train.destStation = dest;
+        needsUpdate = true;
+        // Don't need path recalc here - destination just moved, path stays valid
+      }
+
+      // Update nextStation reference
+      if(train.nextStation && train.nextStation._id === this._id) {
+        console.log('  Train', train._id, ': updating nextStation to dest');
+        train.nextStation = dest;
+        needsUpdate = true;
+        needsPathRecalc = true; // Next stop changed, need to recalculate
+      }
+
+      // Check if any station in the path was the merged station
+      if(train.path && train.path.length > 0) {
+        for(const station of train.path) {
+          if(station && station._id === this._id) {
+            console.log('  Train', train._id, ': station in path was merged, need recalc');
+            needsPathRecalc = true;
+            break;
+          }
+        }
+      }
+
+      // If the train needs path recalculation, do it properly
+      if(needsPathRecalc && train.destStation && train.fromStation) {
+        console.log('  Train', train._id, ': recalculating path from', train.fromStation._id, 'to', train.destStation._id);
+
+        // Special case: if we're already at destination (fromStation === destStation)
+        if(train.fromStation._id === train.destStation._id) {
+          console.log('  Train', train._id, ': already at destination after merge, stopping');
+          train.running = false;
+          train.nextStation = null;
+          train.path = [];
+          train.destStation = null;
+        }
+        // Special case: if nextStation is now the same as destStation
+        else if(train.nextStation && train.nextStation._id === train.destStation._id) {
+          console.log('  Train', train._id, ': nextStation === destStation, clearing path');
+          train.path = [];
+          // Keep nextStation and running state - train will arrive on next update
+        }
+        else {
+          // Normal case: recalculate full path
+          train.setPath();
+          train.nextStation = train.path.shift();
+          console.log('  Train', train._id, ': path recalculated, new path length:', train.path.length);
+        }
+
+        needsUpdate = true;
+      }
+
+      // Save the updated train to DB
+      if(needsUpdate) {
+        await train.updateDB();
+        updatedCount++;
+        console.log('  Train', train._id, 'updated and saved');
+      }
+    }
+
+    console.log('Station#updateTrainsAfterMerge: updated', updatedCount, 'trains');
+    return updatedCount;
+  }
+
   // merge 2 stations
   async mergeStation(dest) {
-    // console.log('***** MERGE ', this._id, '=>', dest._id);
+    console.log('***** MERGE ', this._id, '=>', dest._id);
+
+    // CRITICAL: Update all trains BEFORE removing the station
+    await this.updateTrainsAfterMerge(dest);
+
     // add all links to dest
     for(const c of this.children) {
       if(dest._id === c._id) continue;
@@ -127,9 +217,12 @@ export class Station extends DBObject {
       await c.updateDB();
     }
     await dest.updateDB();
+
     // remove self
     await this.map.removeStation(this, true);
     await this.map.removeIsolatedStations(); // the only case where we merge a isolated segment
+
+    console.log('***** MERGE COMPLETED ', this._id, '=>', dest._id);
   }
 
   update(clock) {

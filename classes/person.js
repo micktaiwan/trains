@@ -13,13 +13,20 @@ export class Person extends DBObject {
       birthDate: null,
       health: 100,
       speed: 5,
+      destinationCity: null,
+      destinationCityId: null,
+      inTrain: null,
     };
     super(properties, doc);
+    this.updateFromDB(doc); // Transform string IDs to resolved objects
   }
 
   async update(clock) {
     // death
     if(this.health <= 0) return await this.removeFromDB();
+
+    // if in train, don't move
+    if(this.inTrain) return;
 
     // movement
     // get persons around
@@ -93,11 +100,20 @@ export class Person extends DBObject {
       birthAt: this.birthAt,
       birthDate: this.birthDate,
       pos: this.pos,
+      destinationCity: this.destinationCity ? this.destinationCity._id : null,
+      inTrain: this.inTrain,
     };
   }
 
   updateFromDB(doc) {
     if(doc.pos) this.pos = doc.pos;
+    if(doc.destinationCity) {
+      // Always store the ID
+      this.destinationCityId = doc.destinationCity;
+      // Try to resolve the object (may be null if city not loaded yet)
+      this.destinationCity = this.map.getObjectById(doc.destinationCity);
+    }
+    if(typeof(doc.inTrain) !== 'undefined') this.inTrain = doc.inTrain;
   }
 
 }
@@ -114,6 +130,39 @@ export class PersonGui extends Person {
     this.ctx.fillStyle = '#ff0';
     const rpos = this.map.relToRealCoords(this.pos);
     Drawing.drawPoint(this.ctx, rpos, size);
+
+    // Check if mouse is hovering over this person
+    const isHovering = this.map.mouseRelPos && Geometry.dist(this.pos, this.map.mouseRelPos) < 30;
+
+    // Display destination on hover
+    if(isHovering) {
+      // Lazy resolution: if we have the ID but not the object, try to resolve it
+      if(this.destinationCityId && !this.destinationCity) {
+        this.destinationCity = this.map.getObjectById(this.destinationCityId);
+      }
+
+      // Only display if we have a valid destination city with a name
+      if(this.destinationCity && this.destinationCity.name) {
+        const fontSize = Math.max(16, 16 * this.map.dispo.zoom);
+        this.ctx.font = `bold ${fontSize}px sans-serif`;
+
+        const destinationText = '→ ' + this.destinationCity.name;
+        const textMetrics = this.ctx.measureText(destinationText);
+        const textWidth = textMetrics.width;
+        const textHeight = fontSize;
+
+        const textX = rpos.x - textWidth / 2;
+        const textY = rpos.y - size - 8;
+
+        // Draw background rectangle
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        this.ctx.fillRect(textX - 4, textY - textHeight, textWidth + 8, textHeight + 6);
+
+        // Draw text
+        this.ctx.fillStyle = '#ff0';
+        this.ctx.fillText(destinationText, textX, textY);
+      }
+    }
 
     // draw name
     if(this.map.dispo.zoom > 5) {

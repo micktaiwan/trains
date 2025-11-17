@@ -21,6 +21,7 @@ export class Train extends DBObject {
       progress: 0, // progress along current segment (0-100)
       running: false, // whether train is currently moving
       hasMoved: false,
+      passengers: [], // list of passenger IDs
     };
     super(def, doc);
     this.updateFromDB(doc); // perform additional object transformations
@@ -54,7 +55,7 @@ export class Train extends DBObject {
       }
 
       if(this.running) { // Only move if running
-        this.goTowardNextStop();
+        await this.goTowardNextStop();
         this.hasMoved = true;
       }
     }
@@ -63,7 +64,7 @@ export class Train extends DBObject {
   }
 
   // update train position
-  goTowardNextStop() {
+  async goTowardNextStop() {
     if(!this.nextStation) {
       this.nextStation = this.path.shift();
       this.progress = 0;
@@ -89,9 +90,12 @@ export class Train extends DBObject {
       if(this.fromStation === this.destStation) {
         this.running = false;
         this.destStation = null; // Clear destination to trigger recalculation on next update
-        // this.leavePassengers();
+        await this.leavePassengers();
       }
-      else this.getPassengers();
+      else {
+        await this.leavePassengers(); // Check if passengers should disembark at intermediate stations
+        await this.getPassengers(); // Then pick up new passengers
+      }
     }
       // calculate vector to goal
     // console.log('from', this.fromStation, 'dest', this.nextStation);
@@ -102,19 +106,79 @@ export class Train extends DBObject {
 
   checkStations() {
     //check if the stations are still alive
-    if(!this.fromStation) return this.running = false;
-    this.fromStation = this.map.getObjectById(this.fromStation._id); // we get the real object again in case of DB update (we need it later to check the children)
-    if(!this.fromStation) return this.running = false;
+    if(!this.fromStation) {
+      console.log('Train', this._id, ': fromStation is null, trying to recover...');
+      // Try to find nearest station as recovery
+      const nearestStation = this.map.getNearestStation(this.pos, -1);
+      if(nearestStation) {
+        console.log('Train', this._id, ': recovered, now at station', nearestStation._id);
+        this.fromStation = nearestStation;
+        this.destStation = null; // Clear destination to trigger recalculation
+        this.nextStation = null;
+        this.path = [];
+        this.running = false;
+        return;
+      }
+      console.log('Train', this._id, ': no stations found, stopping');
+      return this.running = false;
+    }
+
+    // Refresh fromStation reference from map (in case it was updated)
+    const refreshedFrom = this.map.getObjectById(this.fromStation._id);
+    if(!refreshedFrom) {
+      console.log('Train', this._id, ': fromStation', this.fromStation._id, 'no longer exists (possibly merged), finding nearest...');
+      // Station was removed (merged) - find nearest station
+      const nearestStation = this.map.getNearestStation(this.pos, -1);
+      if(nearestStation) {
+        console.log('Train', this._id, ': recovered from merge, now at station', nearestStation._id);
+        this.fromStation = nearestStation;
+        this.pos = nearestStation.pos;
+        this.destStation = null; // Clear destination to trigger recalculation
+        this.nextStation = null;
+        this.path = [];
+        this.running = false;
+        return;
+      }
+      console.log('Train', this._id, ': could not recover from merge, stopping');
+      return this.running = false;
+    }
+    this.fromStation = refreshedFrom;
+
     if(!this.nextStation) return;
-    if(!this.map.getObjectById(this.nextStation._id)) {
+
+    // Check if nextStation still exists
+    const refreshedNext = this.map.getObjectById(this.nextStation._id);
+    if(!refreshedNext) {
+      console.log('Train', this._id, ': nextStation', this.nextStation._id, 'no longer exists, shifting to next in path');
       this.nextStation = this.path.shift();
+      if(!this.nextStation) {
+        console.log('Train', this._id, ': path is empty, recalculating...');
+        this.running = false;
+        this.destStation = null;
+      }
       return;
     }
+    this.nextStation = refreshedNext;
+
     // reset path if the next is not a child of from anymore
     const children = _.map(this.fromStation.children, function(child) {return child._id;});
     if(!children.includes(this.nextStation._id)) {
-      this.setPath();
-      this.nextStation = this.path.shift();
+      console.log('Train', this._id, ': nextStation is no longer a child of fromStation, recalculating path');
+
+      // This should not happen if updateTrainsAfterMerge() did its job properly
+      // But if it does, recalculate the path
+      if(this.destStation && this.fromStation._id !== this.destStation._id) {
+        console.log('Train', this._id, ': recalculating path as fallback');
+        this.setPath();
+        this.nextStation = this.path.shift();
+      } else {
+        // No destination or already at destination
+        console.log('Train', this._id, ': stopping (no valid destination)');
+        this.running = false;
+        this.nextStation = null;
+        this.path = [];
+        this.destStation = null;
+      }
     }
   }
 
@@ -160,6 +224,15 @@ export class Train extends DBObject {
 
   setPath() {
     const self = this;
+
+    // Validate inputs (legitimate check, not defensive coding)
+    if(!this.fromStation || !this.destStation) {
+      console.error('Train', this._id, ': setPath called with invalid stations (from:', !!this.fromStation, 'dest:', !!this.destStation, ')');
+      console.error('  This is a BUG - setPath should never be called without valid stations');
+      this.path = [];
+      return;
+    }
+
     this.path = _.map(PathFinder.path(this.fromStation, this.destStation), function(id) {
       // console.log("Station", id);
       return self.map.getObjectById(id);
@@ -181,7 +254,8 @@ export class Train extends DBObject {
       nextStation: this.nextStation ? this.nextStation._id : null,
       path: _.compact(_.map(self.path, function(s) {
         if(s && s._id) return s._id;
-      }))
+      })),
+      passengers: this.passengers || []
     };
   }
 
@@ -199,6 +273,7 @@ export class Train extends DBObject {
     if(doc.destStation) this.destStation = this.map.getObjectById(doc.destStation);
     if(doc.nextStation) this.nextStation = this.map.getObjectById(doc.nextStation);
     if(doc.path) this.path = _.compact(_.map(doc.path, function(id) {return self.map.getObjectById(id);}));
+    if(doc.passengers) this.passengers = doc.passengers;
     // console.log('Train#updateFromDB', doc, "\n", 'this', this);
   }
 
@@ -208,15 +283,61 @@ export class Train extends DBObject {
     for(let i = 0; i < this.map.objects.length; i++) {
       const obj = this.map.objects[i];
       if(obj.type !== 'person') continue;
+      // Skip passengers already in a train
+      if(obj.inTrain) continue;
       if(Geometry.dist(this.pos, obj.pos) < Helpers.getPassengersRadius) {
         nb++;
         passengers.push(this.map.objects[i]);
       }
     }
     for(const p of passengers) {
-      await p.removeFromDB(); // kill nearby passengers....
+      // Board the passenger
+      p.inTrain = this._id;
+      this.passengers.push(p._id);
+      await p.updateDB();
     }
-    if(nb) console.log('train killed', nb, 'people');
+    if(nb) console.log('train boarded', nb, 'people');
+  }
+
+  async leavePassengers() {
+    // Find the nearest city to current station
+    const nearestCityInfo = this.map.findNearestCity(this.pos);
+    if(!nearestCityInfo) return;
+
+    const nearestCity = nearestCityInfo.city;
+    let disembarked = 0;
+
+    // Check each passenger in the train
+    const remainingPassengers = [];
+    for(const passengerId of this.passengers) {
+      const passenger = this.map.getObjectById(passengerId);
+      if(!passenger) continue; // passenger was removed
+
+      // Check if passenger's destination matches the nearest city (use ID for robustness)
+      if(passenger.destinationCityId && passenger.destinationCityId === nearestCity._id) {
+        // Passenger reached destination - remove from game (despawn)
+        await passenger.removeFromDB();
+        disembarked++;
+      } else {
+        // Keep passenger in train
+        remainingPassengers.push(passengerId);
+      }
+    }
+
+    this.passengers = remainingPassengers;
+    if(disembarked > 0) {
+      console.log('train disembarked', disembarked, 'people at', nearestCity.name);
+
+      // Calculate and generate revenue
+      const baseRevenue = Helpers.passengerBaseRevenue;
+      const capacityRatio = (this.passengers.length + disembarked) / 10; // Assuming capacity of 10
+      const efficiencyBonus = capacityRatio > Helpers.passengerEfficiencyThreshold ? Helpers.passengerEfficiencyBonus : 0;
+      const totalRevenue = disembarked * (baseRevenue + efficiencyBonus);
+
+      // Credit revenue to team
+      await Meteor.callAsync('teamAddRevenue', this.map._id, totalRevenue, disembarked);
+      console.log(`Revenue generated: $${totalRevenue} (${disembarked} passengers × $${baseRevenue + efficiencyBonus})`);
+    }
   }
 
 }

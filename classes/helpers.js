@@ -143,6 +143,18 @@ export class Helpers {
   static timePixels = Helpers.timeFactor * Helpers.pixelSpeed * Helpers.serverInterval / 1000; // the real pixels depending of the refresh time in seconds
   static getPassengersRadius = 50;
   static maxDistGetNearestStation = 400;
+  static cityRadius = 150; // visual size and passenger spawn area
+  static cityStationPlacementRadius = 150; // max distance from city to place stations
+
+  // Economy constants
+  static startingCapital = 12000;
+  static stationCost = 500;
+  static stationMoveCost = 100;
+  static railCostPerMeter = 2;
+  static trainBasicCost = 1000;
+  static passengerBaseRevenue = 10;
+  static passengerEfficiencyBonus = 5;
+  static passengerEfficiencyThreshold = 0.8;
 
   static objectId(object) {
     if(!objIdMap.has(object)) objIdMap.set(object, ++objectCount);

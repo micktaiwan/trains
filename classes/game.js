@@ -38,7 +38,7 @@ export class Game extends DBObject {
         name: 'Default City',
         pos: {x: 500, y: 500},
         population: 3000,
-        radius: 150,
+        radius: Helpers.cityRadius,
         size: 10,
         color: '#fa0'
       });
@@ -48,12 +48,19 @@ export class Game extends DBObject {
     }
 
     // Spawn persons near cities
-    for(let i = 0; i < 10; i++) {
+    for(let i = 0; i < 1; i++) {
       // Pick a random city (uniform distribution)
-      const city = cities[_.random(0, cities.length - 1)];
+      const spawnCity = cities[_.random(0, cities.length - 1)];
+
+      // Pick a different destination city
+      let destinationCity = null;
+      if(cities.length > 1) {
+        const availableDestinations = cities.filter(c => c._id !== spawnCity._id);
+        destinationCity = availableDestinations[_.random(0, availableDestinations.length - 1)];
+      }
 
       // Generate random position within city radius
-      const spawnPos = Geometry.randomPosInCircle(city.pos, city.radius);
+      const spawnPos = Geometry.randomPosInCircle(spawnCity.pos, spawnCity.radius);
 
       const person = new Person({
         map: this.map,
@@ -62,7 +69,8 @@ export class Game extends DBObject {
       person.birthAt = spawnPos;
       person.birthDate = new Date(); // Age could affect skills...
       person.name = 'John Doe'; // to be randomized
-      person.to = {x: _.random(0, 1000), y: _.random(0, 1000)};
+      person.destinationCity = destinationCity;
+      person.destinationCityId = destinationCity ? destinationCity._id : null;
       person.pos = person.birthAt;
       await person.saveToDB();
     }

@@ -1,5 +1,5 @@
 import {DBObject} from "./dbobject";
-import {Drawing} from "./helpers";
+import {Drawing, Helpers} from "./helpers";
 
 export class City extends DBObject {
 
@@ -12,7 +12,7 @@ export class City extends DBObject {
       game_id: null,
       pos: {x: 0, y: 0},
       population: 3000,
-      radius: 150,
+      radius: Helpers.cityRadius,
       size: 10,
       color: '#fa0'
     };

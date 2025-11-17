@@ -211,6 +211,136 @@ Template.myTemplate.events({
 - User data: `await Meteor.userAsync()` on server, `Meteor.user()` on client
 - Collections: `insertAsync`, `updateAsync`, `removeAsync`, `findOneAsync`
 
+## 🚨 CRITICAL: Bug Fixing Philosophy
+
+**NEVER HIDE PROBLEMS - ALWAYS FIX THE ROOT CAUSE**
+
+When fixing bugs, follow these STRICT rules:
+
+### ❌ **FORBIDDEN: Defensive Coding**
+
+**DO NOT** add checks that hide symptoms without fixing the cause:
+
+```javascript
+// ❌ BAD - Hides the problem
+if(this.destStation) {
+  this.setPath();
+} else {
+  // Silently fail - bug is hidden!
+  this.running = false;
+  return;
+}
+```
+
+This approach:
+- Masks the real issue
+- Makes debugging harder
+- Allows bugs to propagate silently
+- Creates technical debt
+
+### ✅ **REQUIRED: Root Cause Analysis**
+
+**ALWAYS** follow this process:
+
+1. **Understand the FULL context**
+   - Read the logs carefully
+   - Trace the execution flow from start to end
+   - Identify WHEN and WHY the problem occurs
+
+2. **Find the ROOT CAUSE**
+   - Ask: "Why is this value null/undefined/invalid?"
+   - Ask: "Where should this value have been set?"
+   - Ask: "What broke the normal flow?"
+   - **Never assume** - verify with logs and code inspection
+
+3. **Fix at the SOURCE**
+   - Fix where the problem originates, not where it manifests
+   - Update the data at the right time, in the right place
+   - Ensure proper state transitions
+
+4. **Add LEGITIMATE validation only**
+   - Input validation at API boundaries = ✅ Good
+   - Null checks with clear "This is a BUG" errors = ✅ Good
+   - Silent fallbacks that hide issues = ❌ Bad
+
+### 📋 Example: The Right Way
+
+**Scenario**: Train crashes because `destStation` is null when calling `setPath()`
+
+❌ **WRONG** (defensive):
+```javascript
+// In checkStations()
+if(this.destStation) {
+  this.setPath();  // Only call if exists
+}
+// Problem hidden, real cause not fixed
+```
+
+✅ **RIGHT** (root cause fix):
+```javascript
+// In updateTrainsAfterMerge() - the REAL source of the problem
+if(needsPathRecalc && train.destStation && train.fromStation) {
+  // Handle the merge properly
+  if(train.nextStation._id === train.destStation._id) {
+    train.path = [];  // Special case: already at next = dest
+  } else {
+    train.setPath();  // Recalculate properly
+    train.nextStation = train.path.shift();
+  }
+}
+// Problem fixed at the source
+```
+
+### 🔍 Debugging Approach
+
+When encountering a bug:
+
+1. **Read the error stack trace completely**
+   - Note the exact line and conditions
+   - Check what values are null/undefined
+
+2. **Add strategic logging**
+   - Log state BEFORE the crash
+   - Log the path that led to the crash
+   - Use `console.log` liberally during investigation
+
+3. **Ask critical questions**
+   - "Why is this null NOW when it should have a value?"
+   - "What operation should have set this value?"
+   - "When did the value become invalid?"
+
+4. **Trace backwards from the crash**
+   - Find where the invalid state was created
+   - Fix the state transition, not the symptom
+
+5. **Legitimate validation vs defensive coding**
+   - Validation at boundaries = Good
+   ```javascript
+   // ✅ GOOD - Catch invalid input early
+   if(!start || !goal) {
+     console.error('PathFinder: BUG - called with null');
+     return {found: false, ...};
+   }
+   ```
+
+   - Silent workarounds = Bad
+   ```javascript
+   // ❌ BAD - Hides the bug
+   if(!this.destStation) {
+     return; // Silently do nothing
+   }
+   ```
+
+### 🎯 Summary
+
+- **Find the root cause** - don't patch symptoms
+- **Fix at the source** - update where data should be set
+- **Add explicit logging** - make bugs visible, not hidden
+- **Validate inputs** - but crash loudly on invalid state
+- **Never silently fail** - if something is wrong, make it obvious
+
+**Remember**: A hidden bug is worse than a crash. Crashes force fixes, hidden bugs accumulate debt.
+
 ## 📊 Known Technical Debt (FIXME comments)
 
 - **P1**: Route picking for new trains (currently picks first station)
