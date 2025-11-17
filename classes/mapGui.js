@@ -95,11 +95,37 @@ export class GameMapGui extends GameMap {
     return q;
   }
 
+  // Validate if a station can be placed at given position (must be within 300m of a city)
+  validateStationPlacement(pos) {
+    const nearestCityInfo = this.findNearestCity(pos);
+    if(!nearestCityInfo) {
+      return {valid: false, error: 'No cities found on map'};
+    }
+
+    const maxDistance = 300; // meters
+    if(nearestCityInfo.dist > maxDistance) {
+      return {
+        valid: false,
+        error: `Station must be within ${maxDistance}m of a city (nearest: ${Math.round(nearestCityInfo.dist)}m from ${nearestCityInfo.city.name})`
+      };
+    }
+
+    return {valid: true, nearestCity: nearestCityInfo.city};
+  }
+
   // given a mouse down, start creating a link between 2 new stations
   startLinkFromEvent(e) {
     if(!this.game.canModifyMap()) return;
-    this.game.sound('station');
     const c = this.relMouseCoords(e);
+
+    // Validate station placement
+    const validation = this.validateStationPlacement(c);
+    if(!validation.valid) {
+      this.setMessage(validation.error);
+      return;
+    }
+
+    this.game.sound('station');
     this.currentStation = new StationGui({map: this, pos: c});
     // this.currentStation.saveToDB();
   }
@@ -108,6 +134,32 @@ export class GameMapGui extends GameMap {
     if(!this.game.canModifyMap()) return;
     this.game.sound('station');
     this.dragStation = await this.insertProjection(this.nearestObj.rel);
+  }
+
+  // Draw 300m radius circles around cities to show placement zones
+  drawCityPlacementZones() {
+    const cities = this.getCities();
+    const maxDistance = 300; // meters
+
+    this.ctx.strokeStyle = 'rgba(100, 200, 255, 0.3)';
+    this.ctx.lineWidth = 2;
+
+    for(const city of cities) {
+      const cityPos = this.relToRealCoords(city.pos);
+      const radiusInPixels = maxDistance * this.dispo.zoom;
+      Drawing.drawCircle(this.ctx, cityPos, radiusInPixels);
+    }
+
+    // Highlight nearest city
+    if(this.mouseRelPos) {
+      const nearestCityInfo = this.findNearestCity(this.mouseRelPos);
+      if(nearestCityInfo && nearestCityInfo.dist <= maxDistance) {
+        const cityPos = this.relToRealCoords(nearestCityInfo.city.pos);
+        this.ctx.strokeStyle = 'rgba(100, 255, 100, 0.6)';
+        this.ctx.lineWidth = 3;
+        Drawing.drawCircle(this.ctx, cityPos, maxDistance * this.dispo.zoom);
+      }
+    }
   }
 
   drawCurrentLinkFromEvent(e) {
@@ -119,6 +171,9 @@ export class GameMapGui extends GameMap {
     Drawing.drawLine(this.ctx, cpos, c);
     Drawing.drawPoint(this.ctx, cpos, this.dispo.mouseSize * this.dispo.zoom);
     Drawing.drawPoint(this.ctx, c, this.dispo.mouseSize * this.dispo.zoom);
+
+    // Draw city placement zones when placing stations
+    this.drawCityPlacementZones();
   }
 
   async endLinkFromEvent(e) {
@@ -127,8 +182,19 @@ export class GameMapGui extends GameMap {
       this.currentStation = null;
       return;
     }
-    this.game.sound('station');
+
     const c = this.relMouseCoords(e);
+
+    // Validate end station placement
+    const validation = this.validateStationPlacement(c);
+    if(!validation.valid) {
+      this.setMessage(validation.error);
+      this.currentStation = null;
+      this.draw();
+      return;
+    }
+
+    this.game.sound('station');
     const endStation = new StationGui({map: this, pos: c});
     this.currentStation.addBiChild(endStation);
     await this.currentStation.saveToDB();
@@ -269,6 +335,12 @@ export class GameMapGui extends GameMap {
     if(!this.game.canModifyMap()) return;
     const c = this.mouseSnappedCoords;
     if(!c) return;
+
+    // Show city placement zones when hovering (and not currently placing a station)
+    if(!this.mouseIsDown && !this.currentStation) {
+      this.drawCityPlacementZones();
+    }
+
     // display mouse
     let size = this.dispo.mouseSize * this.dispo.zoom;
     // if(size < 5) size = 5;
@@ -530,10 +602,12 @@ export class GameMapGui extends GameMap {
     super.addObject(new TrainGui(doc));
   }
 
+  // coming from db
   addCity(doc) {
+    if(this.getObjectById(doc._id)) return; // the client could have added it before saving it to the db
     const c = new CityGui(doc);
-    this.cities.push(c);
-    return c;
+    super.addObject(c);
+    this.draw();
   }
 
   // coming from db

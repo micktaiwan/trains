@@ -150,6 +150,7 @@ export class Helpers {
         if(doc.type === 'train') params.map.addTrain(_.extend({_id: id, map: params.map}, doc));
         else if(doc.type === 'station') params.map.addStation(_.extend({_id: id, map: params.map}, doc));
         else if(doc.type === 'person') params.map.addPerson(_.extend({_id: id, map: params.map}, doc));
+        else if(doc.type === 'city') params.map.addCity(_.extend({_id: id, map: params.map}, doc));
         else console.error('Do not know this type', id, doc);
       },
       changed: async function(id, doc) {
@@ -178,6 +179,7 @@ export class Helpers {
         if(fullDoc.type === 'train') params.map.addTrain(_.extend({_id: id, map: params.map}, fullDoc));
         else if(fullDoc.type === 'station') params.map.addStation(_.extend({_id: id, map: params.map}, fullDoc));
         else if(fullDoc.type === 'person') params.map.addPerson(_.extend({_id: id, map: params.map}, fullDoc));
+        else if(fullDoc.type === 'city') params.map.addCity(_.extend({_id: id, map: params.map}, fullDoc));
         else console.error('Unknown object type', id, fullDoc.type);
       },
       removed: function(id) {

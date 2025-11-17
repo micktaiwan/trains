@@ -5,6 +5,7 @@ import {Geometry, Helpers} from "./helpers";
 import {Train} from "./train";
 import {Person} from "./person";
 import {Station} from "./station";
+import {City} from "./city";
 
 // a map is a set of stations belonging to a game_id
 export class GameMap {
@@ -144,6 +145,36 @@ export class GameMap {
     if(this.getObjectById(doc._id)) return; // the client could have added it before saving it to the db
     const p = new Person(doc);
     this.addObject(p);
+  }
+
+  // Add city from database
+  addCity(doc) {
+    if(this.getObjectById(doc._id)) return; // the client could have added it before saving it to the db
+    const c = new City(doc);
+    this.addObject(c);
+  }
+
+  getCities() {
+    return _.filter(this.objects, function(o) {return o.type === 'city';});
+  }
+
+  // Find the nearest city to a given position
+  findNearestCity(pos) {
+    const cities = this.getCities();
+    if(cities.length === 0) return null;
+
+    let nearestCity = cities[0];
+    let minDist = Geometry.dist(pos, nearestCity.pos);
+
+    for(let i = 1; i < cities.length; i++) {
+      const dist = Geometry.dist(pos, cities[i].pos);
+      if(dist < minDist) {
+        minDist = dist;
+        nearestCity = cities[i];
+      }
+    }
+
+    return {city: nearestCity, dist: minDist};
   }
 
   // coming from db
