@@ -44,11 +44,13 @@ export class Train extends DBObject {
     }
     else { // we come from a station
       if(!this.running) { // we are stopped at a station
-        // If no destination set (e.g., after page refresh), calculate one
+        // First, pick up passengers at this station
+        await this.getPassengers();
+
+        // Then, if no destination set, calculate one based on passengers on board
         if(!this.destStation) {
           this.findDestination();
         }
-        await this.getPassengers();
 
         // If we now have a destination, start moving toward it
         if(this.destStation) {
@@ -361,13 +363,21 @@ export class Train extends DBObject {
         passengers.push(this.map.objects[i]);
       }
     }
+    let boarded = 0;
     for(const p of passengers) {
+      // Check if train has capacity
+      if(this.passengers.length >= this.capacity) {
+        console.log('train is full, cannot board more passengers');
+        break; // Stop boarding when full
+      }
+
       // Board the passenger
       p.inTrain = this._id;
       this.passengers.push(p._id);
       await p.updateDB();
+      boarded++;
     }
-    if(nb) console.log('train boarded', nb, 'people');
+    if(boarded) console.log('train boarded', boarded, 'people');
   }
 
   async leavePassengers() {
