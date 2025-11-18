@@ -22,6 +22,8 @@ export class Train extends DBObject {
       running: false, // whether train is currently moving
       hasMoved: false,
       passengers: [], // list of passenger IDs
+      capacity: 10, // maximum number of passengers
+      maxSpeed: Helpers.trainSpeed, // max speed in km/h
     };
     super(def, doc);
     this.updateFromDB(doc); // perform additional object transformations
@@ -182,8 +184,73 @@ export class Train extends DBObject {
     }
   }
 
+  // Find the best destination station for passengers currently on board
+  findBestDestinationForPassengers() {
+    if(!this.passengers || this.passengers.length === 0) return null;
+
+    const stations = this.map.getStations();
+    if(stations.length === 0) return null;
+
+    // Build a map of destination cities for passengers on board
+    const destinationCityIds = [];
+    for(const passengerId of this.passengers) {
+      const passenger = this.map.getObjectById(passengerId);
+      if(passenger && passenger.destinationCityId) {
+        destinationCityIds.push(passenger.destinationCityId);
+      }
+    }
+
+    if(destinationCityIds.length === 0) return null;
+
+    // For each station, calculate score based on proximity to destination cities
+    const stationScores = {};
+    for(const station of stations) {
+      if(station._id === this.fromStation._id) continue; // Skip current station
+
+      // Find nearest city to this station
+      const nearestCityInfo = this.map.findNearestCity(station.pos);
+      if(!nearestCityInfo) continue;
+
+      const nearestCity = nearestCityInfo.city;
+      const cityId = nearestCity._id;
+
+      // Count how many passengers want to go to this city
+      const score = destinationCityIds.filter(destId => destId === cityId).length;
+
+      // Only consider stations near cities that passengers want to reach
+      if(score > 0) {
+        stationScores[station._id] = score;
+      }
+    }
+
+    // Find station with highest score
+    let bestStation = null;
+    let maxScore = 0;
+    for(const station of stations) {
+      const score = stationScores[station._id] || 0;
+      if(score > maxScore) {
+        maxScore = score;
+        bestStation = station;
+      }
+    }
+
+    return bestStation;
+  }
+
   // will choose a destination based on passenger demand
   findDestination() {
+    // PRIORITY 1: If we have passengers on board, take them to their destination
+    if(this.passengers && this.passengers.length > 0) {
+      const bestStation = this.findBestDestinationForPassengers();
+      if(bestStation) {
+        this.destStation = bestStation;
+        console.log('Train', this._id, ': taking', this.passengers.length, 'passengers to their destination');
+        this.setPath();
+        return;
+      }
+    }
+
+    // PRIORITY 2: Go pick up waiting passengers
     // Get all stations
     const stations = this.map.getStations();
     if(stations.length === 0) return;
@@ -207,7 +274,7 @@ export class Train extends DBObject {
       }
     }
 
-    // Fallback to random if no people waiting anywhere
+    // PRIORITY 3: Fallback to random if no people waiting anywhere
     if(!bestStation || maxPeople === 0) {
       // Filter out current station
       const availableStations = stations.filter(s => s._id !== this.fromStation._id);
@@ -255,7 +322,9 @@ export class Train extends DBObject {
       path: _.compact(_.map(self.path, function(s) {
         if(s && s._id) return s._id;
       })),
-      passengers: this.passengers || []
+      passengers: this.passengers || [],
+      capacity: this.capacity,
+      maxSpeed: this.maxSpeed
     };
   }
 
@@ -274,6 +343,8 @@ export class Train extends DBObject {
     if(doc.nextStation) this.nextStation = this.map.getObjectById(doc.nextStation);
     if(doc.path) this.path = _.compact(_.map(doc.path, function(id) {return self.map.getObjectById(id);}));
     if(doc.passengers) this.passengers = doc.passengers;
+    if(typeof(doc.capacity) !== "undefined") this.capacity = doc.capacity;
+    if(typeof(doc.maxSpeed) !== "undefined") this.maxSpeed = doc.maxSpeed;
     // console.log('Train#updateFromDB', doc, "\n", 'this', this);
   }
 
@@ -330,7 +401,7 @@ export class Train extends DBObject {
 
       // Calculate and generate revenue
       const baseRevenue = Helpers.passengerBaseRevenue;
-      const capacityRatio = (this.passengers.length + disembarked) / 10; // Assuming capacity of 10
+      const capacityRatio = (this.passengers.length + disembarked) / this.capacity;
       const efficiencyBonus = capacityRatio > Helpers.passengerEfficiencyThreshold ? Helpers.passengerEfficiencyBonus : 0;
       const totalRevenue = disembarked * (baseRevenue + efficiencyBonus);
 
