@@ -192,8 +192,10 @@ Template.myTemplate.events({
 **IMPORTANT - For AI Assistants:**
 - ❌ **DO NOT** kill Meteor processes (`pkill meteor`)
 - ❌ **DO NOT** start the Meteor application automatically (`meteor run`)
+- ❌ **DO NOT** create git commits unless explicitly requested by the user
 - ✅ **DO** let the user control the application lifecycle
 - ✅ **DO** provide commands as suggestions
+- ✅ **DO** wait for explicit user instruction before committing changes
 
 **CODE LANGUAGE:**
 - ⚠️ **ALL code, comments, variables, and documentation MUST be in ENGLISH ONLY**
