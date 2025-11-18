@@ -27,6 +27,14 @@ export class GameMapGui extends GameMap {
     this.mouseRelPos = {x: 0, y: 0};
     this.pan = {x: 0, y: 0};
     this.dragStation = null;
+
+    // City zone fade animation
+    this.cityZoneFadeOpacity = 0;          // Current opacity (0-1)
+    this.cityZoneLastMouseMove = Date.now(); // Timestamp of last mouse movement
+    this.cityZoneFadeSpeed = 0.015;         // Fade speed per frame (slower: ~1.1 seconds)
+    this.cityZoneIdleDelay = 500;           // Delay before fade-out (ms)
+    this.cityZoneFadeAnimating = false;     // Animation loop active flag
+    this.cityZoneFadeState = 'idle';        // 'idle', 'fading-in', 'visible', 'fading-out'
   }
 
   static onContextMenu(e) {
@@ -171,7 +179,65 @@ export class GameMapGui extends GameMap {
     const cities = this.getCities();
     const maxDistance = Helpers.cityStationPlacementRadius;
 
-    this.ctx.strokeStyle = 'rgba(100, 200, 255, 0.3)';
+    // State machine for fade animation
+    const now = Date.now();
+    const timeSinceMove = now - this.cityZoneLastMouseMove;
+    let needsRedraw = false;
+
+    // Determine state transitions
+    if(timeSinceMove < 100) {
+      // Mouse is moving
+      if(this.cityZoneFadeState === 'idle' || this.cityZoneFadeState === 'fading-out') {
+        // Start fading in
+        this.cityZoneFadeState = 'fading-in';
+      }
+    } else if(timeSinceMove > this.cityZoneIdleDelay) {
+      // Mouse has been idle for a while
+      if(this.cityZoneFadeState === 'visible' || this.cityZoneFadeState === 'fading-in') {
+        // Start fading out
+        this.cityZoneFadeState = 'fading-out';
+      }
+    }
+
+    // Update opacity based on state
+    if(this.cityZoneFadeState === 'fading-in') {
+      this.cityZoneFadeOpacity = Math.min(1, this.cityZoneFadeOpacity + this.cityZoneFadeSpeed);
+      needsRedraw = true;
+
+      // Check if fade-in is complete
+      if(this.cityZoneFadeOpacity >= 0.99) {
+        this.cityZoneFadeState = 'visible';
+        this.cityZoneFadeOpacity = 1;
+      }
+    } else if(this.cityZoneFadeState === 'fading-out') {
+      this.cityZoneFadeOpacity = Math.max(0, this.cityZoneFadeOpacity - this.cityZoneFadeSpeed);
+      needsRedraw = true;
+
+      // Check if fade-out is complete
+      if(this.cityZoneFadeOpacity <= 0.01) {
+        this.cityZoneFadeState = 'idle';
+        this.cityZoneFadeOpacity = 0;
+      }
+    }
+
+    // Schedule next redraw if animating
+    if(needsRedraw) {
+      const self = this;
+      if(!this.cityZoneFadeAnimating) {
+        this.cityZoneFadeAnimating = true;
+        requestAnimationFrame(function() {
+          self.cityZoneFadeAnimating = false;
+          self.draw();
+        });
+      }
+    }
+
+    // Don't draw if fully transparent (optimization)
+    if(this.cityZoneFadeOpacity <= 0.01) return;
+
+    // Apply fade to normal circles
+    const normalOpacity = 0.3 * this.cityZoneFadeOpacity;
+    this.ctx.strokeStyle = `rgba(100, 200, 255, ${normalOpacity})`;
     this.ctx.lineWidth = 2;
 
     for(const city of cities) {
@@ -184,8 +250,9 @@ export class GameMapGui extends GameMap {
     if(this.mouseRelPos) {
       const nearestCityInfo = this.findNearestCity(this.mouseRelPos);
       if(nearestCityInfo && nearestCityInfo.dist <= maxDistance) {
+        const highlightOpacity = 0.6 * this.cityZoneFadeOpacity;
         const cityPos = this.relToRealCoords(nearestCityInfo.city.pos);
-        this.ctx.strokeStyle = 'rgba(100, 255, 100, 0.6)';
+        this.ctx.strokeStyle = `rgba(100, 255, 100, ${highlightOpacity})`;
         this.ctx.lineWidth = 3;
         Drawing.drawCircle(this.ctx, cityPos, maxDistance * this.dispo.zoom);
       }
@@ -202,9 +269,6 @@ export class GameMapGui extends GameMap {
     Drawing.drawLine(this.ctx, cpos, c);
     Drawing.drawPoint(this.ctx, cpos, this.dispo.mouseSize * this.dispo.zoom);
     Drawing.drawPoint(this.ctx, c, this.dispo.mouseSize * this.dispo.zoom);
-
-    // Draw city placement zones when placing stations
-    this.drawCityPlacementZones();
 
     // Highlight merge target station if mouse is close to an existing station
     const mergeRadius = (this.dispo.stationSize * 2) / this.dispo.zoom;
@@ -531,24 +595,80 @@ export class GameMapGui extends GameMap {
     this.drawMapBorder();
     this.drawCenter();
     this.drawTime = (new Date().getTime()) - time;
-    // display coords
-    this.ctx.font = '14px sans';
-    this.ctx.fillStyle = '#999';
-    this.ctx.fillText('pos: ' + this.mouseRelPos.x + ', ' + this.mouseRelPos.y, 20, 20);
-    this.ctx.fillText('pan: ' + (this.pan.x) + ', ' + (this.pan.y), 20, 40);
-    this.ctx.fillText('zoom: ' + (this.dispo.zoom), 20, 60);
-    this.ctx.fillText('time: ' + (this.drawTime), 20, 80);
+
+    // Draw city placement zones with fade animation
+    this.drawCityPlacementZones();
+
+    // Display passenger destinations for all trains
+    this.drawTrainPassengerInfo();
+  }
+
+  drawTrainPassengerInfo() {
+    const trains = this.getTrains();
+    if(trains.length === 0) return;
+
+    this.ctx.font = '14px sans-serif';
+    this.ctx.fillStyle = '#fff';
+
+    let yOffset = 20;
+
+    for(const train of trains) {
+      const trainIdShort = train._id.substring(0, 6);
+      const passengerCount = train.passengers ? train.passengers.length : 0;
+      const capacity = train.capacity || 10;
+      const maxSpeed = train.maxSpeed || 180;
+
+      // Build train info line: "Train [id] (3/10, 180km/h): destinations"
+      let text = `Train ${trainIdShort} (${passengerCount}/${capacity}, ${maxSpeed}km/h)`;
+
+      // Add destinations if there are passengers
+      if(passengerCount > 0) {
+        // Build list of destination cities
+        const destinations = [];
+        for(const passengerId of train.passengers) {
+          const passenger = this.getObjectById(passengerId);
+          if(passenger && passenger.destinationCityId) {
+            const city = this.getObjectById(passenger.destinationCityId);
+            if(city && city.name) {
+              destinations.push(city.name);
+            }
+          }
+        }
+
+        if(destinations.length > 0) {
+          // Count occurrences of each destination
+          const destinationCounts = {};
+          for(const dest of destinations) {
+            destinationCounts[dest] = (destinationCounts[dest] || 0) + 1;
+          }
+
+          // Format output: "2× Paris, 1× Lyon"
+          const destText = Object.entries(destinationCounts)
+            .map(([city, count]) => count > 1 ? `${count}× ${city}` : city)
+            .join(', ');
+
+          text += `: ${destText}`;
+        }
+      }
+
+      // Draw background
+      const textMetrics = this.ctx.measureText(text);
+      const textWidth = textMetrics.width;
+      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      this.ctx.fillRect(10, yOffset - 14, textWidth + 20, 20);
+
+      // Draw text
+      this.ctx.fillStyle = '#fff';
+      this.ctx.fillText(text, 20, yOffset);
+
+      yOffset += 25;
+    }
   }
 
   drawMouse() {
     if(!this.game.canModifyMap()) return;
     const c = this.mouseSnappedCoords;
     if(!c) return;
-
-    // Show city placement zones when hovering (and not currently placing a station)
-    if(!this.mouseIsDown && !this.currentStation) {
-      this.drawCityPlacementZones();
-    }
 
     // display mouse
     let size = this.dispo.mouseSize * this.dispo.zoom;
@@ -597,6 +717,9 @@ export class GameMapGui extends GameMap {
     this.mouseRelPos = this.relMouseCoords(e);
     this.mouseMovement = {x: this.mousePos.x - this.mouseOldPos.x, y: this.mousePos.y - this.mouseOldPos.y};
     this.nearestObj = this.getNearestStation(this.mouseRelPos, this.dispo.stationSize);
+
+    // Update timestamp for city zone fade animation
+    this.cityZoneLastMouseMove = Date.now();
     if(this.mouseIsDown) {
       if(e.ctrlKey) { // pan map
         drawmouse = false;
