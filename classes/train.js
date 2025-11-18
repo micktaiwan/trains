@@ -14,6 +14,7 @@ export class Train extends DBObject {
       game_id: null,
       map: null,
       pos: {x: 10, y: 10},
+      displayPos: {x: 10, y: 10}, // Position used for rendering (interpolated)
       fromStation: null, // station
       destStation: null, // station
       nextStation: null, // current target station in path
@@ -337,6 +338,11 @@ export class Train extends DBObject {
       this.from = _.clone(this.pos);
       if(doc.pos) this.pos = doc.pos;
       this.hasMoved = true;
+
+      // Initialize displayPos if not set (first update)
+      if(!this.displayPos) {
+        this.displayPos = _.clone(this.pos);
+      }
     }
     if(typeof(doc.progress) !== "undefined") this.progress = doc.progress;
     if(typeof(doc.running) !== "undefined") this.running = doc.running;

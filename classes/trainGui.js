@@ -3,7 +3,8 @@
  */
 
 import {Train} from './train';
-import {Drawing, Helpers, Vector} from "./helpers";
+import {Drawing, Helpers} from "./helpers";
+import {TrainMoveAnimation} from "./trainMoveAnimation";
 
 export class TrainGui extends Train {
 
@@ -16,57 +17,63 @@ export class TrainGui extends Train {
       margin: displayOptions.margin || 0.15, // %
       trainSize: displayOptions.trainSize || 15,
     };
-    this.currentDrawStep = this.moveTotalSteps = 20; // default values that are calculated later
-    this.animateWait = 100; // constant: draw every animateWait ms
-    this.animating = false;
+  }
+
+  /**
+   * Override updateFromDB to start smooth movement animation when position changes
+   */
+  updateFromDB(doc) {
+    // Capture old displayPos before update
+    const oldDisplayPos = this.displayPos ? _.clone(this.displayPos) : null;
+
+    // Call parent updateFromDB (updates this.pos, this.from, etc.)
+    super.updateFromDB(doc);
+
+    // If position changed, start smooth animation
+    if(doc.pos && oldDisplayPos) {
+      // Check if position actually changed (not just a progress update)
+      const posChanged = oldDisplayPos.x !== this.pos.x || oldDisplayPos.y !== this.pos.y;
+
+      if(posChanged) {
+        // Remove any existing animation for this train
+        const animId = `train-move-${this._id}`;
+        if(this.map.animationManager.hasAnimation(animId)) {
+          this.map.animationManager.removeAnimation(animId);
+        }
+
+        // Create new smooth movement animation
+        const animation = new TrainMoveAnimation(animId, {
+          train: this,
+          from: oldDisplayPos,      // Start from current display position
+          to: this.pos,             // Animate to new server position
+          onUpdate: () => {
+            // Request redraw on each animation frame
+            this.map.animationManager.requestRedraw();
+          },
+          onComplete: () => {
+            // Ensure final position is exact
+            this.displayPos = _.clone(this.pos);
+          }
+        });
+
+        // Add animation to manager
+        this.map.animationManager.addAnimation(animation);
+      }
+    }
   }
 
   draw() {
-    return this.doDraw();
-    this.moveTotalSteps = Helpers.serverInterval / this.animateWait;
-    // console.log('TrainGui#draw', Helpers.serverInterval, this.moveTotalSteps, this.animateWait);
-    if(!this.animating) {
-      if(this.hasMoved) {
-        this.hasMoved = false;
-        this.currentDrawStep = 0;
-        this.animate();
-      }
-    }
     this.doDraw();
-  }
-
-  // animate the move
-  // will cut the animation into moveTotalSteps steps
-  animate() {
-    // console.log('TrainGui#animate');
-    this.animating = true;
-    this.currentDrawStep += 1;
-    this.doDraw();
-    const self = this;
-    if(this.currentDrawStep < this.moveTotalSteps) {
-      Meteor.setTimeout(function() {
-        self.animate();
-      }, this.animateWait);
-    }
-    else {
-      this.currentDrawStep = this.moveTotalSteps;
-      this.doDraw();
-      this.animating = false;
-    }
   }
 
   doDraw() {
     // console.log('TrainGui#doDraw', this._id);
-    // console.log(this.from, this.pos);
     let size = this.map.dispo.zoom * this.dispo.trainSize;
-    // if(size < 5) size = 5;
-    // the pos is the destination
-    // we calculate the relative position with a vector
-    const progress = this.currentDrawStep / this.moveTotalSteps;
-    let v = new Vector(this.from, this.pos);
-    const projection = v.origin().plus((v.scal(progress))).norm();
-    // this.map.drawSection(projection);
-    const rpos = this.map.relToRealCoords(projection);
+
+    // Use displayPos (interpolated by animation) for rendering
+    // Falls back to pos if displayPos is not set
+    const renderPos = this.displayPos || this.pos;
+    const rpos = this.map.relToRealCoords(renderPos);
 
     // draw path
     // console.log(this.path.length, this.destStation);
