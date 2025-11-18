@@ -18,8 +18,13 @@ export class DBObject {
     await Meteor.callAsync('mapInsert', this.objToSave());
   }
 
-  async updateDB() {
-    await Meteor.callAsync('mapUpdate', this._id, this.objToSave());
+  async updateDB(oldData = {}) {
+    const objData = this.objToSave();
+    // Merge oldData for comparison purposes (e.g., old city name)
+    if (oldData) {
+      Object.assign(objData, oldData);
+    }
+    await Meteor.callAsync('mapUpdate', this._id, objData);
   }
 
   async removeFromDB() {

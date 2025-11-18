@@ -10,6 +10,16 @@ Meteor.publish('teams', function(game_id) {
   return Teams.find({game_id: game_id});
 });
 
+Meteor.publish('game_logs', function(game_id) {
+  return GameLogs.find(
+    {game_id: game_id},
+    {
+      sort: {timestamp: -1},
+      limit: 10
+    }
+  );
+});
+
 
 // publications to every client without needing a subscription
 Meteor.publish(null, function() {

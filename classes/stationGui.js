@@ -9,6 +9,18 @@ export class StationGui extends Station {
     this.ctx = this.map.ctx;
   }
 
+  objToSave() {
+    const obj = super.objToSave();
+
+    // Add nearest city name for logging purposes
+    const nearestCityInfo = this.map.findNearestCity(this.pos);
+    if (nearestCityInfo && nearestCityInfo.city) {
+      obj.cityName = nearestCityInfo.city.name;
+    }
+
+    return obj;
+  }
+
   draw() {
     this.ctx.fillStyle = "#666";
     const rpos = this.map.relToRealCoords(this.pos);

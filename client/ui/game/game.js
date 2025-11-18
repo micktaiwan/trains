@@ -17,6 +17,9 @@ Template.game.onCreated(function() {
   // Subscribe to teams for this game
   this.subscribe('teams', this.data._id);
 
+  // Subscribe to game logs for this game
+  this.subscribe('game_logs', this.data._id);
+
   map = new GameMapGui(this.data._id);
   game = new GameGui({_id: this.data._id, map: map});
 
@@ -123,6 +126,26 @@ Template.game.onRendered(function() {
       Meteor.defer(() => {
         map.fitMapToView();
       });
+    }
+  });
+
+  // Redraw canvas when game logs change
+  const gameId = this.data._id;
+  GameLogs.find({game_id: gameId}).observe({
+    added: function() {
+      if(map && map.draw) {
+        map.draw();
+      }
+    },
+    changed: function() {
+      if(map && map.draw) {
+        map.draw();
+      }
+    },
+    removed: function() {
+      if(map && map.draw) {
+        map.draw();
+      }
     }
   });
 
