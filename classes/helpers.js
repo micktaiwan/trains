@@ -145,7 +145,7 @@ export class Helpers {
   static maxDistGetNearestStation = 400;
   static cityRadius = 150; // visual size and passenger spawn area
   static cityStationPlacementRadius = 150; // max distance from city to place stations
-  static maxPersons = 10; // maximum number of persons on the map at once
+  static maxPersons = 50; // maximum number of persons on the map at once
 
   // Economy constants
   static startingCapital = 12000;
