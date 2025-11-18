@@ -369,121 +369,7 @@ Freight Train + 4 Wagons
 
 ### Train Mechanics
 
-#### Boarding Process
-```javascript
-// At each station stop:
-function boardPassengers(train, station) {
-  const availableCapacity = train.capacity - train.passengers.length;
-  if (availableCapacity <= 0) return; // Train full
-
-  // Find passengers waiting at this station
-  const waitingPassengers = Persons.find({
-    game_id: train.game_id,
-    state: 'waiting',
-    waitingAt: station._id
-  }).fetch();
-
-  // Board up to capacity (first-come-first-served)
-  const toBoard = waitingPassengers.slice(0, availableCapacity);
-
-  toBoard.forEach(passenger => {
-    train.passengers.push(passenger._id);
-    passenger.state = 'traveling';
-    passenger.boardedTrain = train._id;
-    passenger.waitingAt = null;
-  });
-
-  // Recalculate train destination based on new passengers
-  train.findDestination();
-}
-```
-
-#### Disembarking Process
-```javascript
-// At each station stop:
-function disembarkPassengers(train, station) {
-  const passengersOnBoard = Persons.find({
-    _id: {$in: train.passengers}
-  }).fetch();
-
-  passengersOnBoard.forEach(passenger => {
-    const destCity = Cities.findOne(passenger.cityDestination_id);
-    const distToDestination = distance(station.pos, destCity.pos);
-
-    // Disembark if this is the closest station to destination
-    if (isClosestStationToCity(station, destCity)) {
-      // Remove from train
-      train.passengers = train.passengers.filter(id => id !== passenger._id);
-
-      // Update passenger state
-      passenger.state = 'walking_to_destination';
-      passenger.boardedTrain = null;
-      passenger.pos = station.pos; // Appear at station
-    }
-  });
-}
-
-function isClosestStationToCity(station, city) {
-  const allStations = Stations.find({game_id: station.game_id}).fetch();
-  const distances = allStations.map(s => distance(s.pos, city.pos));
-  const minDistance = Math.min(...distances);
-  return distance(station.pos, city.pos) === minDistance;
-}
-```
-
-#### Pathfinding Enhancement
-```javascript
-// Train destination logic
-findDestination() {
-  if (this.passengers.length > 0) {
-    // PRIORITY 1: Deliver passengers onboard
-    const destinationCities = this.passengers.map(passengerId => {
-      const p = Persons.findOne(passengerId);
-      return Cities.findOne(p.cityDestination_id);
-    });
-
-    // Find station closest to these destination cities
-    return this.findStationNearestToCities(destinationCities);
-  } else {
-    // PRIORITY 2: Go pick up waiting passengers
-    const citiesWithWaiting = this.getCitiesWithWaitingPassengers();
-
-    if (citiesWithWaiting.length === 0) {
-      // No passengers anywhere, go to highest population city
-      return this.findStationNearCity(this.getHighestPopulationCity());
-    }
-
-    // Go to city with most waiting passengers
-    const targetCity = citiesWithWaiting.sort(
-      (a, b) => b.waitingCount - a.waitingCount
-    )[0];
-
-    return this.findStationNearCity(targetCity);
-  }
-}
-
-getCitiesWithWaitingPassengers() {
-  const waiting = Persons.find({
-    game_id: this.game_id,
-    state: 'waiting'
-  }).fetch();
-
-  // Group by origin city
-  const cityGroups = {};
-  waiting.forEach(p => {
-    const cityId = p.cityOrigin_id;
-    if (!cityGroups[cityId]) {
-      cityGroups[cityId] = {
-        city: Cities.findOne(cityId),
-        waitingCount: 0
-      };
-    }
-    cityGroups[cityId].waitingCount++;
-  });
-
-  return Object.values(cityGroups);
-}
-```
+Trains board passengers automatically within 50m radius at stations. Passengers are delivered to the nearest station to their destination city. Intelligent routing prioritizes delivering current passengers over picking up new ones.
 
 ---
 
@@ -692,66 +578,27 @@ The game is already designed for solo mode:
 
 ---
 
-## Implementation Phases
+## Implementation Status
 
-### Phase 0: City System (FOUNDATION - MUST BE FIRST)
-1. Create `Cities` collection
-2. Create `City` class with rendering logic
-3. Define 3 map templates (starter, medium, large)
-4. Add map selection UI to game creation
-5. Render cities on canvas (circles with names and radii)
-6. Implement station placement validation (max 300m from city)
-7. Add visual feedback (show 300m circles when placing stations)
+### ✅ Implemented Systems
 
-**Critical**: This phase establishes the spatial logic that all other systems depend on.
+**City System**: Fixed cities on map serve as spawn/destination points for passengers. Station placement validated within 300m of cities. Visual placement zones fade in/out on mouse movement. Implemented in `classes/city.js` and `classes/mapGui.js`.
 
-### Phase 1: Passenger City Integration
-1. Modify `Person` class to use `cityOrigin_id` and `cityDestination_id`
-2. Update passenger spawn logic (near origin city)
-3. Implement city-based destination selection algorithm
-4. Update passenger movement states (walking_to_station, walking_to_destination)
-5. Update pathfinding to prioritize stations near relevant cities
+**Passenger Transport**: Trains autonomously pick up passengers near stations and deliver them to destination cities. Passengers spawn near origin cities, board trains, and disembark at destination cities. Revenue generated on successful delivery. Implemented in `train.js:getPassengers()` and `leavePassengers()`.
 
-### Phase 2: Core Economy
-1. Add `treasury` field to Teams collection
-2. Implement construction costs for stations and rails
-3. Add "insufficient funds" validation to map building methods
-4. Display treasury in UI
-5. Implement demolition system with 50% refund
+**Core Economy**: Team treasury system with construction costs (stations: $500, rails: $2/m, trains: $1000). Insufficient funds validation prevents overspending. Treasury displayed in UI. Implemented in `lib/methods/methodsGame.js`.
 
-### Phase 3: Passenger Transport
-1. Add `boardedTrain`, `state`, `waitingAt` to Person class
-2. Implement boarding logic in Train.boardPassengers()
-3. Implement disembarking logic (closest station to destination city)
-4. Generate revenue on successful transport
-5. Implement passenger timeout (5 min) with penalty
+**Intelligent Train Routing**: Trains prioritize delivering passengers on board before picking up new ones. Uses 3-tier destination system: (1) deliver passengers to their cities, (2) pick up waiting passengers, (3) random fallback. Implemented in `train.js:findDestination()` and `findBestDestinationForPassengers()`.
 
-### Phase 4: Train Variety
-1. Create train type enum (`basic`, `express`, `freight`)
-2. Add train selection UI when purchasing
-3. Implement speed/capacity variations in Train class
-4. Update rendering to show different train types
-5. Rebalance costs (Express: $1,800, capacity: 8)
+### 🚧 Remaining Features
 
-### Phase 5: Wagon System
-1. Add `wagons` field to Train class
-2. Create "Add Wagon" UI button on train hover
-3. Implement capacity increase and speed penalty (-3%)
-4. Track wagon purchases in player statistics
+**Train Variety** (Partially done): Trains have capacity and maxSpeed properties, but no distinct types (basic/express/freight) or visual differentiation yet.
 
-### Phase 6: Progression & Difficulty
-1. Implement passenger spawn rate escalation (updated schedule)
-2. Add timer-based difficulty phases
-3. Create max passenger cap system
-4. Balance starting capital ($12,000) and costs through playtesting
+**Wagon System** (Not started): Add wagons to trains for increased capacity with speed penalty.
 
-### Phase 7: Statistics & Polish
-1. Create statistics tracking collections
-2. Build team dashboard UI
-3. Build city statistics panel (NEW)
-4. Build individual player statistics panel
-5. Create end-game summary screen
-6. Add achievement milestone checks
+**Progression & Difficulty** (Not started): Passenger spawn rate escalation over time, max passenger cap system.
+
+**Statistics & Polish** (Not started): Comprehensive tracking of player/team performance metrics.
 
 ---
 

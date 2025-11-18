@@ -345,8 +345,6 @@ When encountering a bug:
 
 ## 📊 Known Technical Debt (FIXME comments)
 
-- **P1**: Route picking for new trains (currently picks first station)
-- **P1**: Passenger embarking/disembarking incomplete
 - **P2**: Person movement logic has redundant conditionals
 - Incomplete map modification UI features
 
