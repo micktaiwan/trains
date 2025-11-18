@@ -130,6 +130,15 @@ export class GameMapGui extends GameMap {
     child.addBiChild(addedStation);
     await parent.updateDB();
     await child.updateDB();
+
+    // Log the station insertion (split)
+    const cityInfo = this.findNearestCity(addedStation.pos);
+    const cityName = cityInfo ? cityInfo.city.name : 'Unknown';
+    await Meteor.callAsync('gameLogAdd', this._id, 'station_inserted', {
+      cityName: cityName,
+      stationId: addedStation._id
+    });
+
     return addedStation;
   }
 
@@ -404,6 +413,26 @@ export class GameMapGui extends GameMap {
           mergeRefundCount * Helpers.stationCost, 0);
       }
 
+      // Log the rail creation/connection (single log instead of 2 separate station logs)
+      const fromCityInfo = this.findNearestCity(fromStation.pos);
+      const toCityInfo = this.findNearestCity(toStation.pos);
+      const fromCityName = fromCityInfo ? fromCityInfo.city.name : 'Unknown';
+      const toCityName = toCityInfo ? toCityInfo.city.name : 'Unknown';
+
+      if(fromIsNew && toIsNew) {
+        // Both stations are new - this is a rail build
+        await Meteor.callAsync('gameLogAdd', this._id, 'rail_built', {
+          fromCity: fromCityName,
+          toCity: toCityName
+        });
+      } else {
+        // At least one station already exists - this is a connection
+        await Meteor.callAsync('gameLogAdd', this._id, 'rail_connected', {
+          fromCity: fromCityName,
+          toCity: toCityName
+        });
+      }
+
       console.log('Rail creation completed successfully');
     } catch(err) {
       console.error('Failed to save stations:', err);
@@ -574,6 +603,102 @@ export class GameMapGui extends GameMap {
     // TODO: redraw the segment
   }
 
+  // Format timestamp as HH:MM:SS
+  formatLogTime(timestamp) {
+    if (!timestamp) return '--:--:--';
+    const date = new Date(timestamp);
+    const h = String(date.getHours()).padStart(2, '0');
+    const m = String(date.getMinutes()).padStart(2, '0');
+    const s = String(date.getSeconds()).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  }
+
+  // Format action text based on type and details
+  formatLogAction(action, details) {
+    switch(action) {
+      case 'game_created':
+        return `created game "${details.gameName || 'Untitled'}"`;
+      case 'rail_built':
+        return `built rail ${details.fromCity || '?'} - ${details.toCity || '?'}`;
+      case 'rail_connected':
+        return `connected ${details.fromCity || '?'} → ${details.toCity || '?'}`;
+      case 'stations_removed':
+        if (details.cityNames && details.cityNames.length > 1) {
+          return `removed stations ${details.cityNames.join(', ')}`;
+        } else if (details.cityNames && details.cityNames.length === 1) {
+          return `removed station near ${details.cityNames[0]}`;
+        }
+        return 'removed station';
+      case 'station_inserted':
+        return `inserted station near ${details.cityName || 'Unknown'}`;
+      case 'station_placed':
+        return `placed station near ${details.cityName || 'Unknown'}`;
+      case 'station_removed':
+        return `removed station near ${details.cityName || 'Unknown'}`;
+      case 'station_moved':
+        if (details.oldCityName === details.newCityName) {
+          return `moved station within ${details.newCityName || 'Unknown'}`;
+        } else {
+          return `moved station from ${details.oldCityName || '?'} to ${details.newCityName || '?'}`;
+        }
+      default:
+        return action;
+    }
+  }
+
+  // Draw game logs panel on canvas (bottom-left corner)
+  drawGameLogs() {
+    // Get logs from reactive collection
+    const logs = GameLogs.find(
+      {game_id: this._id},
+      {sort: {timestamp: 1}, limit: 10}
+    ).fetch();
+
+    if (logs.length === 0) return;
+
+    const padding = 10;
+    const lineHeight = 18;
+    const fontSize = 12;
+    const panelPadding = 8;
+
+    // Calculate panel dimensions
+    const panelWidth = 350;
+    const panelHeight = (logs.length * lineHeight) + (panelPadding * 2);
+
+    // Position: bottom-left corner
+    const panelX = padding;
+    const panelY = this.canvas.height - panelHeight - padding;
+
+    // Draw logs (oldest to newest, bottom is newest)
+    this.ctx.font = `${fontSize}px monospace`;
+
+    logs.forEach((log, index) => {
+      // Calculate opacity (gradient: oldest = 0.1, newest = 1.0)
+      const opacity = 0.1 + ((index + 1) / logs.length) * 0.9;
+
+      const y = panelY + panelPadding + ((index + 1) * lineHeight);
+
+      // Format time
+      const time = this.formatLogTime(log.timestamp);
+
+      // Format action
+      const action = this.formatLogAction(log.action, log.details);
+
+      // Draw time (gray)
+      this.ctx.fillStyle = `rgba(136, 136, 136, ${opacity})`;
+      this.ctx.fillText(`[${time}]`, panelX + panelPadding, y);
+
+      // Draw user name (blue)
+      this.ctx.fillStyle = `rgba(110, 181, 255, ${opacity})`;
+      this.ctx.fillText(`${log.user.name}:`, panelX + panelPadding + 70, y);
+
+      // Draw action (white)
+      this.ctx.fillStyle = `rgba(221, 221, 221, ${opacity})`;
+      const actionX = panelX + panelPadding + 70 + (log.user.name.length * 7) + 5;
+      this.ctx.fillText(action, actionX, y);
+    });
+  }
+
   draw() {
     const time = new Date().getTime();
     if(!this.ctx) return;
@@ -601,6 +726,19 @@ export class GameMapGui extends GameMap {
 
     // Display passenger destinations for all trains
     this.drawTrainPassengerInfo();
+
+    // Display game logs
+    this.drawGameLogs();
+
+    // Draw temporary station being created (if any)
+    // This ensures the temporary link remains visible during fade animations
+    if(this.currentStation && this.mousePos) {
+      this.drawCurrentLinkFromEvent({
+        pageX: this.mousePos.x + this.canvas.offsetLeft,
+        pageY: this.mousePos.y + this.canvas.offsetTop,
+        target: this.canvas
+      });
+    }
   }
 
   drawTrainPassengerInfo() {
@@ -642,8 +780,9 @@ export class GameMapGui extends GameMap {
             destinationCounts[dest] = (destinationCounts[dest] || 0) + 1;
           }
 
-          // Format output: "2× Paris, 1× Lyon"
+          // Format output: "2× Paris, 1× Lyon" (sorted by count DESC)
           const destText = Object.entries(destinationCounts)
+            .sort((a, b) => b[1] - a[1])  // Sort by count descending
             .map(([city, count]) => count > 1 ? `${count}× ${city}` : city)
             .join(', ');
 
@@ -789,6 +928,9 @@ export class GameMapGui extends GameMap {
             if(!this.nearestObj.rel) { // a station
               if(this.game.canModifyMap()) {
                 this.dragStation = this.nearestObj;
+                // Store original city name for move logging
+                const originalCityInfo = this.findNearestCity(this.dragStation.pos);
+                this.dragStationOriginalCity = originalCityInfo ? originalCityInfo.city.name : 'Unknown';
                 this.game.sound('drag');
               }
             }
@@ -828,11 +970,19 @@ export class GameMapGui extends GameMap {
           try {
             await Meteor.callAsync('teamDeductCost', this._id,
               Helpers.stationMoveCost, 'Station move');
-            await this.dragStation.updateDB();
+            // Get new city name after move
+            const newCityInfo = this.findNearestCity(this.dragStation.pos);
+            const newCityName = newCityInfo ? newCityInfo.city.name : 'Unknown';
+            // Pass old and new city names for logging
+            await this.dragStation.updateDB({
+              oldCityName: this.dragStationOriginalCity,
+              newCityName: newCityName
+            });
           } catch(err) {
             this.setMessage(err.reason || err.message);
           }
           this.dragStation = null;
+          this.dragStationOriginalCity = null;
           return;
         }
 
@@ -858,13 +1008,21 @@ export class GameMapGui extends GameMap {
         try {
           await Meteor.callAsync('teamDeductCost', this._id,
             Helpers.stationMoveCost, 'Station move');
-          await this.dragStation.updateDB();
+          // Get new city name after move
+          const newCityInfo = this.findNearestCity(this.dragStation.pos);
+          const newCityName = newCityInfo ? newCityInfo.city.name : 'Unknown';
+          // Pass old and new city names for logging
+          await this.dragStation.updateDB({
+            oldCityName: this.dragStationOriginalCity,
+            newCityName: newCityName
+          });
         } catch(err) {
           this.setMessage(err.reason || err.message);
           // TODO: Rollback position to original (would need to store original position)
         }
       }
       this.dragStation = null;
+      this.dragStationOriginalCity = null;
     }
     document.body.style.cursor = 'default';
   }
@@ -944,16 +1102,44 @@ export class GameMapGui extends GameMap {
       this.game.sound('remove');
       const station = this.nearestObj;
 
+      // Collect city names before removal (for logging)
+      const cityNames = [];
+      const stationCityInfo = this.findNearestCity(station.pos);
+      if(stationCityInfo && stationCityInfo.city) {
+        cityNames.push(stationCityInfo.city.name);
+      }
+
       // Calculate refund before removing
       const refund = this.calculateStationRefund(station);
       console.log(`Station removal: refunding $${refund} (station + ${station.children.length} rails)`);
 
       await this.removeStation(station);
+
+      // Find isolated stations before removing them (to get their city names)
+      const isolatedStations = [];
+      for(const s of this.objects) {
+        if(s.type !== 'station') continue;
+        if(s.children.length === 0 && s.parents.length === 0) {
+          const isolatedCityInfo = this.findNearestCity(s.pos);
+          if(isolatedCityInfo && isolatedCityInfo.city) {
+            cityNames.push(isolatedCityInfo.city.name);
+          }
+          isolatedStations.push(s);
+        }
+      }
+
       await this.removeIsolatedStations(); // FIXME P1: should be automatic
 
       // Credit refund
       if(refund > 0) {
         await Meteor.callAsync('teamAddRevenue', this._id, refund, 0);
+      }
+
+      // Log all removed stations in a single entry
+      if(cityNames.length > 0) {
+        await Meteor.callAsync('gameLogAdd', this._id, 'stations_removed', {
+          cityNames: cityNames
+        });
       }
     }
     /*
