@@ -8,6 +8,7 @@ import {TrainGui} from './trainGui';
 import {Drawing, Geometry, Helpers} from "./helpers";
 import {CityGui} from "./city";
 import {PersonGui} from "./person";
+import {AnimationManager, FadeAnimation, Easing} from "./animationManager";
 
 export class GameMapGui extends GameMap {
 
@@ -28,13 +29,15 @@ export class GameMapGui extends GameMap {
     this.pan = {x: 0, y: 0};
     this.dragStation = null;
 
-    // City zone fade animation
+    // Animation Manager - centralized animation system
+    this.animationManager = new AnimationManager((timestamp, deltaTime) => {
+      this.drawScene(timestamp, deltaTime);
+    });
+
+    // City zone fade animation state (will be migrated to AnimationManager)
     this.cityZoneFadeOpacity = 0;          // Current opacity (0-1)
     this.cityZoneLastMouseMove = Date.now(); // Timestamp of last mouse movement
-    this.cityZoneFadeSpeed = 0.015;         // Fade speed per frame (slower: ~1.1 seconds)
     this.cityZoneIdleDelay = 500;           // Delay before fade-out (ms)
-    this.cityZoneFadeAnimating = false;     // Animation loop active flag
-    this.cityZoneFadeState = 'idle';        // 'idle', 'fading-in', 'visible', 'fading-out'
   }
 
   static onContextMenu(e) {
@@ -74,8 +77,18 @@ export class GameMapGui extends GameMap {
     this.canvas.addEventListener("contextmenu", $.proxy(GameMapGui.onContextMenu, this), false);
     //this.canvas.addEventListener("mouseout", $.proxy(this.onMouseOut, this), false);
     //this.canvas.addEventListener("dblclick", $.proxy(this.onMouseDblClick, this), false);
-    this.draw();
+
+    // Start the animation manager
+    this.animationManager.start();
+
     console.log('map initialized');
+  }
+
+  // Stop the animation manager (called on destroy)
+  destroy() {
+    if (this.animationManager) {
+      this.animationManager.stop();
+    }
   }
 
   // insert a station q as a child of another p
@@ -188,56 +201,46 @@ export class GameMapGui extends GameMap {
     const cities = this.getCities();
     const maxDistance = Helpers.cityStationPlacementRadius;
 
-    // State machine for fade animation
+    // State machine for fade animation using AnimationManager
     const now = Date.now();
     const timeSinceMove = now - this.cityZoneLastMouseMove;
-    let needsRedraw = false;
 
-    // Determine state transitions
+    // Determine if we need to start/stop fade animations
     if(timeSinceMove < 100) {
-      // Mouse is moving
-      if(this.cityZoneFadeState === 'idle' || this.cityZoneFadeState === 'fading-out') {
-        // Start fading in
-        this.cityZoneFadeState = 'fading-in';
+      // Mouse is moving - fade in
+      if(!this.animationManager.hasAnimation('cityZoneFadeIn')) {
+        // Remove fade-out if it exists
+        this.animationManager.removeAnimation('cityZoneFadeOut');
+
+        // Start fade-in animation
+        const fadeIn = new FadeAnimation('cityZoneFadeIn', {
+          from: this.cityZoneFadeOpacity,
+          to: 1,
+          duration: 1100, // ~1.1 seconds
+          easing: Easing.easeOutQuad,
+          onUpdate: (progress) => {
+            this.cityZoneFadeOpacity = fadeIn.getOpacity();
+          }
+        });
+        this.animationManager.addAnimation(fadeIn);
       }
     } else if(timeSinceMove > this.cityZoneIdleDelay) {
-      // Mouse has been idle for a while
-      if(this.cityZoneFadeState === 'visible' || this.cityZoneFadeState === 'fading-in') {
-        // Start fading out
-        this.cityZoneFadeState = 'fading-out';
-      }
-    }
+      // Mouse has been idle - fade out
+      if(!this.animationManager.hasAnimation('cityZoneFadeOut')) {
+        // Remove fade-in if it exists
+        this.animationManager.removeAnimation('cityZoneFadeIn');
 
-    // Update opacity based on state
-    if(this.cityZoneFadeState === 'fading-in') {
-      this.cityZoneFadeOpacity = Math.min(1, this.cityZoneFadeOpacity + this.cityZoneFadeSpeed);
-      needsRedraw = true;
-
-      // Check if fade-in is complete
-      if(this.cityZoneFadeOpacity >= 0.99) {
-        this.cityZoneFadeState = 'visible';
-        this.cityZoneFadeOpacity = 1;
-      }
-    } else if(this.cityZoneFadeState === 'fading-out') {
-      this.cityZoneFadeOpacity = Math.max(0, this.cityZoneFadeOpacity - this.cityZoneFadeSpeed);
-      needsRedraw = true;
-
-      // Check if fade-out is complete
-      if(this.cityZoneFadeOpacity <= 0.01) {
-        this.cityZoneFadeState = 'idle';
-        this.cityZoneFadeOpacity = 0;
-      }
-    }
-
-    // Schedule next redraw if animating
-    if(needsRedraw) {
-      const self = this;
-      if(!this.cityZoneFadeAnimating) {
-        this.cityZoneFadeAnimating = true;
-        requestAnimationFrame(function() {
-          self.cityZoneFadeAnimating = false;
-          self.draw();
+        // Start fade-out animation
+        const fadeOut = new FadeAnimation('cityZoneFadeOut', {
+          from: this.cityZoneFadeOpacity,
+          to: 0,
+          duration: 1100,
+          easing: Easing.easeInQuad,
+          onUpdate: (progress) => {
+            this.cityZoneFadeOpacity = fadeOut.getOpacity();
+          }
         });
+        this.animationManager.addAnimation(fadeOut);
       }
     }
 
@@ -699,28 +702,63 @@ export class GameMapGui extends GameMap {
     });
   }
 
+  /**
+   * Request a redraw on next animation frame
+   * This replaces direct calls to draw()
+   */
   draw() {
+    if (this.animationManager) {
+      this.animationManager.requestRedraw();
+    }
+  }
+
+  /**
+   * Main drawing method - called by AnimationManager
+   * @param {number} timestamp - Current timestamp from RAF
+   * @param {number} deltaTime - Time since last frame
+   * @param {Map} animations - Active animations from AnimationManager
+   */
+  drawScene(timestamp, deltaTime, animations) {
     const time = new Date().getTime();
     if(!this.ctx) return;
     this.ctx.fillStyle = 'black';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+    // Layer 1: Cities (background)
     for(let i = 0; i < this.objects.length; i++) {
       if(this.objects[i].type !== 'city') continue;
       this.objects[i].draw();
     }
+
+    // Layer 2: Stations and rails
     this.drawStations();
+
+    // Layer 3: Trains (vehicles)
     for(let i = 0; i < this.objects.length; i++) {
       if(this.objects[i].type !== 'train') continue;
       this.objects[i].draw();
     }
+
+    // Layer 4: Persons (NPCs)
     for(let i = 0; i < this.objects.length; i++) {
       if(this.objects[i].type !== 'person') continue;
       this.objects[i].draw();
     }
+
+    // Layer 5: Effects (animations) - Draw all active animations
+    if(animations) {
+      for(const [id, animation] of animations) {
+        if(animation.drawCallback && typeof animation.drawCallback === 'function') {
+          animation.drawCallback(this.ctx);
+        }
+      }
+    }
+
     this.drawMapBorder();
     this.drawCenter();
     this.drawTime = (new Date().getTime()) - time;
 
+    // Layer 6: UI overlays
     // Draw city placement zones with fade animation
     this.drawCityPlacementZones();
 
@@ -819,7 +857,7 @@ export class GameMapGui extends GameMap {
   removeObjectById(id) {
     // console.log('removing station', id, '...');
     super.removeObjectById(id);
-    this.draw();
+    this.draw(); // This now calls animationManager.requestRedraw()
   }
 
   // Zoom

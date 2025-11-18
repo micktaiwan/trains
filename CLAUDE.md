@@ -65,10 +65,27 @@
 - Euclidean distance heuristic
 - Graph-based rail network (directed graph with parent/child stations)
 
-### 5. Canvas Rendering
+### 5. Canvas Rendering with Animation System
+- **NEW**: Centralized AnimationManager with single requestAnimationFrame loop
 - Strategy pattern for polymorphic drawing
 - Each game object implements its own `draw()` method
+- Layer-based rendering (cities → rails → trains → NPCs → effects → UI)
 - Vector math for smooth interpolation
+- **See [ANIMATION_SYSTEM.md](./ANIMATION_SYSTEM.md) for complete documentation**
+
+**Key Animation Classes:**
+- `AnimationManager` - Central RAF loop, manages all animations
+- `FadeAnimation` - Opacity transitions (UI, zones)
+- `SpriteAnimation` - Position/scale/rotation transforms
+- `PassengerBoardingAnimation` - Bezier curve boarding animations
+- `PassengerDisembarkingAnimation` - Radial spread disembarking
+
+**Migration from old system:**
+- ❌ OLD: Multiple `draw()` calls per frame → glitches
+- ✅ NEW: Single `drawScene()` per frame via AnimationManager
+- ❌ OLD: Manual RAF management in individual components
+- ✅ NEW: Centralized animation lifecycle
+- ✅ NEW: Dirty flag optimization (only redraw when needed)
 
 ### 6. Pub/Sub Real-Time Updates
 - Meteor's differential sync (sends only deltas)

@@ -154,6 +154,9 @@ Template.game.onRendered(function() {
 Template.game.onDestroyed(function() {
   radio.stop();
   game.stop();
+  if(map && typeof map.destroy === 'function') {
+    map.destroy(); // Stop animation manager
+  }
   if(handleMapObjects && typeof handleMapObjects.stop === 'function') {
     handleMapObjects.stop();
   }
