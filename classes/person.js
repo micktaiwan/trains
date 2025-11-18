@@ -126,6 +126,9 @@ export class PersonGui extends Person {
   }
 
   draw() {
+    // Don't draw passengers that are inside a train
+    if(this.inTrain) return;
+
     const size = this.map.dispo.zoom * 4;
     this.ctx.fillStyle = '#ff0';
     const rpos = this.map.relToRealCoords(this.pos);

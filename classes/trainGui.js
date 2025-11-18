@@ -91,6 +91,29 @@ export class TrainGui extends Train {
     this.ctx.fillStyle = "#f00";
     Drawing.drawPoint(this.ctx, rpos, size);
 
+    // Display passenger count above train (always show, even if 0)
+    if(this.passengers) {
+      const passengerCount = this.passengers.length;
+      const fontSize = Math.max(14, 14 * this.map.dispo.zoom);
+      this.ctx.font = `bold ${fontSize}px sans-serif`;
+
+      const text = `${passengerCount}`;
+      const textMetrics = this.ctx.measureText(text);
+      const textWidth = textMetrics.width;
+      const textHeight = fontSize;
+
+      const textX = rpos.x - textWidth / 2;
+      const textY = rpos.y - size - 8;
+
+      // Draw background rectangle
+      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      this.ctx.fillRect(textX - 4, textY - textHeight, textWidth + 8, textHeight + 6);
+
+      // Draw text in white (or gray if empty)
+      this.ctx.fillStyle = passengerCount > 0 ? '#fff' : '#888';
+      this.ctx.fillText(text, textX, textY);
+    }
+
     this.ctx.lineWidth = 1;
     this.ctx.strokeStyle = '#fff';
     if(this.progress === 0) {
