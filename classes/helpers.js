@@ -142,6 +142,19 @@ export class Helpers {
   static timeFactor = 1; //  real time / game time factor (60: each second is one minute)
   static timePixels = Helpers.timeFactor * Helpers.pixelSpeed * Helpers.serverInterval / 1000; // the real pixels depending of the refresh time in seconds
   static getPassengersRadius = 50;
+
+  // Train state machine constants
+  static TrainStates = {
+    STOPPED: 'stopped',
+    LOADING: 'loading',
+    UNLOADING: 'unloading',
+    MOVING: 'moving',
+    WAITING: 'waiting'
+  };
+
+  static trainLoadingDuration = 1000;    // 1 second to load passengers
+  static trainUnloadingDuration = 800;   // 0.8 second to unload passengers
+
   static maxDistGetNearestStation = 400;
   static cityRadius = 150; // visual size and passenger spawn area
   static cityStationPlacementRadius = 150; // max distance from city to place stations

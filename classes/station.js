@@ -169,7 +169,7 @@ export class Station extends DBObject {
         // Special case: if we're already at destination (fromStation === destStation)
         if(train.fromStation._id === train.destStation._id) {
           console.log('  Train', train._id, ': already at destination after merge, stopping');
-          train.running = false;
+          train.setState(Helpers.TrainStates.STOPPED);
           train.nextStation = null;
           train.path = [];
           train.destStation = null;
