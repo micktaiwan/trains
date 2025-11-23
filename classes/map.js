@@ -14,6 +14,7 @@ export class GameMap {
     console.log('GameMap#constructor: game_id', game_id, shouldObserveChanges);
     this._id = game_id;
     this.objects = [];
+    this.stationsCache = []; // Cache of stations for fast lookup (performance optimization)
     this.message = new ReactiveVar('');
     this.observeHandle = null;
     this.shouldObserveChanges = shouldObserveChanges;
@@ -45,6 +46,7 @@ export class GameMap {
   async resetMap() {
     // Clear all objects locally - server will recreate cities and observer will sync them back
     this.objects.length = 0;
+    this.stationsCache.length = 0; // Clear stations cache
     await Meteor.callAsync('mapReset', this._id);
   }
 
@@ -59,7 +61,16 @@ export class GameMap {
   removeObjectById(id) {
     for(let i = 0; i < this.objects.length; i++) {
       if(this.objects[i]._id === id) {
+        const obj = this.objects[i];
         this.objects.splice(i, 1);
+
+        // Also remove from stations cache if it's a station
+        if(obj.type === 'station') {
+          const cacheIndex = this.stationsCache.indexOf(obj);
+          if(cacheIndex !== -1) {
+            this.stationsCache.splice(cacheIndex, 1);
+          }
+        }
         break;
       }
     }
@@ -129,6 +140,7 @@ export class GameMap {
     if(this.getObjectById(doc._id)) return; // the client could have added it before saving it to the db
     const s = new Station(doc);
     this.addObject(s);
+    this.stationsCache.push(s); // Add to cache for fast lookups
     this.updateStationsLinks();
   }
 
@@ -222,18 +234,31 @@ export class GameMap {
   }
 
   getNearestStation(pos, maxdist) {
-    const stations = this.getNearestStations(pos, maxdist);
-    if(stations.length > 0) return stations[0].station;
-    return null;
+    // Optimized version: find minimum without sorting
+    // Uses stationsCache for O(n) complexity instead of O(n*m + sort)
+    let nearest = null;
+    let minDist = Infinity;
+
+    for(const station of this.stationsCache) {
+      const d = Geometry.dist(pos, station.pos);
+      if((maxdist < 0 || d <= maxdist) && d < minDist) {
+        minDist = d;
+        nearest = station;
+      }
+    }
+
+    return nearest;
   }
 
   // if maxdist < 0 then not limit on distance, return all stations
   getNearestStations(pos, maxdist) {
+    // Optimized version: uses stationsCache instead of filtering all objects
     const rv = [];
-    for(let i = 0; i < this.objects.length; i++) {
-      if(this.objects[i].type !== 'station') continue;
-      const d = Geometry.dist(pos, this.objects[i].pos);
-      if(maxdist < 0 || d <= maxdist) rv.push({station: this.objects[i], dist: d});
+    for(const station of this.stationsCache) {
+      const d = Geometry.dist(pos, station.pos);
+      if(maxdist < 0 || d <= maxdist) {
+        rv.push({station: station, dist: d});
+      }
     }
     return _.sortBy(rv, function(p) {return p.dist;});
   }

@@ -1,3 +1,21 @@
+// Infinite capacity button styling
+.js-toggle-infinite-capacity {
+  transition: all 0.3s ease;
+
+  &.green {
+    animation: pulse-green 2s infinite;
+  }
+}
+
+@keyframes pulse-green {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(33, 186, 69, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(33, 186, 69, 0);
+  }
+}
+
 .teams-modal {
   display: none;
   position: fixed;

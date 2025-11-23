@@ -238,11 +238,43 @@ Template.game.helpers({
     if(!team || typeof team.treasury === 'undefined') return '$0';
     // Format with thousands separator
     return '$' + team.treasury.toLocaleString('en-US');
+  },
+
+  infiniteCapacityButtonClass: function() {
+    const gameData = Games.findOne(this._id);
+    return gameData && gameData.infiniteCapacityMode ? 'green' : '';
+  },
+
+  infiniteCapacityButtonIcon: function() {
+    const gameData = Games.findOne(this._id);
+    return gameData && gameData.infiniteCapacityMode ? 'infinity' : 'train';
+  },
+
+  infiniteCapacityButtonText: function() {
+    const gameData = Games.findOne(this._id);
+    return gameData && gameData.infiniteCapacityMode ? 'Infinite Capacity ON' : 'Infinite Capacity OFF';
+  },
+
+  infiniteCapacityButtonTooltip: function() {
+    const gameData = Games.findOne(this._id);
+    return gameData && gameData.infiniteCapacityMode
+      ? 'Click to disable infinite train capacity (Fun Mode)'
+      : 'Click to enable infinite train capacity (Fun Mode)';
   }
 
 });
 
 Template.game.events({
+
+  'click .js-toggle-infinite-capacity': async function() {
+    try {
+      const gameId = this._id;
+      await Meteor.callAsync('gameToggleInfiniteCapacity', gameId);
+    } catch(err) {
+      console.error('Error toggling infinite capacity:', err);
+      alert('Error: ' + err.message);
+    }
+  },
 
   'click .js-reset': async function() {
     await map.resetMap();

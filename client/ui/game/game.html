@@ -28,6 +28,10 @@
   <canvas width="{{canvasWidth}}" height="{{canvasHeight}}"></canvas>
   <br/>
   {{#if displayGameButtons}}
+    <button class="right floated ui {{infiniteCapacityButtonClass}} button js-toggle-infinite-capacity pup" data-content="{{infiniteCapacityButtonTooltip}}">
+      <i class="{{infiniteCapacityButtonIcon}} icon"></i>
+      {{infiniteCapacityButtonText}}
+    </button>
     <button class="right floated ui red button js-reset pup" data-content="Remove all rails">Reset GameMap</button>
   {{/if}}
   <div class="mini ui buttons floated right">
