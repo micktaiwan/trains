@@ -116,7 +116,6 @@ export class GameServer extends Game {
     const trainCount = this.map.getTrains().length;
     const stationCount = this.map.getStations().length;
     if(trainCount === 0 && stationCount > 0) {
-      console.log(`[TRAIN] Auto-spawning train (${stationCount} stations available)`);
       await this.addTrain();
     }
 
@@ -179,20 +178,12 @@ export class GameServer extends Game {
         const count = Math.floor(this.passengerSpawnAccumulator);
         this.passengerSpawnAccumulator -= count;
 
-        console.log(`Spawning ${count} passengers (Rate: ${currentRate}/min, Time: ${Math.round(gameDurationMinutes)}m, Current: ${nbPersons}/${Helpers.maxPersons})`);
-
         for(let k=0; k<count; k++) {
           // Re-check limit inside loop
           if(this.map.getPersons().length < Helpers.maxPersons) {
             await this.addPerson();
           }
         }
-      } else if (this.tick % 60 === 0) {
-         // Log status every 60 ticks (1 minute) if no spawning is happening but loop is running
-         console.log(`Spawn Status: Accum=${this.passengerSpawnAccumulator.toFixed(2)}, Rate=${currentRate}, Persons=${nbPersons}/${Helpers.maxPersons}`);
-         if (nbPersons >= Helpers.maxPersons) {
-           console.warn('Max persons reached. Spawning paused.');
-         }
       }
     }
 
@@ -202,16 +193,6 @@ export class GameServer extends Game {
     }
 
     // if(train.move()) Trains.update({_id: train._id}, {$set: {pos: train.pos, dir: train.dir, interval: Helpers.moveInterval}});
-
-    // Periodic status logging every 10 ticks for debugging
-    if(this.tick % 10 === 0) {
-      const cities = this.map.getCities().length;
-      const stations = this.map.getStations().length;
-      const trains = this.map.getTrains().length;
-      console.log(`[LOOP] Tick ${this.tick}: Time=${Math.round(gameDurationMinutes * 10) / 10}m, ` +
-                  `Spawn=${currentRate}/min, Persons=${nbPersons}/${Helpers.maxPersons}, ` +
-                  `Cities=${cities}, Stations=${stations}, Trains=${trains}`);
-    }
 
     const self = this;
     Meteor.setTimeout(function() {self.loop();}, nextDelay);
