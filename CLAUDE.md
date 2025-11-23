@@ -214,6 +214,14 @@ Template.myTemplate.events({
 - ✅ **DO** provide commands as suggestions
 - ✅ **DO** wait for explicit user instruction before committing changes
 
+**CLARITY AND CONFIRMATION:**
+- ⚠️ **WHEN THE USER'S REQUEST IS UNCLEAR OR AMBIGUOUS, YOU MUST ASK FOR CLARIFICATION BEFORE ACTING**
+- ❌ **NEVER** make assumptions about what the user wants
+- ❌ **NEVER** interpret vague requests broadly without confirmation
+- ✅ **ALWAYS** ask specific questions to understand the exact scope
+- ✅ **ALWAYS** confirm your understanding before making changes
+- Example: If user says "remove logs on state changes", ask which specific logs (all logs? only state transition logs? logs in which methods?) before deleting anything
+
 **CODE LANGUAGE:**
 - ⚠️ **ALL code, comments, variables, and documentation MUST be in ENGLISH ONLY**
 - ❌ **NEVER** write French (or any other language) in code/comments
