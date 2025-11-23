@@ -29,6 +29,7 @@ export class Train extends DBObject {
       passengers: [], // list of passenger IDs
       capacity: 10, // maximum number of passengers
       maxSpeed: Helpers.trainSpeed, // max speed in km/h
+      ticksSinceLastProgressSave: 0, // Track ticks for periodic progress sync
     };
     super(def, doc);
     this.updateFromDB(doc); // perform additional object transformations
@@ -43,7 +44,6 @@ export class Train extends DBObject {
     this.state = newState;
     this.stateStartTime = Date.now();
     this.stateDuration = duration;
-    console.log(`Train ${this._id}: state=${newState}, duration=${duration}ms`);
   }
 
   /**
@@ -70,6 +70,9 @@ export class Train extends DBObject {
     // Find the station where we want to go to
     this.checkStations();
 
+    // Track if we need to save to DB (only on important events, not every tick)
+    let needsDBUpdate = false;
+
     if(this.fromStation === null) { // we are not on a track
       // find the nearest station
       const station = this.map.getNearestStation(this.pos, -1);
@@ -86,7 +89,8 @@ export class Train extends DBObject {
           if(unloaded) {
             // State is now UNLOADING, wait for completion
             // hasUnloaded will be set to true when UNLOADING completes
-            // Save state to DB immediately so DDP can sync to client
+            // Mark for DB update (important state change)
+            needsDBUpdate = true;
             await this.updateDB();
             return;
           } else {
@@ -101,7 +105,8 @@ export class Train extends DBObject {
           if(loaded) {
             // State is now LOADING, wait for completion
             // hasLoaded will be set to true when LOADING completes
-            // Save state to DB immediately so DDP can sync to client
+            // Mark for DB update (important state change)
+            needsDBUpdate = true;
             await this.updateDB();
             return;
           } else {
@@ -116,6 +121,9 @@ export class Train extends DBObject {
         }
         if(this.destStation) {
           this.setState(Helpers.TrainStates.MOVING);
+          needsDBUpdate = true; // State changed to MOVING
+          // Reset counter so first movement tick is counted as tick 1
+          this.ticksSinceLastProgressSave = 0;
         }
       }
       else if(this.state === Helpers.TrainStates.LOADING || this.state === Helpers.TrainStates.UNLOADING) {
@@ -131,20 +139,45 @@ export class Train extends DBObject {
           // Always return to STOPPED after loading/unloading completes
           // This ensures STOPPED is visible between each phase
           this.setState(Helpers.TrainStates.STOPPED);
+          needsDBUpdate = true; // State changed back to STOPPED
         }
         // If not complete, do nothing this tick (wait)
       }
       else if(this.state === Helpers.TrainStates.MOVING) {
         // Move toward next station
-        await this.goTowardNextStop();
+        const arrivedAtStation = await this.goTowardNextStop();
+        if(arrivedAtStation) {
+          needsDBUpdate = true; // Arrived at station - important event
+          this.ticksSinceLastProgressSave = 0; // Reset counter
+        } else {
+          // Periodically save progress for client synchronization
+          // Strategy: save at ticks 1, 2, 3 (smooth startup), then every 5 ticks
+          this.ticksSinceLastProgressSave++;
+
+          let shouldSync = false;
+
+          if(this.ticksSinceLastProgressSave <= 3) {
+            // First 3 ticks: sync every tick for smooth startup
+            shouldSync = true;
+          } else if(this.ticksSinceLastProgressSave >= 8) {
+            // After tick 3, wait 5 more ticks (tick 8), then every 5 after that
+            shouldSync = true;
+            this.ticksSinceLastProgressSave = 3; // Reset to 3, so next sync is at +5 = tick 8 again
+          }
+
+          if(shouldSync) {
+            needsDBUpdate = true;
+          }
+        }
         this.hasMoved = true;
       }
     }
     if(!this.fromStation) await this.removeFromDB(); // no rails, remove the train
-    else await this.updateDB();
+    else if(needsDBUpdate) await this.updateDB(); // Only save on important events
   }
 
   // update train position
+  // @returns {boolean} true if train arrived at a station
   async goTowardNextStop() {
     if(!this.nextStation) {
       this.nextStation = this.path.shift();
@@ -152,7 +185,7 @@ export class Train extends DBObject {
     }
     if(!this.nextStation) {
       this.setState(Helpers.TrainStates.STOPPED);
-      return; // end of path
+      return false; // end of path
     }
 
     this.checkStations();
@@ -191,22 +224,24 @@ export class Train extends DBObject {
       // 3. STOPPED → check !hasLoaded → getPassengers() → LOADING
       // 4. LOADING complete → STOPPED
       // 5. STOPPED → check hasUnloaded && hasLoaded → MOVING
+
+      return true; // Arrived at station - important event!
     }
       // calculate vector to goal
     // console.log('from', this.fromStation, 'dest', this.nextStation);
     else
       this.pos = Geometry.getProgressPos(v, this.progress / 100);
     // console.log(this.progress, this.pos, this.fromStation._id, this.nextStation._id);
+
+    return false; // Not arrived yet - don't save to DB
   }
 
   checkStations() {
     //check if the stations are still alive
     if(!this.fromStation) {
-      console.log('Train', this._id, ': fromStation is null, trying to recover...');
       // Try to find nearest station as recovery
       const nearestStation = this.map.getNearestStation(this.pos, -1);
       if(nearestStation) {
-        console.log('Train', this._id, ': recovered, now at station', nearestStation._id);
         this.fromStation = nearestStation;
         this.destStation = null; // Clear destination to trigger recalculation
         this.nextStation = null;
@@ -214,7 +249,6 @@ export class Train extends DBObject {
         this.setState(Helpers.TrainStates.STOPPED);
         return;
       }
-      console.log('Train', this._id, ': no stations found, stopping');
       this.setState(Helpers.TrainStates.STOPPED);
       return;
     }
@@ -222,11 +256,9 @@ export class Train extends DBObject {
     // Refresh fromStation reference from map (in case it was updated)
     const refreshedFrom = this.map.getObjectById(this.fromStation._id);
     if(!refreshedFrom) {
-      console.log('Train', this._id, ': fromStation', this.fromStation._id, 'no longer exists (possibly merged), finding nearest...');
       // Station was removed (merged) - find nearest station
       const nearestStation = this.map.getNearestStation(this.pos, -1);
       if(nearestStation) {
-        console.log('Train', this._id, ': recovered from merge, now at station', nearestStation._id);
         this.fromStation = nearestStation;
         this.pos = nearestStation.pos;
         this.destStation = null; // Clear destination to trigger recalculation
@@ -235,7 +267,6 @@ export class Train extends DBObject {
         this.setState(Helpers.TrainStates.STOPPED);
         return;
       }
-      console.log('Train', this._id, ': could not recover from merge, stopping');
       this.setState(Helpers.TrainStates.STOPPED);
       return;
     }
@@ -246,10 +277,8 @@ export class Train extends DBObject {
     // Check if nextStation still exists
     const refreshedNext = this.map.getObjectById(this.nextStation._id);
     if(!refreshedNext) {
-      console.log('Train', this._id, ': nextStation', this.nextStation._id, 'no longer exists, shifting to next in path');
       this.nextStation = this.path.shift();
       if(!this.nextStation) {
-        console.log('Train', this._id, ': path is empty, recalculating...');
         this.setState(Helpers.TrainStates.STOPPED);
         this.destStation = null;
       }
@@ -260,17 +289,13 @@ export class Train extends DBObject {
     // reset path if the next is not a child of from anymore
     const children = _.map(this.fromStation.children, function(child) {return child._id;});
     if(!children.includes(this.nextStation._id)) {
-      console.log('Train', this._id, ': nextStation is no longer a child of fromStation, recalculating path');
-
       // This should not happen if updateTrainsAfterMerge() did its job properly
       // But if it does, recalculate the path
       if(this.destStation && this.fromStation._id !== this.destStation._id) {
-        console.log('Train', this._id, ': recalculating path as fallback');
         this.setPath();
         this.nextStation = this.path.shift();
       } else {
         // No destination or already at destination
-        console.log('Train', this._id, ': stopping (no valid destination)');
         this.setState(Helpers.TrainStates.STOPPED);
         this.nextStation = null;
         this.path = [];
@@ -339,7 +364,6 @@ export class Train extends DBObject {
       const bestStation = this.findBestDestinationForPassengers();
       if(bestStation) {
         this.destStation = bestStation;
-        console.log('Train', this._id, ': taking', this.passengers.length, 'passengers to their destination');
         this.setPath();
         return;
       }
@@ -369,12 +393,17 @@ export class Train extends DBObject {
       }
     }
 
-    // PRIORITY 3: Fallback to random if no people waiting anywhere
+    // PRIORITY 3: Fallback - Stop and wait if no demand
     if(!bestStation || maxPeople === 0) {
-      // Filter out current station
-      const availableStations = stations.filter(s => s._id !== this.fromStation._id);
-      if(availableStations.length === 0) return;
-      bestStation = availableStations[_.random(availableStations.length - 1)];
+      // Old logic: Fallback to random if no people waiting anywhere
+      // const availableStations = stations.filter(s => s._id !== this.fromStation._id);
+      // if(availableStations.length === 0) return;
+      // bestStation = availableStations[_.random(availableStations.length - 1)];
+
+      // New logic: Wait for passengers
+      // console.log('Train', this._id, ': no demand, waiting...');
+      this.destStation = null;
+      return;
     }
 
     this.destStation = bestStation;
@@ -458,35 +487,106 @@ export class Train extends DBObject {
     // console.log('Train#updateFromDB', doc, "\n", 'this', this);
   }
 
+  /**
+   * Calculate priority score for a passenger based on train's path
+   * Higher score = higher priority for boarding
+   * @param {Person} passenger - The passenger to evaluate
+   * @returns {number} Priority score (5-100)
+   */
+  calculatePassengerPriority(passenger) {
+    // No destination known for passenger → medium priority
+    if(!passenger.destinationCityId) return 30;
+
+    // Train has no path/destination → all passengers equal priority
+    if(!this.destStation || !this.path || this.path.length === 0) {
+      return 50;
+    }
+
+    // Build list of cities served by this train's path
+    const pathCities = [];
+
+    // Next station (index 0 = highest priority)
+    if(this.nextStation) {
+      const nextCityInfo = this.map.findNearestCity(this.nextStation.pos);
+      if(nextCityInfo) {
+        pathCities.push({cityId: nextCityInfo.city._id, index: 0});
+      }
+    }
+
+    // Stations in the path (index 1, 2, 3...)
+    for(let i = 0; i < this.path.length; i++) {
+      const station = this.path[i];
+      const cityInfo = this.map.findNearestCity(station.pos);
+      if(cityInfo) {
+        pathCities.push({cityId: cityInfo.city._id, index: i + 1});
+      }
+    }
+
+    // Check if passenger's destination matches any city on the path
+    for(const item of pathCities) {
+      if(item.cityId === passenger.destinationCityId) {
+        // Score: 100 for next station, then -5 per index
+        // Examples: index 0 = 100, index 1 = 95, index 2 = 90, etc.
+        return 100 - (item.index * 5);
+      }
+    }
+
+    // Destination not on path → very low priority
+    return 5;
+  }
+
   async getPassengers() {
-    let nb = 0;
-    const passengers = [];
+    // Check if infinite capacity mode is enabled (Fun Mode!)
+    let infiniteCapacity = false;
+    if(Meteor.isServer) {
+      const game = await Games.findOneAsync(this.map._id);
+      infiniteCapacity = game && game.infiniteCapacityMode;
+    }
+
+    // 1. Collect all potential passengers at this station
+    const potentialPassengers = [];
     for(let i = 0; i < this.map.objects.length; i++) {
       const obj = this.map.objects[i];
       if(obj.type !== 'person') continue;
       // Skip passengers already in a train
       if(obj.inTrain) continue;
-      if(Geometry.dist(this.pos, obj.pos) < Helpers.getPassengersRadius) {
-        nb++;
-        passengers.push(this.map.objects[i]);
+      // Only board people at station (not wandering in city)
+      if(obj.state !== Helpers.PersonStates.AT_STATION) continue;
+      // Check if passenger is at the same station as the train (by station ID)
+      if(obj.currentLocation === this.fromStation._id) {
+        potentialPassengers.push(this.map.objects[i]);
       }
     }
+
+    if(potentialPassengers.length === 0) return false;
+
+    // 2. Calculate priority score for each passenger
+    const passengersWithScores = potentialPassengers.map(p => ({
+      passenger: p,
+      score: this.calculatePassengerPriority(p)
+    }));
+
+    // 3. Sort by score descending (highest priority first)
+    passengersWithScores.sort((a, b) => b.score - a.score);
+
+    // 4. Board passengers in priority order until train is full
     let boarded = 0;
-    for(const p of passengers) {
-      // Check if train has capacity
-      if(this.passengers.length >= this.capacity) {
-        console.log('train is full, cannot board more passengers');
+    for(const item of passengersWithScores) {
+      // Check if train has capacity (unless infinite capacity mode is enabled)
+      if(!infiniteCapacity && this.passengers.length >= this.capacity) {
         break; // Stop boarding when full
       }
 
-      // Board the passenger
+      const p = item.passenger;
+      // Board the passenger - update state
       p.inTrain = this._id;
+      p.state = Helpers.PersonStates.IN_TRAIN;
       this.passengers.push(p._id);
       await p.updateDB();
       boarded++;
     }
+
     if(boarded) {
-      console.log('train boarded', boarded, 'people');
       // Enter LOADING state for specified duration
       this.setState(Helpers.TrainStates.LOADING, Helpers.trainLoadingDuration);
       return true; // Indicate that loading occurred
@@ -521,8 +621,6 @@ export class Train extends DBObject {
 
     this.passengers = remainingPassengers;
     if(disembarked > 0) {
-      console.log('train disembarked', disembarked, 'people at', nearestCity.name);
-
       // Calculate and generate revenue
       const baseRevenue = Helpers.passengerBaseRevenue;
       const capacityRatio = (this.passengers.length + disembarked) / this.capacity;
@@ -531,7 +629,6 @@ export class Train extends DBObject {
 
       // Credit revenue to team
       await Meteor.callAsync('teamAddRevenue', this.map._id, totalRevenue, disembarked);
-      console.log(`Revenue generated: $${totalRevenue} (${disembarked} passengers × $${baseRevenue + efficiencyBonus})`);
 
       // Enter UNLOADING state for specified duration
       this.setState(Helpers.TrainStates.UNLOADING, Helpers.trainUnloadingDuration);

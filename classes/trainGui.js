@@ -3,7 +3,7 @@
  */
 
 import {Train} from './train';
-import {Drawing, Helpers} from "./helpers";
+import {Drawing, Geometry, Helpers, Vector} from "./helpers";
 import {TrainMoveAnimation} from "./trainMoveAnimation";
 import {FadeAnimation, Easing} from "./animationManager";
 
@@ -21,6 +21,19 @@ export class TrainGui extends Train {
     this.loadingCircleOpacity = 0; // Animated opacity for loading circle (0-1)
     this.stateTextOpacity = 0; // Animated opacity for state text (0-1)
     this.stateText = ''; // Current state text to display
+
+    // Client-side interpolation properties (NEW)
+    // Since server no longer sends pos updates every tick (Phase 3 optimization),
+    // client must calculate displayPos locally based on fromStation, nextStation, progress
+    this.lastServerProgress = this.progress || 0; // Last progress received from server
+    this.lastProgressUpdateTime = Date.now(); // When we last received progress update
+
+    // Initialize displayPos
+    if(!this.displayPos) {
+      this.displayPos = _.clone(this.pos);
+    }
+
+    console.log('TrainGui', this._id, 'constructed, state:', this.state, 'progress:', this.progress);
   }
 
   /**
@@ -45,48 +58,75 @@ export class TrainGui extends Train {
   }
 
   /**
-   * Override updateFromDB to start smooth movement animation when position changes
-   * and detect state changes for loading animations
+   * Override updateFromDB to detect state changes and progress updates
    */
   updateFromDB(doc) {
-    // Capture old state and displayPos before update
+    // Capture old state before update
     const oldState = this.state;
-    const oldDisplayPos = this.displayPos ? _.clone(this.displayPos) : null;
 
-    // Call parent updateFromDB (updates this.pos, this.state, etc.)
+    // Call parent updateFromDB (updates this.pos, this.state, progress, etc.)
     super.updateFromDB(doc);
 
     // Detect state changes
     if(oldState !== this.state) {
       this.onStateChange(oldState, this.state);
+
+      // When train starts moving, initialize extrapolation timing
+      if(this.state === Helpers.TrainStates.MOVING) {
+        this.lastServerProgress = this.progress || 0;
+        this.lastProgressUpdateTime = Date.now();
+      }
     }
 
-    // If position changed, start smooth movement animation
-    if(doc.pos && oldDisplayPos) {
-      const posChanged = oldDisplayPos.x !== this.pos.x || oldDisplayPos.y !== this.pos.y;
+    // Track progress updates for client-side interpolation (during movement)
+    if(typeof(doc.progress) !== 'undefined' && this.state === Helpers.TrainStates.MOVING) {
+      this.lastServerProgress = doc.progress;
+      this.lastProgressUpdateTime = Date.now();
+    }
+  }
 
-      if(posChanged) {
-        // Remove any existing movement animation
-        const animId = `train-move-${this._id}`;
-        if(this.map.animationManager.hasAnimation(animId)) {
-          this.map.animationManager.removeAnimation(animId);
-        }
+  /**
+   * Update displayPos based on current state (called every frame by AnimationManager)
+   * Client-side interpolation to ensure smooth movement even when server only
+   * sends updates on station arrival (Phase 3 optimization)
+   * @param {number} deltaTime - Time since last frame (ms)
+   */
+  update(deltaTime) {
+    if(this.state === Helpers.TrainStates.MOVING && this.fromStation && this.nextStation) {
+      // Train is moving - extrapolate progress based on time and speed
+      // Since server only sends updates on important events, client must predict progress
 
-        // Create new smooth movement animation
-        const animation = new TrainMoveAnimation(animId, {
-          train: this,
-          from: oldDisplayPos,
-          to: this.pos,
-          onUpdate: () => {
-            this.map.animationManager.requestRedraw();
-          },
-          onComplete: () => {
-            this.displayPos = _.clone(this.pos);
-          }
-        });
+      // Calculate progress increment per server tick (same calculation as server)
+      const v = new Vector(this.fromStation.pos, this.nextStation.pos);
+      const segmentLen = v.len();
 
-        this.map.animationManager.addAnimation(animation);
+      if(segmentLen === 0) {
+        // Edge case: fromStation and nextStation are at same position
+        this.displayPos = _.clone(this.nextStation.pos);
+        return;
       }
+
+      const push = (Helpers.timePixels / segmentLen) * 100; // % progress per tick
+      const nbPushInSegment = 100 / push;
+      const progressIncrement = 100 / Math.round(nbPushInSegment);
+
+      // Calculate how many server ticks have elapsed since last update
+      const timeSinceUpdate = Date.now() - this.lastProgressUpdateTime;
+      const ticksElapsed = timeSinceUpdate / Helpers.serverInterval;
+
+      // Extrapolate progress (but clamp to 100 to avoid overshooting)
+      const extrapolatedProgress = Math.min(100, this.lastServerProgress + (progressIncrement * ticksElapsed));
+
+      // Calculate displayPos using extrapolated progress
+      this.displayPos = Geometry.getProgressPos(v, extrapolatedProgress / 100);
+
+      // If we're very close to destination (>95%), snap to nextStation to avoid visual glitches
+      if(extrapolatedProgress > 95) {
+        this.displayPos = _.clone(this.nextStation.pos);
+      }
+    } else {
+      // Train is stopped/loading/unloading - use pos directly
+      this.displayPos = _.clone(this.pos);
     }
   }
 
@@ -96,8 +136,6 @@ export class TrainGui extends Train {
    * @param {string} newState - New current state
    */
   onStateChange(oldState, newState) {
-    console.log(`Train ${this._id}: ${oldState} -> ${newState}`);
-
     // Update state text
     this.stateText = this.getStateText();
 
