@@ -22,7 +22,7 @@ export async function cleanupDatabase() {
   // ===========================================
   // 1. Clean Station References
   // ===========================================
-  console.log('\n[1/3] Cleaning station references...');
+  console.log('\n[1/4] Cleaning station references...');
   const stations = await MapObjects.find({type: 'station'}).fetchAsync();
   let stationsCleaned = 0;
 
@@ -70,7 +70,7 @@ export async function cleanupDatabase() {
   // ===========================================
   // 2. Clean Train References
   // ===========================================
-  console.log('\n[2/3] Cleaning train references...');
+  console.log('\n[2/4] Cleaning train references...');
   const trains = await MapObjects.find({type: 'train'}).fetchAsync();
   let trainsCleaned = 0;
 
@@ -137,7 +137,7 @@ export async function cleanupDatabase() {
   // ===========================================
   // 3. Clean Person References
   // ===========================================
-  console.log('\n[3/3] Cleaning person references...');
+  console.log('\n[3/4] Cleaning person references...');
   const persons = await MapObjects.find({type: 'person'}).fetchAsync();
   let personsCleaned = 0;
 
@@ -176,6 +176,25 @@ export async function cleanupDatabase() {
   totalCleaned += personsCleaned;
 
   // ===========================================
+  // 4. Remove Stations Without Position
+  // ===========================================
+  console.log('\n[4/4] Removing stations without position...');
+  const allStations = await MapObjects.find({type: 'station'}).fetchAsync();
+  let stationsRemoved = 0;
+
+  for(const station of allStations) {
+    // Check if pos is missing or invalid
+    if(!station.pos || typeof station.pos.x !== 'number' || typeof station.pos.y !== 'number') {
+      console.log(`  Station ${station._id}: invalid position (pos: ${JSON.stringify(station.pos)}) - removing station`);
+      await MapObjects.removeAsync(station._id);
+      stationsRemoved++;
+    }
+  }
+
+  console.log(`  ✓ Removed ${stationsRemoved} stations without valid position`);
+  totalCleaned += stationsRemoved;
+
+  // ===========================================
   // Summary
   // ===========================================
   console.log('\n====================================');
@@ -187,19 +206,10 @@ export async function cleanupDatabase() {
 }
 
 /**
- * Run cleanup migration with safety checks
- * - Only runs once per deployment
- * - Uses environment variable flag to control execution
+ * Run cleanup migration
+ * - Runs on every server startup to ensure data integrity
  */
 export async function runCleanupMigration() {
-  // Check if cleanup should run (controlled by environment variable)
-  const shouldRun = process.env.RUN_DB_CLEANUP === 'true';
-
-  if(!shouldRun) {
-    console.log('[DB Cleanup] Skipped (set RUN_DB_CLEANUP=true to run)');
-    return;
-  }
-
   try {
     const cleanedCount = await cleanupDatabase();
     console.log(`[DB Cleanup] Migration completed successfully (${cleanedCount} objects cleaned)`);
