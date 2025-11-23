@@ -125,6 +125,17 @@ export class Geometry {
     };
   }
 
+  // Generate a random position within an annulus (ring)
+  static randomPosInAnnulus(center, minRadius, maxRadius) {
+    const angle = Math.random() * 2 * Math.PI;
+    // Uniform distribution in annulus: sqrt(random * (R2^2 - R1^2) + R1^2)
+    const r = Math.sqrt(Math.random() * (maxRadius * maxRadius - minRadius * minRadius) + minRadius * minRadius);
+    return {
+      x: Math.round(center.x + r * Math.cos(angle)),
+      y: Math.round(center.y + r * Math.sin(angle))
+    };
+  }
+
 }
 
 // Note that object must be an object or array,
@@ -141,7 +152,7 @@ export class Helpers {
   static defaultZoom = 1;
   static timeFactor = 1; //  real time / game time factor (60: each second is one minute)
   static timePixels = Helpers.timeFactor * Helpers.pixelSpeed * Helpers.serverInterval / 1000; // the real pixels depending of the refresh time in seconds
-  static getPassengersRadius = 50;
+  static getPassengersRadius = 80; // increased to catch passengers in the annulus (max dist 70 + margin)
 
   // Train state machine constants
   static TrainStates = {
@@ -155,10 +166,35 @@ export class Helpers {
   static trainLoadingDuration = 1000;    // 1 second to load passengers
   static trainUnloadingDuration = 800;   // 0.8 second to unload passengers
 
+  // Person state machine constants
+  static PersonStates = {
+    AT_CITY: 'at_city',               // Person is wandering in a city
+    WALKING_TO_STATION: 'walking',    // Person is walking toward nearest station
+    AT_STATION: 'at_station',         // Person is waiting at a station
+    IN_TRAIN: 'in_train'              // Person is riding in a train
+  };
+
+  static personWalkingSpeed = 5;         // pixels per server tick
+  static personStationRadius = 25;       // arrival threshold at station
+  static personMinStationDist = 35;      // min distance from station center (radius of station graphic)
+  static personMaxStationDist = 70;      // max distance from station center (waiting area)
+  static personSeparationRadius = 20;    // radius to check for other people to avoid
+  static personSeparationForce = 0.5;    // strength of repulsion
+
   static maxDistGetNearestStation = 400;
   static cityRadius = 150; // visual size and passenger spawn area
   static cityStationPlacementRadius = 150; // max distance from city to place stations
-  static maxPersons = 50; // maximum number of persons on the map at once
+  static maxPersons = 150; // maximum number of persons on the map at once
+
+  // Spawn rate schedule (minutes -> passengers per minute)
+  // Used by GameServer to calculate current spawn rate
+  static spawnRateSchedule = [
+    {time: 0, rate: 1},   // 0-5 min: 1 pax/min
+    {time: 5, rate: 3},   // 5-10 min: 3 pax/min
+    {time: 10, rate: 6},  // 10-20 min: 6 pax/min
+    {time: 20, rate: 10}, // 20-30 min: 10 pax/min
+    {time: 30, rate: 15}  // 30+ min: 15 pax/min
+  ];
 
   // Economy constants
   static startingCapital = 12000;

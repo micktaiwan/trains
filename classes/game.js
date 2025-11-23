@@ -20,31 +20,37 @@ export class Game extends DBObject {
   // add a train to the map
   async addTrain() {
     // FIXME P1: should pick a station near a city
-    const station = await MapObjects.findOneAsync({type: 'station'});
-    if(station)
-      await Meteor.callAsync('mapInsert', {type: 'train', game_id: this.map._id, pos: station.pos});
+    const station = await MapObjects.findOneAsync({
+      type: 'station',
+      game_id: this.map._id
+    });
+
+    if(!station) {
+      console.warn('[TRAIN] Cannot add train: no stations exist in game', this.map._id);
+      return null;
+    }
+
+    console.log('[TRAIN] Adding train at station', station._id, 'pos:', station.pos);
+    const trainId = await Meteor.callAsync('mapInsert', {
+      type: 'train',
+      game_id: this.map._id,
+      pos: station.pos
+    });
+
+    console.log('[TRAIN] Train successfully added with id:', trainId);
+    return trainId;
   }
 
   // add a person to the map
   async addPerson() {
     // Get existing cities
-    let cities = this.map.getCities();
+    const cities = this.map.getCities();
 
-    // If no cities exist, create a default city at center of map
+    // If no cities exist, abort passenger spawn
+    // Cities should be created from template during game initialization/reset
     if(cities.length === 0) {
-      await Meteor.callAsync('mapInsert', {
-        type: 'city',
-        game_id: this.map._id,
-        name: 'Default City',
-        pos: {x: 500, y: 500},
-        population: 3000,
-        radius: Helpers.cityRadius,
-        size: 10,
-        color: '#fa0'
-      });
-      // Wait a bit for the city to be added to the local map
-      await new Promise(resolve => Meteor.setTimeout(resolve, 100));
-      cities = this.map.getCities();
+      console.warn('[SPAWN] Cannot spawn passenger: no cities available. Waiting for cities to sync from database.');
+      return;
     }
 
     // Spawn persons near cities
@@ -57,6 +63,14 @@ export class Game extends DBObject {
       if(cities.length > 1) {
         const availableDestinations = cities.filter(c => c._id !== spawnCity._id);
         destinationCity = availableDestinations[_.random(0, availableDestinations.length - 1)];
+      } else {
+        // Single city case: allow spawning but without a specific destination yet
+        // They will wander until a new city appears
+        // console.log('Spawning person in single city scenario (no destination)');
+      }
+
+      if (!destinationCity && cities.length > 1) {
+         console.warn('Failed to pick destination city despite multiple cities existing');
       }
 
       // Generate random position within city radius
@@ -72,7 +86,11 @@ export class Game extends DBObject {
       person.destinationCity = destinationCity;
       person.destinationCityId = destinationCity ? destinationCity._id : null;
       person.pos = person.birthAt;
+      // NEW: Initialize state machine properties
+      person.state = Helpers.PersonStates.AT_CITY;
+      person.currentLocation = spawnCity._id;
       await person.saveToDB();
+      // console.log(`Spawned person at ${spawnCity.name} -> ${destinationCity ? destinationCity.name : 'None'}`);
     }
   }
 
