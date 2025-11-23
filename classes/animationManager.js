@@ -222,7 +222,8 @@ export class AnimationManager {
     this.running = false;
     this.lastFrameTime = 0;
     this.deltaTime = 0;
-    this.frameCount = 0;
+    this.frameCount = 0; // Global frame counter (never reset)
+    this.fpsFrameCount = 0; // FPS calculation counter (reset every second)
     this.fps = 0;
     this.fpsUpdateTime = 0;
     this.rafId = null;
@@ -287,11 +288,14 @@ export class AnimationManager {
     this.deltaTime = timestamp - this.lastFrameTime;
     this.lastFrameTime = timestamp;
 
-    // Update FPS counter
-    this.frameCount++;
+    // Update frame counters
+    this.frameCount++; // Global counter (never reset)
+    this.fpsFrameCount++; // FPS counter (reset every second)
+
+    // Update FPS counter every second
     if (timestamp - this.fpsUpdateTime > 1000) {
-      this.fps = Math.round((this.frameCount * 1000) / (timestamp - this.fpsUpdateTime));
-      this.frameCount = 0;
+      this.fps = Math.round((this.fpsFrameCount * 1000) / (timestamp - this.fpsUpdateTime));
+      this.fpsFrameCount = 0; // Reset only the FPS counter
       this.fpsUpdateTime = timestamp;
     }
 
