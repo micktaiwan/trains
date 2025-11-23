@@ -3,6 +3,7 @@
  */
 
 import {GameServer} from "../classes/gameServer";
+import {runCleanupMigration} from "./cleanupDatabase";
 
 // Accounts configuration moved to /lib/accountsConfig.js (shared between client and server)
 
@@ -10,6 +11,9 @@ import {GameServer} from "../classes/gameServer";
 const activeGameServers = new Map();
 
 Meteor.startup(async function() {
+
+  // Run database cleanup migration (controlled by RUN_DB_CLEANUP env var)
+  await runCleanupMigration();
 
   // server observe for new games
   await Games.find().observeChangesAsync({
